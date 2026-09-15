@@ -190,7 +190,7 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px"><div style="border:1px solid var(--line);padding:12px;background:var(--pearl);text-align:center"><b id="dashTier" style="font-size:12px">NO CARD</b><br><span style="font-size:10px;color:var(--muted)">Tier</span></div><div style="border:1px solid var(--line);padding:12px;background:var(--pearl);text-align:center"><b id="dashValid">—</b><br><span style="font-size:10px;color:var(--muted)">Valid</span></div></div>
     <h4 style="margin:0;font-size:11px;letter-spacing:.1em;text-transform:uppercase">My Tickets</h4>
     <div id="dashTickets" style="margin-top:8px;display:grid;gap:8px"></div>
-    <div style="margin-top:8px;font-size:11px;color:var(--muted)">Purchase a tier to open a support ticket → admin replies via chat (bottom-right).</div>
+    <div style="margin-top:8px;font-size:11px;color:var(--muted)">Purchase a tier to open a support ticket → Management replies via chat (bottom-right).</div>
     <h4 style="margin:14px 0 6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase">Vault Access</h4>
     <div id="dashVaultStatus" style="font-size:12px;padding:10px;border:1px solid var(--line);background:var(--pearl)">No active Fan Card — purchase to unlock Exclusive Vault.</div>
     <div style="margin-top:12px;display:flex;gap:8px"><button class="btn ghost small" style="flex:1" onclick="logoutMember()">Logout</button><button class="btn primary small" style="flex:1" onclick="closeMember();document.getElementById('membership').scrollIntoView({behavior:'smooth'})">Browse Tiers →</button></div>
@@ -219,7 +219,7 @@ if(localStorage.getItem(K.version)!==FRESH){
   console.log('Fresh wipe — no mocks');
 }
 
-// Seeds — hero is premium carousel (6 professional frames), others empty — admin populates via CMS
+// Seeds — hero is premium carousel (6 professional frames), others empty — Management populates via CMS
 const seedHero=[
   {id:1,kicker:"LIVE TOUR 2026",title:"TAKUYA KIMURA<br><em>Live Tour 2026 Checkpoint</em>",sub:"Fukuoka • Seoul • Taipei • Nationwide arena tour",img:"/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg",fallback:"https://starto.jp/images/81/dab/39f6d56abd1d7225af6f95477c01e-01.jpg"},
   {id:2,kicker:"PREMIUM FAN CLUB",title:"FAN CARD<br><em>¥300,000 — ¥1,000,000</em>",sub:"Silver • Gold • Platinum • Diamond — Ticket + Management chat",img:"/image-search/takuya-kimura-starto-entertainment-offic-2.png",fallback:"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1600&auto=format&fit=crop"},
@@ -236,11 +236,11 @@ const seedPayments=[
   {id:'amex', name:'AMEX', icon:'AMEX', enabled:false, details:'American Express', instructions:'Provider verified'},
   {id:'apple_pay', name:'Apple Pay', icon:' Pay', enabled:true, details:'Apple Pay via Stripe', instructions:'Use iPhone / Mac Sheet'},
   {id:'google_pay', name:'Google Pay', icon:'G Pay', enabled:true, details:'Google Pay via Stripe', instructions:'Android / Chrome sheet'},
-  {id:'paypay', name:'PayPay', icon:'PayPay', enabled:true, details:'PayPay ID: TAKUYA-OFFICIAL — manual verify by admin', instructions:'Scan PayPay QR — admin confirms'},
+  {id:'paypay', name:'PayPay', icon:'PayPay', enabled:true, details:'PayPay ID: TAKUYA-OFFICIAL — manual verify by Management', instructions:'Scan PayPay QR — Management confirms'},
   {id:'konbini', name:'Konbini', icon:'🏪', enabled:true, details:'FamilyMart / Lawson / Ministop — voucher issued', instructions:'Konbini voucher — pay within 3 days'},
-  {id:'bank', name:'Bank Transfer', icon:'🏦', enabled:true, details:'Bank: MUFG • Branch: Tokyo • Account: 1234567 • Name: STARTO ENTERTAINMENT (manual by admin)', instructions:'Manual transfer — upload receipt via chat, admin verifies'}
+  {id:'bank', name:'Bank Transfer', icon:'🏦', enabled:true, details:'Bank: MUFG • Branch: Tokyo • Account: 1234567 • Name: STARTO ENTERTAINMENT (manual by Management)', instructions:'Manual transfer — upload receipt via chat, Management verifies'}
 ];
-/* Daily live seeds — admin can view/edit/manage daily */
+/* Daily live seeds — Management can view/edit/manage daily */
 const seedNews=[
   {id:1700001, date:"2026.09.15", cat:"CONCERT", title:"Daily Update — Checkpoint Tour Fukuoka Sep 10 at TOTTEI PARK, Fan Club lottery now open", href:"#tour", status:"published"},
   {id:1700002, date:"2026.09.14", cat:"RELEASE", title:"“CHECKPOINT” — 12 tracks streaming now, limited vinyl & Vault download for members", href:"#release", status:"published"},
@@ -330,7 +330,7 @@ function renderFooterPayments(){
   }
   if(details){
     const primary=enabled.slice(0,2).map(m=>m.name).join(' / ');
-    details.innerHTML= enabled.length? `Available: ${enabled.map(m=>m.name).join(' • ')} — <span style="color:var(--gold)">Details provided by administrator</span> • Tap chip for info • ${primary?primary+' preferred':''}` : '';
+    details.innerHTML= enabled.length? `Available: ${enabled.map(m=>m.name).join(' • ')} — <span style="color:var(--gold)">Details provided by Management</span> • Tap chip for info • ${primary?primary+' preferred':''}` : '';
   }
 }
 renderFooterPayments();
@@ -397,7 +397,7 @@ function renderTiers(){
       <div class="price"><b>${t.price}</b><span>${t.period}</span></div>
       <ul>${t.features.map(f=>`<li><i>✓</i> ${f}</li>`).join('')}</ul>
       <button class="btn ${t.id==='diamond'?'gold':'primary'}" onclick="purchaseTier('${t.id}')">Purchase ${t.name} — Ticket →</button>
-      <div style="margin-top:8px;font-size:10px;color:#8a8a8a;text-align:center">Opens support ticket + chat with admin</div>
+      <div style="margin-top:8px;font-size:10px;color:#8a8a8a;text-align:center">Opens support ticket + chat with Management</div>
     </div>
   `).join('');
   grid.querySelectorAll('.reveal').forEach(el=>io.observe(el));
@@ -428,7 +428,7 @@ function renderTour(){
     <img src="${t.img}" alt="" style="width:100%;height:100%;object-fit:cover;aspect-ratio:1/1" onerror="this.src='${t.fallback||t.img}'">
     <div style="padding:24px;display:flex;flex-direction:column;justify-content:center">
       <small style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">${t.period||''} • CONCERT</small>
-      <h3 style="margin:8px 0 10px;font-family:Cormorant Garamond,serif;font-weight:400;font-size:24px">${t.title||'Tour — awaiting admin publish'}</h3>
+      <h3 style="margin:8px 0 10px;font-family:Cormorant Garamond,serif;font-weight:400;font-size:24px">${t.title||'Tour — awaiting Management publish'}</h3>
       <p style="margin:0;font-size:12.5px;color:#4a4a4a;line-height:1.8">${t.desc||'No tour description yet. Admin will publish via Concert CMS — no pre-approved content.'}</p>
       <div style="margin-top:16px;display:flex;gap:10px"><a class="btn primary" href="/#booking">Request via Ticket →</a><a class="btn ghost" href="/#membership">Fan Card</a></div>
     </div>`;
@@ -504,7 +504,7 @@ function submitBooking(e){
   try{new BroadcastChannel('st_ticket').postMessage('update')}catch{}
   try{new BroadcastChannel('st_tk_chat').postMessage('update')}catch{}
   $('#bookingOk').style.display='block'; e.target.reset();
-  toast('Ticket created — admin will reply via chat'); renderDashTickets();
+  toast('Ticket created — Management will reply via chat'); renderDashTickets();
   setTimeout(()=>$('#bookingOk').style.display='none',5000);
 }
 window.submitBooking=submitBooking;
@@ -516,7 +516,7 @@ function purchaseTier(tierId){
   const cur = load(K.memberCurrent,null);
   if(!cur){ toast('Please sign up / login first — then purchase your Fan Card'); openMember('signup'); return; }
   const enabledPayments=load(K.payments, seedPayments).filter(p=>p.enabled);
-  const paySummary = enabledPayments.length? `Available payments (admin provided): ${enabledPayments.map(p=>p.name).join(' • ')} — details in chat after admin reply.` : 'Payments updating — admin will send details via chat.';
+  const paySummary = enabledPayments.length? `Available payments (Management provided): ${enabledPayments.map(p=>p.name).join(' • ')} — details in chat after Management reply.` : 'Payments updating — Management will send details via chat.';
   const payDetailsMsg = enabledPayments.map(p=>`• ${p.name}: ${p.details} — ${p.instructions}`).join('\n');
   // create ticket for purchase with payment context
   const tickets=load(K.tickets,[]);
@@ -526,7 +526,7 @@ function purchaseTier(tierId){
   if(!threads[key]) threads[key]=[];
   threads[key].push({from:'user', text:`🎫 Ticket #${ticket.id}: Purchase ${tier.name} ${tier.price} — ${ticket.messages[0].text}`, ts:Date.now(), ticketId:ticket.id});
   save(K.threads,threads);
-  // also global chat for admin notification
+  // also global chat for Management notification
   const chatGlobal=load(K.chat,[]); chatGlobal.push({from:'visitor', text:`[Ticket #${ticket.id}] ${cur.name} <${cur.email}> wants ${tier.name} ${tier.price}`, ts:Date.now(), ticketId:ticket.id, userEmail:cur.email});
   save(K.chat,chatGlobal);
   try{new BroadcastChannel('st_ticket').postMessage('update')}catch{}
@@ -617,7 +617,7 @@ function renderDashboard(){
 function renderDashTickets(){
   const cur=load(K.memberCurrent,null); const box=$('#dashTickets'); if(!cur){box.innerHTML='';return}
   const tickets=load(K.tickets,[]).filter(t=>t.userEmail===cur.email);
-  if(!tickets.length) box.innerHTML=`<div style="padding:14px;border:1px dashed var(--line);background:var(--pearl);font-size:11px;color:var(--muted);text-align:center">No tickets yet — purchase a Fan Card or create a booking ticket to chat with admin.</div>`;
+  if(!tickets.length) box.innerHTML=`<div style="padding:14px;border:1px dashed var(--line);background:var(--pearl);font-size:11px;color:var(--muted);text-align:center">No tickets yet — purchase a Fan Card or create a booking ticket to chat with Management.</div>`;
   else box.innerHTML=tickets.map(t=>`<div style="border:1px solid var(--line);background:#fff;padding:12px"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:12px">#${t.id} — ${t.subject}</b><span style="font-size:10px;border:1px solid var(--line);padding:4px 8px;background:var(--pearl)">${t.status}</span></div><div style="margin-top:6px;font-size:11px;color:var(--muted)">${t.messages.slice(-1)[0]?.text.slice(0,80)}…</div><div style="margin-top:8px;display:flex;gap:6px"><button class="btn ghost small" onclick="openChat();document.getElementById('chatInput').focus()">Open Chat →</button><span style="font-size:10px;color:var(--muted);align-self:center">${new Date(t.created).toLocaleString('ja-JP')}</span></div></div>`).join('');
 }
 
@@ -627,7 +627,7 @@ function closeDrawer(){$('#drawer').classList.remove('open')}
 window.closeDrawer=closeDrawer;
 $('#drawer').addEventListener('click',e=>{if(e.target===$('#drawer')) closeDrawer()});
 
-// Chat — per-user tickets + threads, support reaches admin via BroadcastChannel + threads
+// Chat — per-user tickets + threads, support reaches Management via BroadcastChannel + threads
 let chatOpen=false, unread=0;
 function threadsForEmail(email){
   const all=load(K.threads,{}); return all[email]||[];
@@ -677,12 +677,12 @@ function sendChat(){
   } else {
     hasOpen.messages.push({from:'user',text:t,ts:Date.now()}); save(K.tickets,tickets);
   }
-  // notify admin via global chat + ticket channel
+  // notify Management via global chat + ticket channel
   const chatGlobal=load(K.chat,[]); chatGlobal.push({from:'visitor', text:`[${email}] ${t}`, ts:Date.now(), userEmail:email}); save(K.chat,chatGlobal);
   try{new BroadcastChannel('st_ticket').postMessage('update')}catch{}
   try{new BroadcastChannel('st_tk_chat').postMessage('update')}catch{}
   i.value=''; renderChat();
-  toast('Ticket updated — admin will reply shortly');
+  toast('Ticket updated — Management will reply shortly');
 }
 window.sendChat=sendChat;
 

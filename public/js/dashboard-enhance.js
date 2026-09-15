@@ -9,7 +9,7 @@
         passUpdated: Date.now() - 1000*60*60*24*7,
         sessions: [
           {device:'This browser — '+navigator.userAgent.slice(0,32), ip:'local', time: Date.now(), current:true},
-          {device:'Admin verification', ip:'Vercel', time: Date.now()-1000*60*60*5, current:false}
+          {device:'Verification', ip:'Vercel', time: Date.now()-1000*60*60*5, current:false}
         ],
         logins: [
           {at: Date.now()-1000*60*30, via:'Password', ok:true, ip:'local'},
@@ -23,6 +23,49 @@
   function saveSec(email, v){
     try{ localStorage.setItem('st_security:'+email, JSON.stringify(v)); }catch{}
   }
+
+  function getBirthday(email){
+    try{ return localStorage.getItem('st_birthday:'+email) || ''; }catch{ return ''; }
+  }
+  function saveBirthday(email, val){
+    try{ localStorage.setItem('st_birthday:'+email, val); }catch{}
+  }
+  function isBirthdayMonth(bday){
+    if(!bday) return false;
+    try{
+      const m = new Date(bday).getMonth();
+      return m === new Date().getMonth();
+    }catch{ return false; }
+  }
+  function renderBirthday(cur, container){
+    const bday = getBirthday(cur.email);
+    const isMonth = isBirthdayMonth(bday);
+    const has = cur.tier && cur.tier!=='none';
+    const unlocked = has && (isMonth || cur.tier==='diamond' || cur.tier==='platinum');
+    const bdayText = bday ? new Date(bday).toLocaleDateString('ja-JP',{month:'long',day:'numeric'}) : 'Not set';
+    container.innerHTML = `
+      <div style="border:1px solid ${unlocked?'var(--gold)':'var(--line)'};background:${unlocked?'linear-gradient(180deg,#fff 0%, #fdfbf7 100%)':'var(--pearl)'};padding:14px;margin-top:12px;position:relative;overflow:hidden">
+        ${unlocked?'<div style="position:absolute;top:10px;right:10px;font-size:9px;letter-spacing:.12em;padding:4px 8px;background:var(--gold);color:#fff">UNLOCKED</div>':''}
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:40px;height:40px;background:${unlocked?'var(--gold)':'#fff'};border:1px solid ${unlocked?'var(--gold)':'var(--line)'};display:grid;place-items:center;font-size:16px">${unlocked?'🎂':'🎁'}</div>
+          <div style="flex:1">
+            <div style="font-size:10px;letter-spacing:.16em;color:${unlocked?'var(--gold3)':'var(--muted)'}">BIRTHDAY VIDEO • ${has ? cur.tier.toUpperCase() : 'LOCK CARD FIRST'}</div>
+            <b style="display:block;margin:4px 0;font-family:Cormorant Garamond,serif;font-size:18px;font-weight:500">${unlocked?'Your birthday surprise is ready':'Birthday surprise awaits'}</b>
+            <div style="font-size:11px;color:var(--muted);line-height:1.6">
+              ${has ? (bday ? `Your birthday ${bdayText} ${isMonth?'— this month unlock!':''} • Exclusive 1:1 video message + uncut vault edit. ${unlocked?'Tap play now.':'Unlocks automatically in your birth month — Diamond always unlocked.'}` : 'Set your birthday to auto-unlock your 1:1 video in your birth month. Exclusive to Fan Card holders.') : 'Purchase any Fan Card to enable birthday video — set date after purchase.'}
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              ${!has ? `<span style="font-size:10px;padding:6px 10px;border:1px solid var(--line);background:#fff">LOCKED — Fan Card required</span>` : bday ? `<span style="font-size:10px;padding:6px 10px;border:1px solid var(--line);background:#fff">🎂 ${bdayText}</span><button class="btn ghost small" style="padding:6px 10px;font-size:10px" onclick="window.setBirthday()">Change date</button>` : `<button class="btn gold small" style="padding:6px 12px;font-size:10px" onclick="window.setBirthday()">Set birthday →</button>`}
+              ${unlocked ? `<button class="btn gold small" onclick="window.playBirthday()">▶ Play Birthday Video</button>` : `<button class="btn ghost small" style="opacity:.6" onclick="window.toast&&toast('Unlocks in your birth month — Management will notify')">Locked until birthday month</button>`}
+            </div>
+            ${!bday && has ? `<div style="margin-top:8px"><input type="date" id="bdayInputDash" style="padding:8px;border:1px solid var(--line);font-size:12px"><button class="btn primary small" style="margin-left:8px;padding:8px 12px" onclick="window.saveBdayFromDash()">Save</button></div>`:''}
+          </div>
+        </div>
+        ${unlocked?`<div style="margin-top:12px;border:1px solid var(--line);background:#0a0a0a;color:#fff;padding:12px;display:flex;gap:12px;align-items:center"><div style="width:36px;height:36px;background:var(--gold);display:grid;place-items:center;flex-shrink:0">▶</div><div><b style="font-size:12px">Birthday Video — Takuya Kimura</b><br><span style="font-size:10px;opacity:.7">Private 02:30 • For ${cur.name.split(' ')[0]} • Members only</span></div><span style="margin-left:auto;font-size:9px;padding:4px 8px;border:1px solid var(--gold);color:var(--gold)">EXCLUSIVE</span></div>`:''}
+      </div>
+    `;
+  }
+
   function earlyCode(cardNo, tier){
     if(!tier || tier==='none') return null;
     const base = (cardNo||'TK').replace(/[^A-Z0-9]/g,'').slice(-5);
@@ -65,7 +108,7 @@
         </div>
         <div style="margin-top:10px;padding:8px;border:1px dashed var(--line);background:var(--pearl);font-size:10px;color:var(--muted);display:flex;gap:8px;align-items:center">
           <span style="font-size:12px">🔒</span>
-          <div><b style="color:var(--ink)">Bank-level feel:</b> no raw card storage • provider-hosted payments • ticket-based Management chat • audit-ready (KIMURA ADMIN roles + logs) • ready for Auth.js / Supabase Auth when you deploy backend. <a href="#" onclick="window.openChat();return false" style="text-decoration:underline;color:var(--gold)">Ask Management →</a></div>
+          <div><b style="color:var(--ink)">Bank-level feel:</b> no raw card storage • provider-hosted payments • ticket-based Management chat • audit-ready (KIMURA MANAGEMENT roles + logs) • ready for Auth.js / Supabase Auth when you deploy backend. <a href="#" onclick="window.openChat();return false" style="text-decoration:underline;color:var(--gold)">Ask Management →</a></div>
         </div>
       </div>
     `;
@@ -154,13 +197,16 @@
       if(tierGrid) tierGrid.after(earlyBox);
       else dashCard.after(earlyBox);
 
+      const bdayBox = document.createElement('div');
+      bdayBox.id = 'bdayBox';
+      renderBirthday(cur, bdayBox);
       const secBox = document.createElement('div');
       secBox.id = 'secBox';
       renderSecurity(cur.email, secBox);
-      // Insert before tickets or after early
+      // Insert boxes: early -> birthday -> security before tickets
       const tickets = document.getElementById('dashTickets');
-      if(tickets) tickets.before(secBox);
-      else earlyBox.after(secBox);
+      if(tickets){ tickets.before(secBox); tickets.before(bdayBox); }
+      else { earlyBox.after(bdayBox); bdayBox.after(secBox); }
 
       // Comfort header
       if(!document.getElementById('comfortHead')){
