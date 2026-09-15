@@ -434,12 +434,12 @@ if(localStorage.getItem(K.version)!==FRESH){
 
 // Seeds — hero is premium carousel (6 professional frames), others empty — Management populates via CMS
 const seedHero=[
-  {id:1,kicker:"LIVE TOUR 2026",title:"TAKUYA KIMURA<br><em>Live Tour 2026 Checkpoint</em>",sub:"Fukuoka • Seoul • Taipei • Nationwide arena tour",img:"image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg",fallback:"https://starto.jp/images/81/dab/39f6d56abd1d7225af6f95477c01e-01.jpg"},
-  {id:2,kicker:"PREMIUM FAN CLUB",title:"FAN CARD<br><em>¥300,000 — ¥1,000,000</em>",sub:"Silver • Gold • Platinum • Diamond — Ticket + Management chat",img:"image-search/takuya-kimura-starto-entertainment-offic-2.png",fallback:"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1600&auto=format&fit=crop"},
-  {id:3,kicker:"EXCLUSIVE VAULT",title:"PRIVATE VAULT<br><em>Members Only Surprise</em>",sub:"Behind-the-scenes, gallery, private stream, birthday video",img:"image-search/takuya-kimura-starto-entertainment-offic-1.png",fallback:"https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1600&auto=format&fit=crop"},
-  {id:4,kicker:"CHECKPOINT • ARENA",title:"ARENA NATIONWIDE<br><em>Sep 5 — Nov 23</em>",sub:"C&C STAGE production — Fan Club pre-sale & Meet & Greet",img:"image-search/takuya-kimura-live-tour-checkpoint-2026--1.gif",fallback:"https://starto.jp/images/81/b0b/9c913dfa75c509b98471e87038ed3/800_800_102400.png"},
-  {id:5,kicker:"CINEMATIC PORTRAIT",title:"TAKUYA KIMURA<br><em>Cinematic • Editorial</em>",sub:"Photography / Interview — STARTO ENTERTAINMENT official",img:"image-search/takuya-kimura-starto-entertainment-offic-3.webp",fallback:"https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=1600&auto=format&fit=crop"},
-  {id:6,kicker:"TOKYO TAXI • KYOJO",title:"FILM & DRAMA<br><em>Next on Screen</em>",sub:"TOKYO TAXI & Kyojo Requiem — crafted for premium experience",img:"image-search/takuya-kimura-live-tour-checkpoint-2026--4.webp",fallback:"https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=1600&auto=format&fit=crop"},
+  {id:1,kicker:"LIVE TOUR 2026",title:"TAKUYA KIMURA<br><em>Live Tour 2026 Checkpoint</em>",sub:"Fukuoka • Seoul • Taipei • Nationwide arena tour",img:"/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg",fallback:"https://starto.jp/images/81/dab/39f6d56abd1d7225af6f95477c01e-01.jpg"},
+  {id:2,kicker:"PREMIUM FAN CLUB",title:"FAN CARD<br><em>¥300,000 — ¥1,000,000</em>",sub:"Silver • Gold • Platinum • Diamond — Ticket + Management chat",img:"/image-search/takuya-kimura-starto-entertainment-offic-2.png",fallback:"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1600&auto=format&fit=crop"},
+  {id:3,kicker:"EXCLUSIVE VAULT",title:"PRIVATE VAULT<br><em>Members Only Surprise</em>",sub:"Behind-the-scenes, gallery, private stream, birthday video",img:"/image-search/takuya-kimura-starto-entertainment-offic-1.png",fallback:"https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1600&auto=format&fit=crop"},
+  {id:4,kicker:"CHECKPOINT • ARENA",title:"ARENA NATIONWIDE<br><em>Sep 5 — Nov 23</em>",sub:"C&C STAGE production — Fan Club pre-sale & Meet & Greet",img:"/image-search/takuya-kimura-live-tour-checkpoint-2026--1.gif",fallback:"https://starto.jp/images/81/b0b/9c913dfa75c509b98471e87038ed3/800_800_102400.png"},
+  {id:5,kicker:"CINEMATIC PORTRAIT",title:"TAKUYA KIMURA<br><em>Cinematic • Editorial</em>",sub:"Photography / Interview — STARTO ENTERTAINMENT official",img:"/image-search/takuya-kimura-starto-entertainment-offic-3.webp",fallback:"https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=1600&auto=format&fit=crop"},
+  {id:6,kicker:"TOKYO TAXI • KYOJO",title:"FILM & DRAMA<br><em>Next on Screen</em>",sub:"TOKYO TAXI & Kyojo Requiem — crafted for premium experience",img:"/image-search/takuya-kimura-live-tour-checkpoint-2026--4.webp",fallback:"https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=1600&auto=format&fit=crop"},
 ];
 const seedAnnounce=["TAKUYA KIMURA • LIVE TOUR 2026 CHECKPOINT • ON SALE","NEW ALBUM “CHECKPOINT” — 2026.08.12","FAN CLUB MEMBERSHIP ¥300,000 — ¥1,000,000 • MEET & GREET TICKET OPEN","EXCLUSIVE VAULT FOR MEMBERS • BIRTHDAY SURPRISE"];
 const seedPayments=[
@@ -471,9 +471,9 @@ const seedSched=[
   {id:1800006, date:"2026.09.30", time:"00:00", title:"Vault Update — Birthday Message Template", place:"Exclusive Vault", tag:"REGULAR"}
 ];
 const seedRegular=[
-  {cat:"RADIO", title:"Flow", desc:"Every Sunday 11:30 TOKYO FM — Takuya's voice, music, guests. Today’s behind-the-scenes in Vault.", img:"image-search/takuya-kimura-starto-entertainment-offic-4.png", href:"#regular"},
-  {cat:"TV", title:"THE SWARM", desc:"International thriller — now streaming. Behind-the-scenes + interview.", img:"image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg", href:"#regular"},
-  {cat:"MAGAZINE", title:"Editorial — Cinematic Portrait", desc:"Creamy black & gold editorial, interview & vault photos.", img:"image-search/takuya-kimura-starto-entertainment-offic-1.png", href:"#regular"}
+  {cat:"RADIO", title:"Flow", desc:"Every Sunday 11:30 TOKYO FM — Takuya's voice, music, guests. Today’s behind-the-scenes in Vault.", img:"/image-search/takuya-kimura-starto-entertainment-offic-4.png", href:"#regular"},
+  {cat:"TV", title:"THE SWARM", desc:"International thriller — now streaming. Behind-the-scenes + interview.", img:"/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg", href:"#regular"},
+  {cat:"MAGAZINE", title:"Editorial — Cinematic Portrait", desc:"Creamy black & gold editorial, interview & vault photos.", img:"/image-search/takuya-kimura-starto-entertainment-offic-1.png", href:"#regular"}
 ];
 const seedCM=[
   {id:190001, brand:"McDonald's Japan", cat:"CM", img:"https://images.unsplash.com/photo-1528605248644-14dd04022da1?q=80&w=400&auto=format&fit=crop"},
@@ -484,16 +484,16 @@ const seedCM=[
   {id:190006, brand:"TOYOTA", cat:"Auto", img:"https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=400&auto=format&fit=crop"}
 ];
 const seedMovies=[
-  {id:200001, date:"2026.11.01", cat:"MOVIE", title:"TOKYO TAXI", desc:"Lead — heart-warming road movie, directed by Yoji Yamada. Trailer + Vault stills.", img:"image-search/takuya-kimura-live-tour-checkpoint-2026--5.webp"},
-  {id:200002, date:"2026.09.30", cat:"DRAMA", title:"Kyojo Requiem / Reunion", desc:"Kazama Kimichika returns — Blu-ray & DVD, exclusive commentary.", img:"image-search/takuya-kimura-starto-entertainment-offic-2.png"},
-  {id:200003, date:"2025.02.15", cat:"MOVIE", title:"THE SWARM", desc:"International co-production — deep sea thriller.", img:"image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg"},
-  {id:200004, date:"2024.01.01", cat:"STAGE", title:"Judgment — Lost Judgment (Voice)", desc:"Takayuki Yagami — game & drama, fan vault voice notes.", img:"image-search/takuya-kimura-starto-entertainment-offic-5.jpg"}
+  {id:200001, date:"2026.11.01", cat:"MOVIE", title:"TOKYO TAXI", desc:"Lead — heart-warming road movie, directed by Yoji Yamada. Trailer + Vault stills.", img:"/image-search/takuya-kimura-live-tour-checkpoint-2026--5.webp"},
+  {id:200002, date:"2026.09.30", cat:"DRAMA", title:"Kyojo Requiem / Reunion", desc:"Kazama Kimichika returns — Blu-ray & DVD, exclusive commentary.", img:"/image-search/takuya-kimura-starto-entertainment-offic-2.png"},
+  {id:200003, date:"2025.02.15", cat:"MOVIE", title:"THE SWARM", desc:"International co-production — deep sea thriller.", img:"/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg"},
+  {id:200004, date:"2024.01.01", cat:"STAGE", title:"Judgment — Lost Judgment (Voice)", desc:"Takayuki Yagami — game & drama, fan vault voice notes.", img:"/image-search/takuya-kimura-starto-entertainment-offic-5.jpg"}
 ];
 const seedReleases=[
-  {id:210001, date:"2026.08.12", cat:"ALBUM", title:"CHECKPOINT", artist:"Takuya Kimura", img:"image-search/takuya-kimura-starto-entertainment-offic-4.png"},
-  {id:210002, date:"2024.08.14", cat:"ALBUM", title:"SEE YOU THERE", artist:"Takuya Kimura", img:"image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg"},
-  {id:210003, date:"2022.01.19", cat:"ALBUM", title:"Next Destination", artist:"Takuya Kimura", img:"image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg"},
-  {id:210004, date:"2026.06.10", cat:"SINGLE", title:"Flow Theme — Vault Edit", artist:"Takuya Kimura", img:"image-search/takuya-kimura-starto-entertainment-offic-1.png"}
+  {id:210001, date:"2026.08.12", cat:"ALBUM", title:"CHECKPOINT", artist:"Takuya Kimura", img:"/image-search/takuya-kimura-starto-entertainment-offic-4.png"},
+  {id:210002, date:"2024.08.14", cat:"ALBUM", title:"SEE YOU THERE", artist:"Takuya Kimura", img:"/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg"},
+  {id:210003, date:"2022.01.19", cat:"ALBUM", title:"Next Destination", artist:"Takuya Kimura", img:"/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg"},
+  {id:210004, date:"2026.06.10", cat:"SINGLE", title:"Flow Theme — Vault Edit", artist:"Takuya Kimura", img:"/image-search/takuya-kimura-starto-entertainment-offic-1.png"}
 ];
 const seedShop=[]; // prod // prod: no demo — API only
 const seedJournal=[]; // prod: no demo — API only
@@ -514,7 +514,7 @@ function ensureSeeds(){
   if(!localStorage.getItem('st_archive')) save('st_archive', []); // prod: no demo — API only
   if(!localStorage.getItem('st_notifications')) save('st_notifications', []);
   if(!localStorage.getItem('st_notif_prefs')) save('st_notif_prefs', {tour:{inapp:true,email:true,push:false},music:{inapp:true,email:true,push:false},journal:{inapp:true,email:false,push:false},membership:{inapp:true,email:true,push:true},ticket:{inapp:true,email:true,push:true},merchandise:{inapp:true,email:true,push:false},support:{inapp:true,email:true,push:false}});
-  if(!localStorage.getItem(K.concert)) localStorage.setItem(K.concert, JSON.stringify({period:"2026.09.05 — 2026.11.23",title:"TAKUYA KIMURA Live Tour 2026 Checkpoint — Daily update Sep 15: Fukuoka added, Seoul/Taipei lottery",desc:"Arena tour Sep 5–Nov 23 — C&C STAGE. Fukuoka Sep 10 (TOTTEI PARK), Seoul Oct 18, Taipei Nov 13 Birthday Special. Details editable via Admin → Concert. Today’s rehearsal live on Vault.",img:"image-search/takuya-kimura-live-tour-checkpoint-2026--1.gif",fallback:"https://starto.jp/images/81/b0b/9c913dfa75c509b98471e87038ed3/800_800_102400.png"}));
+  if(!localStorage.getItem(K.concert)) localStorage.setItem(K.concert, JSON.stringify({period:"2026.09.05 — 2026.11.23",title:"TAKUYA KIMURA Live Tour 2026 Checkpoint — Daily update Sep 15: Fukuoka added, Seoul/Taipei lottery",desc:"Arena tour Sep 5–Nov 23 — C&C STAGE. Fukuoka Sep 10 (TOTTEI PARK), Seoul Oct 18, Taipei Nov 13 Birthday Special. Details editable via Admin → Concert. Today’s rehearsal live on Vault.",img:"/image-search/takuya-kimura-live-tour-checkpoint-2026--1.gif",fallback:"https://starto.jp/images/81/b0b/9c913dfa75c509b98471e87038ed3/800_800_102400.png"}));
   if(!localStorage.getItem(K.tickets)) save(K.tickets, []);
   if(!localStorage.getItem(K.threads)) save(K.threads, {});
   if(!localStorage.getItem(K.memberUsers)) save(K.memberUsers, []);
