@@ -360,6 +360,8 @@ document.addEventListener('DOMContentLoaded', function(){
 <div id="toast" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(8px);background:#0a0a0a;color:#fff;padding:12px 16px;font-size:12.5px;letter-spacing:.02em;border:1px solid #222;opacity:0;transition:all .32s var(--ease);pointer-events:none;z-index:90">—</div>
 
 <script src="/js/db-adapter.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="/js/email.js"></script>
 <script src="/js/site-shared.js"></script>
 <script>
 const K={
@@ -739,6 +741,10 @@ function submitBooking(e){
   try{new BroadcastChannel('st_tk_chat').postMessage('update')}catch{}
   $('#bookingOk').style.display='block'; e.target.reset();
   toast('Ticket created — admin will reply via chat'); renderDashTickets();
+  try{
+    const curBk = load(K.memberCurrent,null);
+    if(curBk && window.EmailNotify) window.EmailNotify.booking({email: curBk.email, name: curBk.name, type: data.type, date: data.date});
+  }catch{}
   setTimeout(()=>$('#bookingOk').style.display='none',5000);
 }
 window.submitBooking=submitBooking;
@@ -766,6 +772,7 @@ function purchaseTier(tierId){
   try{new BroadcastChannel('st_ticket').postMessage('update')}catch{}
   try{new BroadcastChannel('st_tk_chat').postMessage('update')}catch{}
   toast(`Ticket #${ticket.id} opened for ${tier.name} — ${paySummary}`);
+  if(window.EmailNotify) window.EmailNotify.ticket({email: cur.email, name: cur.name, ticketNo: ticket.id, tier: tier.name, subject: ticket.subject});
   if(enabledPayments.length){
     // quick inline payment helper
     setTimeout(()=>toast(`💳 ${paySummary}`),1200);
@@ -830,7 +837,14 @@ function signup(){
   users.push(user); save(K.memberUsers,users);
   localStorage.setItem(K.memberCurrent, JSON.stringify(user));
   updateHeaderAuth(); try{updateFamilyClub();}catch{} try{updateFamilyClub();}catch{} msg.textContent='✓ Account created — welcome! Opening dashboard…';msg.className='form-msg show ok';
-  toast(`Welcome ${name} — account created`); setTimeout(()=>switchMember('dashboard'),600);
+  toast(`Welcome ${name} — account created`);
+  if(window.EmailNotify) window.EmailNotify.welcome({name, email});
+  // Also try backend signup for real email (if apiBase configured)
+  try{
+    const apiBase = window.KimuraDB?.apiBase || document.querySelector('meta[name="kimura-api"]')?.content || '';
+    if(apiBase) fetch(apiBase + '/api/auth/signup', {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({email, password: pass, name})}).then(r=>r.json()).then(j=>console.log('backend signup',j)).catch(()=>{});
+  }catch{}
+  setTimeout(()=>switchMember('dashboard'),600);
 }
 function login(){
   const email=$('#liEmail').value.trim().toLowerCase(), pass=$('#liPass').value;
@@ -843,7 +857,8 @@ function forgot(){
   const email=$('#foEmail').value.trim().toLowerCase(), msg=$('#forgotMsg'); msg.style.display='none';
   if(!email.includes('@')){msg.textContent='Enter valid email';msg.className='form-msg show';return}
   if(!load(K.memberUsers,[]).find(u=>u.email===email)){msg.textContent='No account with that email';msg.className='form-msg show';return}
-  msg.textContent='✓ Reset link sent (simulated) — use login again or contact support';msg.className='form-msg show ok'; toast('Reset link sent (simulated)');
+  msg.textContent='✓ Reset link sent — check your inbox';msg.className='form-msg show ok'; toast('Reset link sent');
+  if(window.EmailNotify) window.EmailNotify.passwordReset({email});
 }
 function logoutMember(){localStorage.removeItem(K.memberCurrent);updateHeaderAuth(); try{updateFamilyClub();}catch{} try{updateFamilyClub();}catch{}toast('Signed out');switchMember('login')}
 window.signup=signup;window.login=login;window.forgot=forgot;window.logoutMember=logoutMember;
