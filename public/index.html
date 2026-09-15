@@ -190,6 +190,37 @@
     <div class="booking-card dark">
       <h3>Meet & Greet</h3>
       <p style="margin:8px 0 0;font-size:12px;color:#b8b8b8;line-height:1.7">Intimate sessions around Checkpoint tour. Limited 20 per city. Requires Fan Card — purchase to get ticket priority.</p>
+
+      <div id="lotteryDashboard" style="margin-top:16px;border:1px solid #222;background:#111;padding:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <b style="font-size:11px;letter-spacing:.12em">LOTTERY DASHBOARD • Live</b>
+          <span style="font-size:10px;padding:4px 8px;background:#0a0a0a;border:1px solid #222;color:var(--gold)">Your Rank: <span id="lotteryRank">#342</span> • Boost with tier</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px">
+          <div style="border:1px solid #222;background:#0a0a0a;padding:12px;text-align:center">
+            <div style="font-size:10px;letter-spacing:.1em;color:#9a9a9a">FUKUOKA</div>
+            <div style="font-size:20px;font-weight:700;margin:4px 0" id="lotteryFukuoka">6</div>
+            <div style="font-size:10px;color:#9a9a9a">left / 20</div>
+            <div style="height:4px;background:#222;margin-top:8px;border-radius:99px;overflow:hidden"><i id="lotteryBarFukuoka" style="display:block;height:100%;width:70%;background:var(--gold);transition:width .6s"></i></div>
+          </div>
+          <div style="border:1px solid #222;background:#0a0a0a;padding:12px;text-align:center;opacity:.7">
+            <div style="font-size:10px;letter-spacing:.1em;color:#9a9a9a">SEOUL</div>
+            <div style="font-size:20px;font-weight:700;margin:4px 0">—</div>
+            <div style="font-size:10px;color:#9a9a9a">Gold+ only</div>
+            <div style="height:4px;background:#222;margin-top:8px;border-radius:99px;overflow:hidden"><i style="display:block;height:100%;width:100%;background:#333"></i></div>
+          </div>
+          <div style="border:1px solid #222;background:#0a0a0a;padding:12px;text-align:center;opacity:.7">
+            <div style="font-size:10px;letter-spacing:.1em;color:#9a9a9a">TAIPEI BDAY</div>
+            <div style="font-size:20px;font-weight:700;margin:4px 0;color:var(--gold)">◆</div>
+            <div style="font-size:10px;color:#9a9a9a">Diamond ★</div>
+            <div style="height:4px;background:#222;margin-top:8px;border-radius:99px;overflow:hidden"><i style="display:block;height:100%;width:30%;background:var(--gold)"></i></div>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center;font-size:10px;color:#9a9a9a">
+          <span>Next draw: <b id="lotteryCountdown" style="color:#fff;font-family:JetBrains Mono,monospace">02:14:33</b></span>
+          <span style="margin-left:auto">Tap tier below to boost rank →</span>
+        </div>
+      </div>
       <div style="margin-top:14px;display:grid;gap:10px">
         <div style="display:flex;gap:10px;align-items:center;border:1px solid #222;padding:10px;background:#111"><div style="width:40px;height:40px;background:var(--gold);display:grid;place-items:center;color:#fff">★</div><div><b style="font-size:12px">Fukuoka — Sep 10</b><br><span style="font-size:11px;color:#9a9a9a">12:00 • TOTTEI PARK • 6 left</span></div><button class="btn gold small" style="margin-left:auto" onclick="purchaseTier('meet')">Ticket</button></div>
         <div style="display:flex;gap:10px;align-items:center;border:1px solid #222;padding:10px;background:#111"><div style="width:40px;height:40px;border:1px solid #333;display:grid;place-items:center">◎</div><div><b style="font-size:12px">Seoul — Oct 18</b><br><span style="font-size:11px;color:#9a9a9a">18:00 • Private • Gold+</span></div><button class="btn ghost small" style="margin-left:auto;background:#111;color:#fff;border-color:#222" onclick="purchaseTier()">Ticket</button></div>
@@ -341,6 +372,18 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Navigation menu"><div class="drawer-panel" style="max-width:760px;background:#1a1a1a;color:#fff;display:grid;grid-template-columns:1fr 1px 1fr"><div style="padding:28px"><div style="font-size:11px;letter-spacing:.14em;opacity:.6">MENU</div><div style="margin-top:18px;display:grid;gap:18px;font-size:18px;letter-spacing:.04em;line-height:1.2"><a href="/work/" onclick="closeDrawer()" style="display:block;color:#fff">PROFILE</a><a href="/tour/" onclick="closeDrawer()" style="display:block;color:#fff">SCHEDULE</a><a href="/work/#news" onclick="closeDrawer()" style="display:block;color:#fff">NEWS</a><a href="/tour/" onclick="closeDrawer()" style="display:block;color:#fff">CONCERT/STAGE</a><a href="/work/#film" onclick="closeDrawer()" style="display:block;color:#fff">MOVIE</a><a href="/music/" onclick="closeDrawer()" style="display:block;color:#fff">DISCOGRAPHY</a></div></div><div style="background:#333"></div><div style="padding:28px;background:#1a1a1a"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;letter-spacing:.14em;display:flex;gap:8px"><a href="/members/" style="color:#fff;border-bottom:1px solid #fff">FAN CLUB</a><span>›</span></div><button class="icon-btn" onclick="document.getElementById('drawer').classList.remove('open')" style="width:32px;height:32px;background:#fff;color:#000">✕</button></div><div style="margin-top:18px"><div style="display:flex;gap:12px;font-size:11px;letter-spacing:.12em"><a href="/journal/" onclick="closeDrawer()" style="color:#fff">BLOG</a><a href="/shop/" onclick="closeDrawer()" style="color:#fff">SHOP ↗</a></div><div id="family-club" style="margin-top:18px;border:1px solid #333;padding:18px"><div style="display:flex;gap:12px;align-items:center"><div style="font-size:18px;letter-spacing:.1em">FC</div><div style="font-size:11px"><b>FAMILY CLUB</b><br><span style="opacity:.6">Takuya Kimura&apos;s official fan club.</span></div></div><div style="margin-top:14px;display:flex;gap:8px"><a href="#" onclick="openMember('login');closeDrawer();return false" style="background:#fff;color:#000;padding:8px 14px;font-size:11px;border-radius:999px">Log in</a><a href="#" onclick="openMember('signup');closeDrawer();return false" style="background:#fff;color:#000;padding:8px 14px;font-size:11px;border-radius:999px">Member Registration</a></div></div></div></div></div></div>
 <!-- Support Live Chat — Official Site / Management -->
+
+<!-- Vault Player — premium modal with blurred preview -->
+<div id="vaultModal" class="modal" style="z-index:85">
+  <div class="modal-card" style="max-width:720px;background:#0a0a0a;color:#fff;border-color:#222">
+    <div class="modal-head" style="background:#0a0a0a;border-color:#222">
+      <b id="vaultTitle" style="letter-spacing:.08em;font-size:12px;color:#fff">VAULT</b>
+      <button class="icon-btn" onclick="closeVault()" style="width:32px;height:32px;background:#111;color:#fff;border-color:#222">✕</button>
+    </div>
+    <div id="vaultBody" style="padding:0"></div>
+  </div>
+</div>
+
 <div id="chatLauncher" class="chat-launcher" aria-label="Support Chat — Management">
   <span style="font-size:20px">💬</span>
   <div id="chatBadge" class="chat-badge">0</div>
@@ -1030,6 +1073,107 @@ window.addEventListener('storage',e=>{if(e.key===K.threads||e.key===K.tickets){r
 const sections=[...document.querySelectorAll('section[id], #top')];
 window.addEventListener('scroll',()=>{let cur='top';sections.forEach(s=>{if(window.scrollY>=s.offsetTop-100) cur=s.id||'top'});$$('.nav a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+cur))},{passive:true});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMember();closeChat();closeDrawer()}});
+
+// === NEW PREMIUM FEATURES — non-destructive, motion demos ===
+// Lottery Dashboard — live rank + countdown + tier boost
+(function(){
+  const rankEl = document.getElementById('lotteryRank');
+  const fukuokaEl = document.getElementById('lotteryFukuoka');
+  const barEl = document.getElementById('lotteryBarFukuoka');
+  const countdownEl = document.getElementById('lotteryCountdown');
+  if(!rankEl) return;
+  let left = 6;
+  let rank = 342;
+  function updateRank(){
+    const cur = JSON.parse(localStorage.getItem('st_member_current')||'null');
+    const tier = cur?.tier || 'none';
+    const boost = {none:0,silver:40,gold:120,platinum:200,diamond:300}[tier]||0;
+    rank = Math.max(12, 342 - boost - Math.floor(Math.random()*20));
+    rankEl.textContent = '#' + rank;
+    if(cur) rankEl.parentElement.style.borderColor = 'var(--gold)';
+  }
+  window.addEventListener('storage', (e)=>{ if(e.key==='st_member_current') updateRank(); });
+  // Also call on tier preview
+  document.addEventListener('click', (e)=>{
+    if(e.target.closest('.tier')) setTimeout(updateRank, 100);
+  });
+  updateRank();
+  // Countdown
+  let sec = 2*3600 + 14*60 + 33;
+  setInterval(()=>{
+    sec = sec>0? sec-1 : 2*3600+14*60;
+    const h = String(Math.floor(sec/3600)).padStart(2,'0');
+    const m = String(Math.floor((sec%3600)/60)).padStart(2,'0');
+    const s = String(sec%60).padStart(2,'0');
+    if(countdownEl) countdownEl.textContent = h+':'+m+':'+s;
+  },1000);
+  // Click Fukuoka ticket reduces left (demo)
+  document.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(btn && btn.textContent.includes('Ticket') && btn.closest('.booking-card.dark')){
+      if(left>1){ left--; fukuokaEl.textContent=left; barEl.style.width = (left/20*100)+'%'; fukuokaEl.style.color = left<3 ? '#ff4444' : '#fff'; }
+    }
+  });
+})();
+
+// Vault Player — premium modal with tier check + blurred preview
+window.openVault = function(id){
+  const cur = JSON.parse(localStorage.getItem('st_member_current')||'null');
+  const tier = cur?.tier || 'none';
+  const vaults = {
+    1: {title:'VAULT 01 — Rehearsal Checkpoint', tier:'none', img:'/image-search/takuya-kimura-starto-entertainment-offic-1.png', desc:'Unseen studio moments, soundcheck whispers. 4-min private stream + photos.'},
+    2: {title:'VAULT 02 — Private Gallery', tier:'gold', img:'/image-search/takuya-kimura-starto-entertainment-offic-2.png', desc:'High-res Polaroids, handwritten notes, 4K wallpapers. Gold+ unlocks.'},
+    3: {title:'VAULT 03 — Surprise Stream', tier:'platinum', img:'/image-search/takuya-kimura-starto-entertainment-offic-4.png', desc:'Monthly private live — Q&A + acoustic. Platinum/Diamond invite + replay.'},
+  };
+  const v = vaults[id];
+  if(!v) return;
+  const needRank = {none:0,gold:2,platinum:3}[v.tier]||0;
+  const hasRank = {none:0,silver:1,gold:2,platinum:3,diamond:4}[tier]||0;
+  const can = hasRank >= needRank;
+  const body = document.getElementById('vaultBody');
+  if(can){
+    body.innerHTML = `<img src="${v.img}" style="width:100%;aspect-ratio:16/9;object-fit:cover"><div style="padding:18px"><h3 style="margin:0;font-family:Cormorant Garamond,serif;font-size:22px">${v.title}</h3><p style="color:#b8b8b8;font-size:12.5px;margin:8px 0 14px">${v.desc}</p><div style="background:#111;border:1px solid #222;padding:14px;display:flex;gap:12px;align-items:center"><div style="width:40px;height:40px;background:var(--gold);display:grid;place-items:center">▶</div><div><b>Now playing — exclusive</b><br><span style="font-size:11px;color:#9a9a9a">Vault 01 — 04:12 • Members only</span></div><span style="margin-left:auto;font-size:10px;padding:6px 10px;border:1px solid var(--gold);color:var(--gold)">● LIVE</span></div><div style="margin-top:14px;display:flex;gap:8px"><button class="btn gold small" onclick="closeVault()">Close</button><button class="btn ghost small" style="background:#111;color:#fff;border-color:#222" onclick="toast('Added to Passport')">Stamp Passport →</button></div></div>`;
+  } else {
+    body.innerHTML = `<div style="position:relative"><img src="${v.img}" style="width:100%;aspect-ratio:16/9;object-fit:cover;filter:blur(12px) brightness(.6)"><div style="position:absolute;inset:0;background:rgba(10,10,10,.45);backdrop-filter:blur(6px);display:grid;place-items:center;padding:20px;text-align:center"><div><div style="width:56px;height:56px;border:1px solid rgba(255,255,255,.2);display:grid;place-items:center;margin:0 auto 12px">🔒</div><b style="font-size:12px;letter-spacing:.12em">Members Only — ${v.tier.toUpperCase()}+ required</b><p style="font-size:11px;color:#b8b8b8;margin:8px 0 12px">Your current: ${(tier||'none').toUpperCase()} — upgrade to unlock this vault + birthday video</p><button class="btn gold small" onclick="closeVault();document.getElementById('tierGrid').scrollIntoView({behavior:'smooth'})">View Tiers →</button></div></div></div><div style="padding:18px"><h3 style="margin:0;font-size:16px">${v.title}</h3><p style="color:#9a9a9a;font-size:12px;margin:6px 0 0">${v.desc}</p></div>`;
+  }
+  document.getElementById('vaultModal').classList.add('open');
+}
+window.closeVault = function(){ document.getElementById('vaultModal').classList.remove('open'); };
+document.getElementById('vaultModal')?.addEventListener('click', e=>{ if(e.target.id==='vaultModal') closeVault(); });
+document.querySelectorAll('.vault-card').forEach(c=>{
+  c.style.cursor='pointer';
+  c.addEventListener('click', ()=> openVault(c.dataset.vault||1));
+});
+
+// Passport stamps — enhance member dashboard
+(function(){
+  const origRenderDash = window.renderDashboard;
+  if(!origRenderDash) return;
+  window.renderDashboard = function(){
+    origRenderDash();
+    const cur = JSON.parse(localStorage.getItem('st_member_current')||'null');
+    if(!cur) return;
+    const dashCard = document.getElementById('dashCard');
+    if(!dashCard) return;
+    // Add stamps below card if Diamond+ or has bookings
+    const tickets = JSON.parse(localStorage.getItem('st_tickets')||'[]').filter(t=>t.userEmail===cur.email);
+    if(tickets.length || cur.tier==='diamond' || cur.tier==='platinum'){
+      const stamps = [
+        {city:'Fukuoka', date:'2026.09.10', done: tickets.length>0},
+        {city:'Seoul', date:'2026.10.18', done: cur.tier==='gold' || cur.tier==='platinum' || cur.tier==='diamond'},
+        {city:'Taipei', date:'2026.11.13', done: cur.tier==='diamond'},
+      ];
+      let html = `<div style="margin-top:14px;border:1px solid var(--line);background:var(--pearl);padding:12px"><b style="font-size:11px;letter-spacing:.12em">TOUR PASSPORT • Stamps</b><div style="display:flex;gap:10px;margin-top:10px">`;
+      stamps.forEach(s=>{
+        html += `<div style="flex:1;border:1px solid ${s.done?'var(--gold)':'var(--line)'};background:${s.done?'#0a0a0a':'#fff'};color:${s.done?'#c9a86a':'#9a9a9a'};padding:10px;text-align:center;border-radius:8px"><div style="font-size:10px;letter-spacing:.12em">${s.city}</div><div style="font-size:16px;margin:4px 0">${s.done?'✓':'○'}</div><div style="font-size:10px">${s.date}</div></div>`;
+      });
+      html += `</div><div style="margin-top:8px;font-size:11px;color:#6a6a6a">${stamps.filter(s=>s.done).length} / 3 stamps — ${stamps.filter(s=>s.done).length===3 ? 'All stamped! Show at venue for gift.' : 'Attend & QR-verify to stamp.'}</div></div>`;
+      dashCard.insertAdjacentHTML('afterend', html);
+    }
+  };
+})();
+
+
 renderChat(); updateVault();
 </script>
 </body>
