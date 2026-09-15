@@ -400,8 +400,7 @@ $('#heroPause').addEventListener('click',()=>{heroPaused=!heroPaused;$('#heroPau
 $('#hero').addEventListener('mouseenter',()=>{heroPaused=true;$('#heroProgress').style.transition='none'});
 $('#hero').addEventListener('mouseleave',()=>{heroPaused=false;resetProgress()});
 window.addEventListener('scroll',()=>{const r=window.scrollY;const img=document.querySelector('.hero-slide.active img'); if(img) img.style.transform=`translateY(${r*0.08}px) scale(1.02)`},{passive:true});
-const io=new IntersectionObserver(ents=>{ents.forEach(e=>{if(e.isIntersecting) e.target.classList.add('in')})},{threshold:.14});
-$$('.reveal').forEach(el=>io.observe(el));
+// duplicate observer removed — first io already handles reveal
 
 const tiers=[
   {id:'silver',name:'SILVER',price:'¥300,000',priceNum:300000,period:'/ year',icon:'◯',desc:'Entry — Fan essentials',features:['Member Fan Card (Digital)','Ticket pre-sale (lottery)','Member-only blog & photos','Shop 5% discount','Birthday message']},
