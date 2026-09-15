@@ -65,6 +65,8 @@
   </div>
   <div class="loader-line" style="margin-top:22px"><i></i></div>
   <div class="loader-text" style="margin-top:10px">Cinematic Digital World — entering KIMURA // 01</div>
+  <button id="loaderEnter" onclick="hideLoader()" style="margin-top:18px;padding:10px 18px;border:1px solid var(--gold);background:rgba(201,168,106,.12);color:var(--gold);font-size:10px;letter-spacing:.18em;cursor:pointer">ENTER SITE → TAP TO CONTINUE</button>
+  <div style="margin-top:8px;font-size:9px;letter-spacing:.12em;opacity:.5">Tap anywhere to enter</div>
 </div></div>
 <style>
 @keyframes loaderSlide{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}
@@ -561,12 +563,17 @@ function hideLoader(){
     setTimeout(()=>{ el.style.display='none'; }, 900);
   }
 }
-window.addEventListener('load',()=>setTimeout(hideLoader,700));
-setTimeout(hideLoader, 2800); // fallback: always hide after 2.8s even if load fails
+window.addEventListener('load',()=>setTimeout(hideLoader,400));
+setTimeout(hideLoader, 900); // aggressive fallback so loader NEVER blocks
+setTimeout(hideLoader, 1900); // double safety // fallback: always hide after 2.8s even if load fails
 // Click loader to dismiss
 document.addEventListener('DOMContentLoaded',()=>{
   const el=document.getElementById('loader');
-  if(el) el.addEventListener('click', hideLoader);
+  if(el){ el.addEventListener('click', hideLoader); el.style.cursor='pointer'; }
+  // ESC to dismiss
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') hideLoader(); });
+  // Any scroll/touch also dismisses after 1s
+  let _ld=0; window.addEventListener('touchmove',()=>{ if(Date.now()-_ld>900){_ld=Date.now(); hideLoader();}}, {passive:true});
 });
 const header=$('#header');
 window.addEventListener('scroll',()=>header.classList.toggle('scrolled',window.scrollY>16),{passive:true});
