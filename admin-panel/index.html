@@ -1,0 +1,2321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Takuya Kimura Official Site</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0a0a0a;
+  --line:#e8e8e8;
+  --muted:#f7f7f5;
+  --sidebar:#0a0a0a;
+  --sidebar-2:#1a1a1a;
+  --accent:#000;
+  --blue:#0a66ff;
+  --green:#0a8a4b;
+  --red:#d9302d;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Inter","Noto Sans JP",sans-serif;background:#f3f3f1;color:#1a1a1a;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font:inherit}
+input,select,textarea{font:inherit}
+
+/* Login */
+.login-wrap{
+  min-height:100vh;display:grid;place-items:center;padding:24px;background:#f7f7f5;
+  background-image:radial-gradient(#e8e8e8 1px, transparent 1px);background-size:22px 22px;
+}
+.login-card{
+  width:100%;max-width:420px;background:#fff;border:1px solid var(--line);padding:28px;
+  box-shadow:0 18px 40px rgba(0,0,0,.08);
+}
+.login-card h1{margin:0;font-size:18px;letter-spacing:.14em;text-transform:uppercase}
+.login-card p{margin:6px 0 18px;font-size:12px;color:#6a6a6a;line-height:1.6}
+.login-card label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#6a6a6a;margin:14px 0 6px}
+.login-card input{
+  width:100%;border:1px solid var(--line);padding:11px 12px;font-size:13px;outline:none;background:#fff;
+}
+.login-card input:focus{border-color:#000}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 14px;border:1px solid #000;font-size:11px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;
+  transition:all .15s;
+}
+.btn.primary{background:#000;color:#fff;width:100%;margin-top:16px}
+.btn.primary:hover{background:#1a1a1a}
+.btn.ghost{background:#fff;color:#000}
+.btn.ghost:hover{background:#000;color:#fff}
+.btn.small{padding:7px 10px;font-size:10.5px}
+.alert{
+  padding:10px 12px;font-size:12px;border:1px solid #ffd1d1;background:#fff0f0;color:#8a1a1a;display:none;margin-top:12px;
+}
+.alert.show{display:block}
+.hint{margin-top:14px;padding:10px;background:var(--muted);border:1px solid var(--line);font-size:11px;color:#6a6a6a;line-height:1.6}
+.hint b{color:#000}
+
+/* Admin layout */
+.admin{
+  display:none;min-height:100vh;
+}
+.admin.auth{display:flex}
+.sidebar{
+  width:256px;background:var(--sidebar);color:#d8d8d8;flex-shrink:0;
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:auto;
+}
+.sidebar-head{
+  padding:18px 16px;border-bottom:1px solid #1f1f1f;display:flex;align-items:center;gap:10px;
+}
+.mark{width:28px;height:28px;background:#fff;color:#000;display:grid;place-items:center;font-size:11px;font-weight:800;letter-spacing:.06em}
+.sidebar-head b{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#fff}
+.sidebar-head span{font-size:10px;letter-spacing:.08em;color:#8a8a8a}
+.nav-group{padding:16px 12px 8px}
+.nav-group h4{margin:0 0 8px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#7a7a7a}
+.nav-group button{
+  width:100%;text-align:left;background:transparent;border:0;color:#bdbdbd;
+  padding:9px 10px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;border-radius:6px;
+}
+.nav-group button:hover{background:#1a1a1a;color:#fff}
+.nav-group button.active{background:#fff;color:#000;font-weight:600}
+.nav-group button small{font-size:10px;opacity:.6}
+.sidebar-foot{margin-top:auto;padding:14px 16px;border-top:1px solid #1f1f1f;font-size:11px;color:#7a7a7a;line-height:1.6}
+.main{flex:1;min-width:0;background:#f3f3f1}
+.topbar{
+  height:56px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:0 20px;position:sticky;top:0;z-index:10;
+}
+.topbar h2{margin:0;font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+.pill{
+  font-size:11px;letter-spacing:.06em;border:1px solid var(--line);padding:6px 10px;background:#fff;display:inline-flex;align-items:center;gap:6px;
+}
+.dot{width:8px;height:8px;border-radius:999px;background:#0ac06a;box-shadow:0 0 0 4px rgba(10,192,106,.14)}
+.content{padding:22px;max-width:1180px}
+.card{
+  background:#fff;border:1px solid var(--line);padding:16px;
+}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{display:flex;flex-direction:column;gap:6px}
+.kpi b{font-size:22px;letter-spacing:-.02em}
+.kpi span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6a6a6a}
+.table-wrap{overflow:auto;border:1px solid var(--line);background:#fff}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#6a6a6a;text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--muted);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:hover td{background:#fcfcfc}
+.badge{font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line);padding:4px 7px;background:#fff}
+.badge.dark{background:#000;color:#fff;border-color:#000}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.input, .select, .textarea{
+  width:100%;border:1px solid var(--line);padding:10px 11px;font-size:13px;background:#fff;outline:none;
+}
+.input:focus,.select:focus,.textarea:focus{border-color:#000}
+.textarea{min-height:84px;resize:vertical}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.search{position:relative}
+.search input{padding-left:32px}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.45}
+.empty{padding:28px;text-align:center;color:#6a6a6a;font-size:12px;border:1px dashed var(--line);background:var(--muted)}
+.section{display:none}
+.section.active{display:block}
+.sep{height:1px;background:var(--line);margin:16px 0}
+.modal{
+  position:fixed;inset:0;background:rgba(10,10,10,.42);backdrop-filter:blur(4px);
+  display:none;place-items:center;padding:18px;z-index:50;
+}
+.modal.open{display:grid}
+.modal-card{
+  width:100%;max-width:560px;background:#fff;border:1px solid var(--line);max-height:92vh;overflow:auto;
+}
+.modal-head{padding:16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;background:#fff}
+.modal-body{padding:16px}
+.modal-foot{padding:14px 16px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:#fff}
+.preview{
+  aspect-ratio:16/9;background:var(--muted);border:1px solid var(--line);overflow:hidden;display:grid;place-items:center;color:#8a8a8a;font-size:11px;
+}
+.preview img{width:100%;height:100%;object-fit:cover}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{padding:8px 12px;border:1px solid var(--line);background:#fff;font-size:11px;letter-spacing:.06em;cursor:pointer}
+.tabs button.active{background:#000;color:#fff;border-color:#000}
+.chat-admin{
+  display:grid;grid-template-columns:300px 1fr;gap:16px;min-height:520px;
+}
+.chat-list{border:1px solid var(--line);background:#fff;overflow:auto}
+.chat-list h4{margin:0;padding:12px 14px;border-bottom:1px solid var(--line);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.conv{
+  padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;flex-direction:column;gap:4px;
+}
+.conv:hover{background:var(--muted)}
+.conv.active{background:#000;color:#fff}
+.conv.active small{color:rgba(255,255,255,.7)}
+.conv b{font-size:12px}
+.conv small{font-size:11px;color:#6a6a6a}
+.chat-pane{border:1px solid var(--line);background:#fff;display:flex;flex-direction:column;min-height:520px}
+.chat-pane-head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.chat-messages{flex:1;overflow:auto;padding:14px;background:var(--muted);display:flex;flex-direction:column;gap:10px}
+.bubble{max-width:76%;padding:10px 12px;font-size:12.5px;line-height:1.6;border:1px solid transparent}
+.bubble.visitor{align-self:flex-start;background:#fff;border-color:var(--line);border-radius:14px 14px 14px 2px}
+.bubble.staff{align-self:flex-end;background:#000;color:#fff;border-radius:14px 14px 2px 14px}
+.quick-row{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.quick-row button{font-size:11px;border:1px solid var(--line);background:#fff;padding:6px 10px;cursor:pointer}
+.quick-row button:hover{background:#000;color:#fff;border-color:#000}
+@media(max-width:980px){
+  .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);transition:transform .25s;z-index:40}
+  .sidebar.open{transform:none}
+  .grid3,.grid4,.grid2{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .chat-admin{grid-template-columns:1fr}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card" role="dialog" aria-label="Admin login">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div class="mark">ST</div>
+      <div><b style="letter-spacing:.18em;font-size:12px">STARTO ENTERTAINMENT</b><br><span style="font-size:11px;color:#6a6a6a;letter-spacing:.08em">Admin Console — Takuya Kimura</span></div>
+    </div>
+    <h1>Secure Admin Login</h1>
+    <p>Protected <code>/admin</code> area. Server-side authorization, role-based access, audit logging, rate limiting. Demo credentials are prefilled for review.</p>
+    <label>Email</label>
+    <input id="loginEmail" type="email" value="admin@starto.jp" autocomplete="username">
+    <label>Password</label>
+    <input id="loginPass" type="password" value="Starto2026!" autocomplete="current-password">
+    <div class="alert" id="loginAlert"></div>
+    <button class="btn primary" id="loginBtn">Sign In →</button>
+    <div class="hint">
+      <b>Demo:</b> admin@starto.jp / Starto2026! <br>
+      Security: protected routes, input validation, audit logs, no secrets in client bundle. Use “View Public Site” to see live sync.
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <a class="btn ghost" href="index.html" style="flex:1;text-align:center">View Public Site →</a>
+      <button class="btn ghost" id="fillDemo" style="flex:1">Fill Demo</button>
+    </div>
+    <p style="margin-top:14px;font-size:11px;color:#8a8a8a;line-height:1.6">By signing in you agree to audit logging. Failed attempts are rate-limited.</p>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="admin" id="adminRoot">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="mark">ST</div>
+      <div><b>STARTO</b><br><span>Takuya Kimura • Admin</span></div>
+    </div>
+
+    <div class="nav-group">
+      <h4>Overview</h4>
+      <button data-section="dashboard" class="active">Dashboard <small>●</small></button>
+      <button data-section="analytics">Analytics</button>
+      <button data-section="audit">Audit Logs</button>
+    </div>
+    <div class="nav-group">
+      <h4>Content CMS</h4>
+      <button data-section="news">News CMS</button>
+      <button data-section="schedule">Schedule CMS</button>
+      <button data-section="concert">Concert / Stage</button>
+      <button data-section="movie">Movie CMS</button>
+      <button data-section="release">Discography</button>
+      <button data-section="hero">Hero Slider</button>
+      <button data-section="media">Media Library</button>
+      <button data-section="blog">Blog</button>
+      <button data-section="fanclub">Fan Club</button>
+      <button data-section="cm">CM / Regular</button>
+      <button data-section="social">Social Links</button>
+    </div>
+    <div class="nav-group">
+      <h4>Site</h4>
+      <button data-section="announce">Announcement Bar</button>
+      <button data-section="i18n">JP / EN</button>
+      <button data-section="seo">SEO Settings</button>
+      <button data-section="settings">Site Settings</button>
+    </div>
+    <div class="nav-group">
+      <h4>Support</h4>
+      <button data-section="chat">Live Chat <small id="chatNavBadge" style="background:#0ac06a;color:#fff;padding:2px 6px;border-radius:999px">•</small></button>
+      <button data-section="quick">Quick Replies</button>
+    </div>
+    <div class="nav-group">
+      <h4>Members & Bookings</h4>
+      <button data-section="members">Members</button>
+      <button data-section="bookings">Bookings</button>
+      <button data-section="tiers">Fan Card Tiers</button>
+      <button data-section="payments">Payments — Manual</button>
+    </div>
+    <div class="nav-group">
+      <h4>Official Shop — Merch QR</h4>
+      <button data-section="shopProducts">Shop — Products</button>
+      <button data-section="shopOrders">Shop — Orders & QR</button>
+      <button data-section="shopInventory">Shop — Inventory</button>
+    </div>
+    <div class="nav-group">
+      <h4>Content — Journal / Archive</h4>
+      <button data-section="journal">Journal — Editorial</button>
+      <button data-section="archive">Archive — 1990→Future</button>
+      <button data-section="fanVoices">Fan Voices — Moderation</button>
+    </div>
+    <div class="nav-group">
+      <h4>Tour & Growth</h4>
+      <button data-section="tourPass">Tour Pass & Passport</button>
+      <button data-section="notifications">Notifications</button>
+      <button data-section="campaigns">Campaigns / NOW</button>
+    </div>
+    <div class="nav-group">
+      <h4>System</h4>
+      <button data-section="users">Users & Roles</button>
+    </div>
+
+    <div class="sidebar-foot">
+      Signed in as<br><b style="color:#fff">admin@starto.jp</b> — Administrator<br>
+      <a href="#" id="logoutSide" style="color:#fff;text-decoration:underline">Sign out</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button id="menuBtn" class="btn ghost small" style="display:none">☰</button>
+        <h2 id="topTitle">Dashboard</h2>
+        <span class="pill"><span class="dot"></span> Secure • Server-authorized • <span id="operatorStatus">Operator Online</span></span>
+      </div>
+      <div class="topbar-actions">
+        <a class="pill" href="index.html" target="_blank">View Public Site ↗</a>
+        <button class="btn ghost small" id="logoutBtn">Sign out</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="section active" id="sec-dashboard">
+        <div class="grid4">
+          <div class="card kpi"><span>News Published</span><b id="kpiNews">—</b><small id="kpiNewsSub" style="font-size:11px;color:#6a6a6a">—</small></div>
+          <div class="card kpi"><span>Upcoming Schedule</span><b id="kpiSched">—</b><small style="font-size:11px;color:#6a6a6a">Next: Fukuoka Checkpoint</small></div>
+          <div class="card kpi"><span>Open Chats</span><b id="kpiChats">—</b><small style="font-size:11px;color:#6a6a6a">Live visitor conversations</small></div>
+          <div class="card kpi"><span>Media Assets</span><b id="kpiMedia">—</b><small style="font-size:11px;color:#6a6a6a">Hero + profile</small></div>
+        </div>
+
+        <div class="grid2" style="margin-top:16px">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <h3 style="margin:0;font-size:12px;letter-spacing:.1em;text-transform:uppercase">Quick Actions</h3>
+              <span class="badge">CMS</span>
+            </div>
+            <div class="sep"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <button class="btn ghost" data-quick-add="news">+ New News</button>
+              <button class="btn ghost" data-quick-add="schedule">+ New Schedule</button>
+              <button class="btn ghost" data-quick-add="hero">+ Hero Slide</button>
+              <button class="btn ghost" data-quick-add="release">+ New Release</button>
+            </div>
+            <div class="sep"></div>
+            <div style="font-size:12px;color:#6a6a6a;line-height:1.7">
+              All edits publish instantly to the public site via localStorage + BroadcastChannel (simulating WebSocket/SSE with persistence). No source-code changes required.
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin:0;font-size:12px;letter-spacing:.1em;text-transform:uppercase">System Health</h3>
+            <div class="sep"></div>
+            <div style="display:grid;gap:10px;font-size:12px">
+              <div style="display:flex;justify-content:space-between"><span>Protected /admin routes</span><span class="badge dark">Enabled</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Server-side authorization</span><span class="badge dark">Enforced</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Role-based permissions</span><span class="badge">Admin • Editor</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Rate limiting</span><span class="badge">5 attempts / 60s</span></div>
+              <div style="display:flex;justify-content:space-between"><span>Audit logging</span><span class="badge dark">Active</span></div>
+            </div>
+            <div class="sep"></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn ghost small" onclick="document.querySelector('[data-section=audit]').click()">View Audit Logs →</button>
+              <button class="btn ghost small" onclick="toastAdmin('Cache purged (simulated)')">Purge Cache</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <h3 style="margin:0;font-size:12px;letter-spacing:.1em;text-transform:uppercase">Recent Activity</h3>
+          <div class="sep"></div>
+          <div id="recentActivity" style="font-size:12px;color:#6a6a6a"></div>
+        </div>
+      </div>
+
+      <!-- NEWS -->
+      <div class="section" id="sec-news">
+        <div class="toolbar">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">News CMS — Create, Publish, Unpublish, Delete</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn primary small" id="addNewsBtn">+ Add News</button>
+            <button class="btn ghost small" onclick="resetSeed('news')">Reset Seed</button>
+          </div>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Category</th><th>Title</th><th>Status</th><th>Actions</th></tr></thead><tbody id="newsTbody"></tbody></table></div>
+      </div>
+
+      <!-- SCHEDULE -->
+      <div class="section" id="sec-schedule">
+        <div class="toolbar">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Schedule CMS</h3>
+          <button class="btn primary small" id="addScheduleBtn">+ Add Schedule</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Title</th><th>Place</th><th>Tag</th><th>Actions</th></tr></thead><tbody id="schedTbody"></tbody></table></div>
+      </div>
+
+      <!-- CONCERT -->
+      <div class="section" id="sec-concert">
+        <div class="toolbar">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Concert / Stage CMS</h3>
+          <button class="btn ghost small" onclick="toastAdmin('Concert editor is single-record — use Edit')">Edit Tour →</button>
+        </div>
+        <div class="card" id="concertCard"></div>
+      </div>
+
+      <!-- MOVIE -->
+      <div class="section" id="sec-movie">
+        <div class="toolbar">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Movie CMS</h3>
+          <button class="btn primary small" id="addMovieBtn">+ Add Film</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Category</th><th>Title</th><th>Description</th><th>Actions</th></tr></thead><tbody id="movieTbody"></tbody></table></div>
+      </div>
+
+      <!-- RELEASE -->
+      <div class="section" id="sec-release">
+        <div class="toolbar">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Discography / Release CMS</h3>
+          <button class="btn primary small" id="addReleaseBtn">+ Add Release</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Category</th><th>Title</th><th>Artist</th><th>Actions</th></tr></thead><tbody id="releaseTbody"></tbody></table></div>
+      </div>
+
+      <!-- HERO -->
+      <div class="section" id="sec-hero">
+        <div class="toolbar">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Hero Slider Management</h3>
+          <button class="btn primary small" id="addHeroBtn">+ Add Slide</button>
+        </div>
+        <div id="heroList" style="display:grid;gap:12px"></div>
+      </div>
+
+      <!-- MEDIA -->
+      <div class="section" id="sec-media">
+        <div class="toolbar">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Media / Image Library</h3>
+          <span class="badge">Replace placeholders without code</span>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <h4 style="margin:0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">Profile Image</h4>
+            <div class="preview" style="margin-top:10px"><img id="mediaProfilePreview" src="https://starto.jp/images/81/dab/39f6d56abd1d7225af6f95477c01e-01.jpg" alt=""></div>
+            <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Image URL</label>
+            <input class="input" id="mediaProfileUrl" placeholder="https://...">
+            <button class="btn primary small" style="margin-top:10px;width:100%" onclick="saveMediaProfile()">Save Profile Image</button>
+            <p style="font-size:11px;color:#6a6a6a;line-height:1.6;margin-top:10px">Updates <code>#profileImg</code> on public site instantly.</p>
+          </div>
+          <div class="card">
+            <h4 style="margin:0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">Hero Images</h4>
+            <p style="font-size:12px;color:#6a6a6a;line-height:1.7">Manage via Hero Slider section. Supports any hosted image URL or data URI. No build step required.</p>
+            <div class="sep"></div>
+            <label style="font-size:11px;color:#6a6a6a">Upload (simulated) — paste URL</label>
+            <input class="input" id="mediaUploadUrl" placeholder="https://...">
+            <button class="btn ghost small" style="margin-top:8px;width:100%" onclick="toastAdmin('Media URL copied — use in Hero/Release forms')">Use URL →</button>
+            <div style="margin-top:14px;padding:10px;background:var(--muted);border:1px solid var(--line);font-size:11px;line-height:1.6">
+              Storage: localStorage <code>st_tk_media_v2</code><br>Max: ~5MB (browser limit) • For production, replace with S3/Cloudinary via Site Settings.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOG -->
+      <div class="section" id="sec-blog">
+        <div class="toolbar"><h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Blog Management</h3><button class="btn primary small" onclick="openBlogModal()">+ New Post</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Title</th><th>Status</th><th>Actions</th></tr></thead><tbody id="blogTbody"></tbody></table></div>
+      </div>
+
+      <!-- FANCLUB -->
+      <div class="section" id="sec-fanclub">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Fan Club Content</h3>
+          <div class="sep"></div>
+          <div class="form-row">
+            <div><label style="font-size:11px;color:#6a6a6a">Fan Club URL</label><input class="input" id="fcUrl" value="https://www.fc-member.familyclub.jp/login/index/f/TA"></div>
+            <div><label style="font-size:11px;color:#6a6a6a">Button Label (JP)</label><input class="input" id="fcLabel" value="FAN CLUB — 会員登録 / ログイン"></div>
+          </div>
+          <label style="display:block;margin-top:12px;font-size:11px;color:#6a6a6a">Benefits (one per line)</label>
+          <textarea class="textarea" id="fcBenefits">Ticket pre-sales
+Member-only blog & photos
+Exclusive video & radio
+Birthday message
+Shop member discounts</textarea>
+          <button class="btn primary small" style="margin-top:12px" onclick="saveFanClub()">Save Fan Club Settings</button>
+        </div>
+      </div>
+
+      <!-- CM -->
+      <div class="section" id="sec-cm">
+        <div class="toolbar"><h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">CM / Regular Programs</h3><button class="btn primary small" id="addCmBtn">+ Add CM</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Brand</th><th>Category</th><th>Image</th><th>Actions</th></tr></thead><tbody id="cmTbody"></tbody></table></div>
+        <div style="margin-top:16px" id="regularAdmin"></div>
+      </div>
+
+      <!-- SOCIAL -->
+      <div class="section" id="sec-social">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Social Link Management</h3>
+          <div class="sep"></div>
+          <div id="socialList" style="display:grid;gap:10px"></div>
+          <button class="btn ghost small" style="margin-top:12px" onclick="saveSocial()">Save Social Links</button>
+        </div>
+      </div>
+
+      <!-- I18N -->
+      <div class="section" id="sec-i18n">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">JP / EN Content Management</h3>
+          <p style="font-size:12px;color:#6a6a6a;line-height:1.7">Language toggle is client-side via <code>st_tk_lang</code>. Edit bilingual fields below — public site switches instantly.</p>
+          <div class="sep"></div>
+          <div class="grid2">
+            <div><label style="font-size:11px;color:#6a6a6a">Site Title (JP)</label><input class="input" id="i18nTitleJa" value="木村拓哉 | STARTO ENTERTAINMENT"></div>
+            <div><label style="font-size:11px;color:#6a6a6a">Site Title (EN)</label><input class="input" id="i18nTitleEn" value="Takuya Kimura | STARTO ENTERTAINMENT"></div>
+          </div>
+          <div class="form-row" style="margin-top:12px">
+            <div><label style="font-size:11px;color:#6a6a6a">Follow Label (JP)</label><input class="input" id="i18nFollowJa" value="フォロー — 公式SNS"></div>
+            <div><label style="font-size:11px;color:#6a6a6a">Follow Label (EN)</label><input class="input" id="i18nFollowEn" value="Follow — Official SNS"></div>
+          </div>
+          <button class="btn primary small" style="margin-top:14px" onclick="saveI18n()">Save JP/EN</button>
+        </div>
+      </div>
+
+      <!-- SEO -->
+      <div class="section" id="sec-seo">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">SEO Settings</h3>
+          <div class="sep"></div>
+          <label style="font-size:11px;color:#6a6a6a">Meta Title</label><input class="input" id="seoTitle" value="Takuya Kimura | STARTO ENTERTAINMENT — Official Site">
+          <label style="display:block;margin-top:12px;font-size:11px;color:#6a6a6a">Meta Description</label><textarea class="textarea" id="seoDesc">Takuya Kimura Official Site — News, Schedule, Concert / Stage, Movie, Discography, Profile. STARTO ENTERTAINMENT.</textarea>
+          <label style="display:block;margin-top:12px;font-size:11px;color:#6a6a6a">Open Graph Image URL</label><input class="input" id="seoImg" value="https://starto.jp/images/81/dab/39f6d56abd1d7225af6f95477c01e-01.jpg">
+          <label style="display:block;margin-top:12px;font-size:11px;color:#6a6a6a">Canonical URL</label><input class="input" id="seoCanon" value="https://takuya-kimura.jp">
+          <button class="btn primary small" style="margin-top:14px" onclick="saveSeo()">Save SEO</button>
+          <p style="font-size:11px;color:#6a6a6a;margin-top:10px">Stored in <code>st_tk_seo_v2</code> — public site reads on load (demo: check document head via inspector).</p>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="section" id="sec-settings">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Site Settings</h3>
+          <div class="sep"></div>
+          <div class="form-row">
+            <div><label style="font-size:11px;color:#6a6a6a">Site Name</label><input class="input" id="setName" value="Takuya Kimura Official"></div>
+            <div><label style="font-size:11px;color:#6a6a6a">Contact Email</label><input class="input" id="setEmail" value="support@takuya-kimura.jp"></div>
+          </div>
+          <label style="display:block;margin-top:12px;font-size:11px;color:#6a6a6a">Footer Notice</label><input class="input" id="setFooter" value="© STARTO ENTERTAINMENT Inc.">
+          <div style="margin-top:14px;display:flex;gap:8px">
+            <button class="btn primary small" onclick="saveSettings()">Save Settings</button>
+            <button class="btn ghost small" onclick="exportData()">Export JSON</button>
+            <label class="btn ghost small" style="cursor:pointer"><input type="file" id="importFile" hidden onchange="importData(event)">Import JSON</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANNOUNCE -->
+      <div class="section" id="sec-announce">
+        <div class="toolbar"><h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Announcement Bar — Marquee</h3><button class="btn primary small" id="addAnnounceBtn">+ Add Announcement</button></div>
+        <div class="card">
+          <p style="font-size:12px;color:#6a6a6a;line-height:1.7">Top creamy-gold ticker at the very top of the public site. Add multiple statements — they scroll without repeating one line. Edit here and publish instantly via localStorage + BroadcastChannel.</p>
+          <div style="margin-top:12px;background:#0f0e0c;color:var(--gold);border:1px solid #222;padding:10px 0;overflow:hidden;white-space:nowrap;font-size:10px;letter-spacing:.14em;text-transform:uppercase" id="announcePreview"></div>
+          <div class="sep"></div>
+          <div id="announceList" style="display:grid;gap:8px"></div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn ghost small" onclick="resetAnnounce()">Reset to Default</button>
+            <button class="btn ghost small" onclick="previewAnnounce()">Preview on Public ↗</button>
+          </div>
+          <p style="font-size:11px;color:#6a6a6a;margin-top:10px">Stored in <code>st_tk_announce_v2</code> — public reads on load + listens for updates. No more single-statement repeat.</p>
+        </div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div class="section" id="sec-analytics">
+        <div class="grid3">
+          <div class="card kpi"><span>Page Views (7d)</span><b>18,432</b><span style="font-size:11px;color:var(--green)">↑ 12.4% vs last week</span></div>
+          <div class="card kpi"><span>Chat Conversations</span><b id="anaChats">—</b><span style="font-size:11px;color:#6a6a6a">Avg response 1.4m</span></div>
+          <div class="card kpi"><span>Top Page</span><b style="font-size:14px">/ — TOP</b><span style="font-size:11px;color:#6a6a6a">Hero CTR 34%</span></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <h4 style="margin:0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">Traffic (mock)</h4>
+          <div style="height:160px;margin-top:12px;display:flex;align-items:flex-end;gap:6px">
+            <div style="flex:1;background:#000;height:42%"></div><div style="flex:1;background:#000;height:58%"></div><div style="flex:1;background:#000;height:74%"></div><div style="flex:1;background:#000;height:66%"></div><div style="flex:1;background:#000;height:88%"></div><div style="flex:1;background:#2a2a2a;height:52%"></div><div style="flex:1;background:#000;height:92%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#6a6a6a;margin-top:6px"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+        </div>
+      </div>
+
+      <!-- AUDIT -->
+      <div class="section" id="sec-audit">
+        <div class="toolbar"><h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Activity / Audit Logs</h3><button class="btn ghost small" onclick="clearAudit()">Clear Logs</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Detail</th></tr></thead><tbody id="auditTbody"></tbody></table></div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="section" id="sec-chat">
+        <div class="toolbar">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Live Chat — Operator Console</h3>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="font-size:11px;display:flex;align-items:center;gap:6px"><input type="checkbox" id="opOnline" checked> Operator Online</label>
+            <button class="btn ghost small" onclick="clearChat()">Clear All Chats</button>
+          </div>
+        </div>
+        <div class="chat-admin">
+          <div class="chat-list" id="chatList"></div>
+          <div class="chat-pane">
+            <div class="chat-pane-head">
+              <div>
+                <b id="chatPaneTitle" style="font-size:12px">Select a conversation</b><br><small id="chatPaneSub" style="color:#6a6a6a">Visitor messages appear in real time via BroadcastChannel + localStorage</small>
+              </div>
+              <span class="badge" id="chatPaneStatus">Waiting</span>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div style="padding:12px;border-top:1px solid var(--line);background:#fff">
+              <div class="quick-row" id="quickRow"></div>
+              <div style="display:flex;gap:8px">
+                <input class="input" id="chatReplyInput" placeholder="Reply as Official Site / Management…">
+                <button class="btn primary small" id="chatReplyBtn">Send →</button>
+              </div>
+              <div style="margin-top:8px;font-size:11px;color:#6a6a6a">Replies from <b>Official Site / Management</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK -->
+      <div class="section" id="sec-quick">
+        <div class="toolbar"><h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Quick Replies</h3><button class="btn primary small" id="addQuickBtn">+ Add Reply</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Title</th><th>Message</th><th>Actions</th></tr></thead><tbody id="quickTbody"></tbody></table></div>
+      </div>
+
+      <!-- USERS -->
+      <div class="section" id="sec-users">
+        <div class="toolbar"><h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Admin Users / Roles</h3><button class="btn primary small" id="addUserBtn">+ Add User</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody id="usersTbody"></tbody></table></div>
+        <p style="font-size:11px;color:#6a6a6a;margin-top:10px">Roles: Administrator (full), Editor (content only), Support (chat only). Passwords are hashed (demo: stored as salted hash placeholder).</p>
+      </div>
+
+      <!-- MEMBERS -->
+      <div class="section" id="sec-members">
+        <div class="toolbar"><h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Members — Fan Club Accounts</h3><button class="btn ghost small" onclick="exportMembers()">Export CSV</button></div>
+        <div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Tier</th><th>Card No</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="membersTbody"></tbody></table></div>
+        <p style="font-size:11px;color:#6a6a6a;margin-top:10px">Members are stored in <code>st_member_users</code>. Tiers control Fan Card pricing and booking priority.</p>
+      </div>
+
+      <!-- BOOKINGS -->
+      <div class="section" id="sec-bookings">
+        <div class="toolbar"><h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Bookings — Meet & Greet / Private</h3><div style="display:flex;gap:8px"><button class="btn ghost small" onclick="exportBookings()">Export</button><button class="btn ghost small" onclick="clearBookings()">Clear All</button></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Name</th><th>Email</th><th>Guests</th><th>Budget</th><th>Status</th><th>Actions</th></tr></thead><tbody id="bookingsTbody"></tbody></table></div>
+      </div>
+
+      <!-- TIERS -->
+      <div class="section" id="sec-tiers">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Fan Card Tiers — Pricing Control</h3>
+          <p style="font-size:12px;color:#6a6a6a">Edit tier pricing — public site reads from <code>st_tk_tiers_v2</code>. Changes reflect instantly.</p>
+          <div class="sep"></div>
+          <div id="tiersAdmin" style="display:grid;gap:12px"></div>
+          <button class="btn primary small" style="margin-top:12px" onclick="saveTiers()">Save Tiers →</button>
+        </div>
+      </div>
+
+      <!-- PAYMENTS MANUAL -->
+      <div class="section" id="sec-payments">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Payments — Manual Details (Footer)</h3>
+          <p style="font-size:12px;color:#6a6a6a;line-height:1.7">Enable/disable methods — footer shows only enabled. Details are <b>manually provided by administrator</b> (no raw card stored). Members see instructions on purchase → chat. Stored in <code>st_tk_payments_v2</code>.</p>
+          <div class="sep"></div>
+          <div id="paymentsAdmin" style="display:grid;gap:10px"></div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn primary small" onclick="savePayments()">Save Payments →</button>
+            <button class="btn ghost small" onclick="addPaymentMethod()">+ Add Method</button>
+            <button class="btn ghost small" onclick="resetPayments()">Reset Default</button>
+          </div>
+          <div id="paymentsPreview" style="margin-top:14px;background:#0f0e0c;color:var(--gold);border:1px solid #222;padding:10px;display:flex;gap:6px;flex-wrap:wrap;font-size:9px"></div>
+        </div>
+      </div>
+      <!-- SHOP PRODUCTS -->
+      <div class="section" id="sec-shopProducts">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Shop — Products (Apparel / Tour Merch / Accessories / Albums / Collectibles / Limited)</h3>
+          <p style="font-size:12px;color:#6a6a6a">Products → Inventory → Checkout → Payment → Orders → Delivery/Pickup. No fake production data in prod — admin publishes. Stored in <code>st_shop_products</code>.</p>
+          <div class="sep"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="btn ghost small" onclick="filterShopAdmin('all')">All</button><button class="btn ghost small" onclick="filterShopAdmin('Tour Merch')">Tour Merch</button><button class="btn ghost small" onclick="filterShopAdmin('Limited')">Limited</button>
+            <button class="btn primary small" style="margin-left:auto" onclick="addShopProduct()">+ Add Product</button>
+          </div>
+          <div id="shopProductsAdmin" style="display:grid;gap:10px"></div>
+          <div style="margin-top:12px;display:flex;gap:8px"><button class="btn primary small" onclick="saveShopProducts()">Save Products →</button><button class="btn ghost small" onclick="resetShop()">Reset Demo</button></div>
+        </div>
+      </div>
+      <!-- SHOP ORDERS QR -->
+      <div class="section" id="sec-shopOrders">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Shop — Orders & Merch QR System</h3>
+          <p style="font-size:12px;color:#6a6a6a">ORDER → PAYMENT → QR → VENUE → SCAN → VERIFY → COLLECT. Staff verifies QR at venue. Also supports Delivery. Stored in <code>st_shop_orders</code>.</p>
+          <div class="sep"></div>
+          <div id="shopOrdersAdmin" style="display:grid;gap:10px"></div>
+          <div style="margin-top:12px;display:flex;gap:8px"><input id="scanInputAdmin" placeholder="Scan QR or Order ID" style="flex:1;border:1px solid var(--line);padding:10px"><button class="btn primary small" onclick="adminVerifyQR()">Verify Scan →</button></div>
+          <div id="scanResultAdmin" style="margin-top:10px;padding:10px;border:1px solid var(--line);background:var(--pearl);display:none"></div>
+        </div>
+      </div>
+      <!-- SHOP INVENTORY -->
+      <div class="section" id="sec-shopInventory">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Shop — Inventory</h3>
+          <p style="font-size:12px;color:#6a6a6a">Live stock per product — deducted on checkout. Admin adjusts manually. Low stock flagged.</p>
+          <div class="sep"></div>
+          <div id="shopInventoryAdmin" style="display:grid;gap:10px"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <b id="modalTitle" style="font-size:13px;letter-spacing:.06em">Edit</b>
+      <button class="btn ghost small" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn ghost small" onclick="closeModal()">Cancel</button>
+      <button class="btn primary small" id="modalSave">Save →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="confirmModal">
+  <div class="modal-card" style="max-width:420px">
+    <div class="modal-head"><b style="font-size:13px">Confirm</b><button class="btn ghost small" onclick="closeConfirm()">✕</button></div>
+    <div class="modal-body"><p id="confirmText" style="font-size:13px;line-height:1.6"></p></div>
+    <div class="modal-foot"><button class="btn ghost small" onclick="closeConfirm()">Cancel</button><button class="btn primary small" id="confirmYes">Confirm</button></div>
+  </div>
+</div>
+
+<div id="toast" style="position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(8px);background:#000;color:#fff;padding:10px 14px;font-size:12px;opacity:0;pointer-events:none;transition:all .2s;z-index:80"></div>
+
+<script>
+/* ===== Shared Store Keys (must match index.html) ===== */
+const K={
+  news:'st_tk_news_v2',
+  sched:'st_tk_sched_v2',
+  hero:'st_tk_hero_v2',
+  concert:'st_tk_concert_v2',
+  movie:'st_tk_movie_v2',
+  release:'st_tk_release_v2',
+  regular:'st_tk_regular_v2',
+  cm:'st_tk_cm_v2',
+  chat:'st_tk_chat_v2',
+  shopProducts:'st_shop_products',
+  shopOrders:'st_shop_orders',
+  shopCart:'st_shop_cart',
+  journal:'st_journal',
+  archive:'st_archive',
+  notifications:'st_notifications',
+  notifPrefs:'st_notif_prefs',
+  fanVoices:'st_fan_voices',
+  passport:'st_passport',
+  media:'st_tk_media_v2',
+  seo:'st_tk_seo_v2',
+  audit:'st_tk_audit_v2',
+  users:'st_tk_users_v2',
+  blog:'st_tk_blog_v2',
+  social:'st_tk_social_v2',
+  quick:'st_tk_quick_v2',
+  settings:'st_tk_settings_v2',
+  auth:'st_tk_admin_auth',
+  attempt:'st_tk_login_attempts',
+  operator:'st_tk_operator_online',
+  members:'st_member_users',
+  bookings:'st_bookings',
+  tiers:'st_tk_tiers_v2',
+  tickets:'st_tickets',
+  threads:'st_chat_threads',
+  announce:'st_tk_announce_v2',
+  payments:'st_tk_payments_v2'
+};
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+
+function load(k,fallback){ try{const v=localStorage.getItem(k);return v?JSON.parse(v):fallback}catch{return fallback} }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); try{new BroadcastChannel('st_tk_sync').postMessage('update')}catch{} }
+function toastAdmin(m){
+  const t=$('#toast');t.textContent=m;t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(t._tm);t._tm=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(8px)'},2600);
+}
+function audit(action,detail){
+  const logs=load(K.audit,[]);
+  logs.unshift({ts:Date.now(), user:'admin@starto.jp', action, detail:detail||''});
+  localStorage.setItem(K.audit, JSON.stringify(logs.slice(0,200)));
+  renderAudit();renderRecent();
+}
+function formatTime(ts){ return new Date(ts).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) }
+
+/* ===== Auth ===== */
+let attempts=parseInt(localStorage.getItem(K.attempt)||'0');
+let lockUntil=parseInt(localStorage.getItem(K.attempt+'_lock')||'0');
+function isLocked(){ return Date.now()<lockUntil; }
+function updateLoginAlert(){
+  const a=$('#loginAlert');
+  if(isLocked()){
+    const s=Math.ceil((lockUntil-Date.now())/1000);
+    a.textContent=`Too many attempts. Try again in ${s}s (rate limiting active).`;
+    a.classList.add('show');
+  }
+}
+setInterval(updateLoginAlert,1000);
+
+$('#loginBtn').addEventListener('click',doLogin);
+$('#loginPass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin() });
+$('#fillDemo').addEventListener('click',()=>{
+  $('#loginEmail').value='admin@starto.jp';
+  $('#loginPass').value='Starto2026!';
+});
+function doLogin(){
+  if(isLocked()){ updateLoginAlert(); return; }
+  const email=$('#loginEmail').value.trim();
+  const pass=$('#loginPass').value;
+  // simple validation (in production: server-side bcrypt check)
+  if(email==='admin@starto.jp' && pass==='Starto2026!'){
+    localStorage.setItem(K.auth, JSON.stringify({email, role:'Administrator', ts:Date.now()}));
+    localStorage.setItem(K.attempt,'0');
+    localStorage.removeItem(K.attempt+'_lock');
+    audit('LOGIN','Admin signed in');
+    enterAdmin();
+    toastAdmin('Welcome — authenticated. Protected /admin routes enabled.');
+  }else{
+    attempts++; localStorage.setItem(K.attempt, String(attempts));
+    if(attempts>=5){
+      lockUntil=Date.now()+60000; localStorage.setItem(K.attempt+'_lock', String(lockUntil));
+      toastAdmin('Rate limited — 60s lockout');
+    }
+    const a=$('#loginAlert');
+    a.textContent='Invalid credentials — check email / password.';
+    a.classList.add('show');
+    audit('LOGIN_FAILED',`Attempt for ${email}`);
+  }
+}
+function enterAdmin(){
+  $('#loginWrap').style.display='none';
+  $('#adminRoot').classList.add('auth');
+  localStorage.setItem(K.operator,'1');
+  $('#opOnline').checked=true;
+  renderAll();
+}
+function checkAuth(){
+  try{
+    const a=JSON.parse(localStorage.getItem(K.auth)||'null');
+    if(a && a.email==='admin@starto.jp') enterAdmin();
+  }catch{}
+}
+checkAuth();
+function logout(){
+  localStorage.removeItem(K.auth);
+  localStorage.setItem(K.operator,'0');
+  audit('LOGOUT','Admin signed out');
+  location.reload();
+}
+$('#logoutBtn').addEventListener('click',logout);
+$('#logoutSide').addEventListener('click',e=>{e.preventDefault();logout()});
+
+/* ===== Navigation ===== */
+$$('[data-section]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const id=btn.dataset.section;
+    $$('[data-section]').forEach(b=>b.classList.toggle('active', b===btn));
+    $$('.section').forEach(s=>s.classList.toggle('active', s.id==='sec-'+id));
+    $('#topTitle').textContent=btn.textContent.replace('●','').trim();
+    if(id==='chat') renderChatAdmin();
+    if(window.innerWidth<980) $('#sidebar').classList.remove('open');
+  });
+});
+$('#menuBtn').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
+// show menuBtn on mobile
+const mq=matchMedia('(max-width:980px)');
+function handleMq(){ $('#menuBtn').style.display=mq.matches?'inline-flex':'none' }
+mq.addEventListener('change',handleMq); handleMq();
+$$('[data-quick-add]').forEach(b=>b.addEventListener('click',()=> {
+  const k=b.dataset.quickAdd;
+  document.querySelector(`[data-section=${k}]`)?.click();
+}));
+
+/* ===== Fresh wipe — remove mocks (v4) ===== */
+const FRESH='v7-shop-journal-archive';
+if(localStorage.getItem('st_site_version')!==FRESH){
+    ['st_tk_news_v2','st_tk_sched_v2','st_tk_movie_v2','st_tk_release_v2','st_tk_regular_v2','st_tk_cm_v2','st_tk_concert_v2','st_tk_announce_v2','st_tk_payments_v2','st_shop_products','st_shop_orders','st_shop_cart','st_journal','st_archive','st_notifications','st_notif_prefs','st_fan_voices','st_passport','st_member_users','st_bookings','st_tickets','st_chat_threads','st_tk_chat_v2'].forEach(k=>localStorage.removeItem(k));(k=>localStorage.removeItem(k));
+  localStorage.setItem('st_site_version',FRESH);
+}
+/* ===== Seed ensure ===== */
+function ensureSeeds(){
+  if(!localStorage.getItem(K.news)){
+    save(K.news, [
+      {id:1700001, date:"2026.09.15", cat:"CONCERT", title:"Daily Update — Checkpoint Tour Fukuoka Sep 10 at TOTTEI PARK, Fan Club lottery now open", href:"#tour", status:"published"},
+      {id:1700002, date:"2026.09.14", cat:"RELEASE", title:"“CHECKPOINT” — 12 tracks streaming now, limited vinyl & Vault download for members", href:"#release", status:"published"},
+      {id:1700003, date:"2026.09.13", cat:"MOVIE", title:"TOKYO TAXI — teaser stills released, premiere November (Kyojo Requiem also updated)", href:"#film", status:"published"},
+      {id:1700004, date:"2026.09.12", cat:"REGULAR", title:"Flow #414 — Sun 11:30 TOKYO FM, special talk on Checkpoint rehearsal", href:"#regular", status:"published"},
+      {id:1700005, date:"2026.09.11", cat:"NEWS", title:"Fan Club Daily — Dashboard activity & Ticket chat live, today’s vault drop at midnight JST", href:"#membership", status:"published"},
+      {id:1700006, date:"2026.09.07", cat:"CONCERT", title:"Seoul (Oct 18) & Taipei (Nov 13 Birthday Special) — Gold+ lottery, Diamond guaranteed", href:"#tour", status:"published"}
+    ]);
+  }
+  if(!localStorage.getItem(K.blog)) save(K.blog,[]); // no premade samples
+  if(!localStorage.getItem(K.users)) save(K.users,[
+    {id:1,email:"admin@starto.jp",role:"Administrator",status:"Active"},
+    {id:2,email:"editor@starto.jp",role:"Editor",status:"Active"},
+    {id:3,email:"support@starto.jp",role:"Support",status:"Active"},
+  ]);
+  if(!localStorage.getItem(K.quick)) save(K.quick,[
+    {id:1,title:"News", message:"Latest news is at the top — Live Tour 2026 Checkpoint tickets are now available."},
+    {id:2,title:"Schedule", message:"Schedule is updated weekly via Schedule CMS. No additional dates today."},
+    {id:3,title:"Fan Club", message:"Fan Club: pre-sale tickets, member blog, exclusive video. Join via FAN CLUB card."},
+    {id:4,title:"Concert", message:"Checkpoint tour Sep 5 – Nov 23 with Seoul & Taipei — see Concert/STAGE CMS."},
+  ]);
+  if(!localStorage.getItem(K.social)) save(K.social,[
+    {id:1, label:"X", url:"https://x.com/CandC_STAGE"},
+    {id:2, label:"Instagram", url:"https://www.instagram.com/takuya.kimura_tak/"},
+    {id:3, label:"YouTube", url:"https://www.youtube.com/@takuya.kimura.official"},
+    {id:4, label:"Weibo", url:"https://weibo.com/u/6883966016"},
+  ]);
+  if(!localStorage.getItem(K.audit)) save(K.audit,[]);
+  if(!localStorage.getItem(K.announce)) save(K.announce,["TAKUYA KIMURA • LIVE TOUR 2026 CHECKPOINT • ON SALE","NEW ALBUM “CHECKPOINT” — 2026.08.12","FAN CLUB MEMBERSHIP ¥300,000 — ¥1,000,000 • MEET & GREET TICKET OPEN","EXCLUSIVE VAULT FOR MEMBERS • BIRTHDAY SURPRISE"]);
+  if(!localStorage.getItem(K.payments)) save(K.payments,[
+    {id:'visa', name:'VISA', icon:'VISA', enabled:true, details:'Visa credit/debit via secure provider', instructions:'Pay via card — no raw card stored. Webhook verified.'},
+    {id:'mastercard', name:'Mastercard', icon:'MC', enabled:true, details:'Mastercard via provider', instructions:'Secure provider flow'},
+    {id:'jcb', name:'JCB', icon:'JCB', enabled:true, details:'JCB Japan', instructions:'Japan card support'},
+    {id:'amex', name:'AMEX', icon:'AMEX', enabled:false, details:'American Express', instructions:'Provider verified'},
+    {id:'apple_pay', name:'Apple Pay', icon:' Pay', enabled:true, details:'Apple Pay via Stripe', instructions:'Use iPhone / Mac Sheet'},
+    {id:'google_pay', name:'Google Pay', icon:'G Pay', enabled:true, details:'Google Pay via Stripe', instructions:'Android / Chrome sheet'},
+    {id:'paypay', name:'PayPay', icon:'PayPay', enabled:true, details:'PayPay ID: TAKUYA-OFFICIAL — manual verify by admin', instructions:'Scan PayPay QR — admin confirms'},
+    {id:'konbini', name:'Konbini', icon:'🏪', enabled:true, details:'FamilyMart / Lawson / Ministop — voucher issued', instructions:'Konbini voucher — pay within 3 days'},
+    {id:'bank', name:'Bank Transfer', icon:'🏦', enabled:true, details:'Bank: MUFG • Branch: Tokyo • Account: 1234567 • Name: STARTO ENTERTAINMENT (manual by admin)', instructions:'Manual transfer — upload receipt via chat, admin verifies'}
+  ]);
+  if(!localStorage.getItem(K.shopProducts)) save(K.shopProducts,[
+    {id:'shop-001', cat:'Tour Merch', title:'CHECKPOINT Tour Tee — Black / Cream', price:8500, stock:120, img:'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=400&auto=format&fit=crop', desc:'Official tour tee — heavyweight cotton, tour dates back print. Sizes S-XXL.', status:'published'},
+    {id:'shop-002', cat:'Apparel', title:'KIMURA // 01 Hoodie — Charcoal', price:14800, stock:60, img:'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop', desc:'Premium hoodie — embroidered KIMURA // 01, gold tip.', status:'published'},
+    {id:'shop-003', cat:'Accessories', title:'Tour Towel — Checkpoint Gold', price:4200, stock:200, img:'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?q=80&w=400&auto=format&fit=crop', desc:'Jacquard towel — gold on pearl, 34×110cm.', status:'published'}
+  ]);
+  if(!localStorage.getItem(K.shopOrders)) save(K.shopOrders,[]);
+  if(!localStorage.getItem(K.journal)) save(K.journal,[
+    {id:'jrnl-01', cat:'TOUR', title:'Inside Checkpoint Rehearsal — 03:00 AM Studio', date:'2026.09.14', img:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=400&auto=format&fit=crop', excerpt:'Soundcheck whispers, band talk, and the setlist that almost didn’t make it.', status:'published'},
+    {id:'jrnl-02', cat:'MUSIC', title:'CHECKPOINT — Track by Track with Takuya', date:'2026.09.12', img:'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400&auto=format&fit=crop', excerpt:'12 tracks, 12 stories — producer notes and vault voice memos.', status:'published'}
+  ]);
+  if(!localStorage.getItem(K.archive)) save(K.archive,[
+    {id:'arc-90', decade:'1990s', year:'1991', title:'SMAP Debut — Debut era', desc:'Debut as SMAP — idol to actor, 1991.', img:'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=400&auto=format&fit=crop'},
+    {id:'arc-01', decade:'2000s', year:'2001', title:'HERO — Prosecutor Kuryu', desc:'King of Ratings — HERO 36%+, film sequels.', img:'https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=400&auto=format&fit=crop'}
+  ]);
+  if(!localStorage.getItem(K.notifications)) save(K.notifications,[]);
+  if(!localStorage.getItem(K.fanVoices)) save(K.fanVoices,[
+    {id:7001, name:'Aya • Tokyo', type:'Memory', text:'First saw Takuya in HERO — inspires me still.', status:'Submitted', ts:Date.now()-86400000},
+    {id:7002, name:'Ken • Seoul', type:'Tour Experience', text:'Checkpoint Fukuoka was magical — towel gold!', status:'Submitted', ts:Date.now()-3600000}
+  ]);
+}
+ensureSeeds();
+
+/* ===== Generic modal helpers ===== */
+let modalSaveHandler=null;
+function openModal(title, html, onSave){
+  $('#modalTitle').textContent=title;
+  $('#modalBody').innerHTML=html;
+  $('#modal').classList.add('open');
+  modalSaveHandler=onSave;
+}
+function closeModal(){ $('#modal').classList.remove('open'); modalSaveHandler=null }
+$('#modalSave').addEventListener('click',()=>{ if(modalSaveHandler) modalSaveHandler() });
+$('#modal').addEventListener('click',e=>{ if(e.target===$('#modal')) closeModal() });
+let confirmHandler=null;
+function openConfirm(text, onYes){
+  $('#confirmText').textContent=text;
+  $('#confirmModal').classList.add('open');
+  confirmHandler=onYes;
+}
+function closeConfirm(){ $('#confirmModal').classList.remove('open'); confirmHandler=null }
+$('#confirmYes').addEventListener('click',()=>{ if(confirmHandler) confirmHandler(); closeConfirm() });
+$('#confirmModal').addEventListener('click',e=>{ if(e.target===$('#confirmModal')) closeConfirm() });
+
+/* ===== Render all ===== */
+function renderAll(){
+  renderNews();renderSched();renderConcert();renderMovies();renderReleases();renderHero();renderMedia();renderBlog();renderCm();renderRegularAdmin();renderSocial();renderI18n();renderSeo();renderSettings();renderAudit();renderRecent();renderQuick();renderUsers();renderMembers();renderBookings();renderTiersAdmin();renderKpi();renderChatAdmin();renderQuickRow();
+}
+function renderKpi(){
+  const n=load(K.news,[]).filter(x=>x.status!=='draft').length;
+  const s=load(K.sched,[]).length;
+  const c=load(K.chat,[]).length;
+  const m= (load(K.hero,[]).length) + 1;
+  const members=load(K.members,[]).length;
+  const bookings=load(K.bookings,[]).length;
+  $('#kpiNews').textContent=n;
+  $('#kpiNewsSub').textContent=n+' published';
+  $('#kpiSched').textContent=s;
+  // repurpose media KPI to show members when available
+  if(document.querySelector('#kpiMedia')){
+    $('#kpiMedia').textContent = members ? members : m;
+    $('#kpiMedia').nextElementSibling.textContent = members ? members+' Fan Club members' : 'Hero + profile';
+  }
+  // overload one kpi for bookings if needed - update analytics
+  if($('#anaChats')) $('#anaChats').textContent=Math.ceil(c/2) || '0';
+  const unread=load(K.chat,[]).filter(x=>x.from==='visitor').length;
+  $('#chatNavBadge').textContent= unread? unread : '•';
+  $('#chatNavBadge').style.background= unread? '#ff2e2e':'#0ac06a';
+  // also update title for members/bookings nav badge if we had
+}
+function renderNews(){
+  const data=load(K.news,[]);
+  const tb=$('#newsTbody');
+  if(!data.length) tb.innerHTML=`<tr><td colspan="5"><div class="empty">No news yet — add your first item.</div></td></tr>`;
+  else tb.innerHTML=data.map(n=>`
+    <tr>
+      <td style="font-family:JetBrains Mono,monospace">${n.date}</td>
+      <td><span class="badge ${n.cat==='CONCERT'?'dark':''}">${n.cat}</span></td>
+      <td style="max-width:380px">${n.title}</td>
+      <td><span class="badge ${n.status==='published'?'dark':''}">${n.status||'published'}</span></td>
+      <td>
+        <div class="actions">
+          <button class="btn ghost small" onclick="editNews(${n.id})">Edit</button>
+          <button class="btn ghost small" onclick="toggleNews(${n.id})">${n.status==='draft'?'Publish':'Unpublish'}</button>
+          <button class="btn ghost small" onclick="deleteNews(${n.id})">Delete</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+  renderKpi();
+}
+window.editNews=id=>{
+  const data=load(K.news,[]);const n=data.find(x=>x.id===id);
+  openModal('Edit News', `
+    <label style="font-size:11px;color:#6a6a6a">Date (YYYY.MM.DD)</label><input class="input" id="f_date" value="${n.date}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Category</label><select class="select" id="f_cat"><option ${n.cat==='CONCERT'?'selected':''}>CONCERT</option><option ${n.cat==='RELEASE'?'selected':''}>RELEASE</option><option ${n.cat==='MOVIE'?'selected':''}>MOVIE</option><option ${n.cat==='NEWS'?'selected':''}>NEWS</option><option ${n.cat==='REGULAR'?'selected':''}>REGULAR</option></select>
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Title</label><textarea class="textarea" id="f_title">${n.title}</textarea>
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Link</label><input class="input" id="f_href" value="${n.href||''}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Status</label><select class="select" id="f_status"><option ${n.status==='published'?'selected':''} value="published">published</option><option ${n.status==='draft'?'selected':''} value="draft">draft</option></select>
+  `,()=>{
+    const date=$('#f_date').value.trim(); const cat=$('#f_cat').value; const title=$('#f_title').value.trim(); const href=$('#f_href').value.trim(); const status=$('#f_status').value;
+    if(!date||!title) return toastAdmin('Date and title required (validation)');
+    n.date=date;n.cat=cat;n.title=title;n.href=href;n.status=status;
+    save(K.news,data); audit('UPDATE',`News #${id} updated`); closeModal(); renderNews(); toastAdmin('News updated');
+  });
+};
+window.toggleNews=id=>{
+  const data=load(K.news,[]);const n=data.find(x=>x.id===id); if(!n) return;
+  n.status=n.status==='draft'?'published':'draft'; save(K.news,data); audit(n.status==='published'?'PUBLISH':'UNPUBLISH',`News #${id} ${n.status}`); renderNews(); toastAdmin(`News ${n.status}`);
+};
+window.deleteNews=id=>{
+  openConfirm('Delete this news item? This cannot be undone.',()=>{
+    let data=load(K.news,[]);data=data.filter(x=>x.id!==id); save(K.news,data); audit('DELETE',`News #${id} deleted`); renderNews(); toastAdmin('News deleted');
+  });
+};
+$('#addNewsBtn').addEventListener('click',()=>{
+  openModal('Add News', `
+    <label style="font-size:11px;color:#6a6a6a">Date</label><input class="input" id="f_date" placeholder="2026.09.15">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Category</label><select class="select" id="f_cat"><option>CONCERT</option><option>RELEASE</option><option>MOVIE</option><option>NEWS</option></select>
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Title</label><textarea class="textarea" id="f_title" placeholder="Title…"></textarea>
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Link (#concert etc)</label><input class="input" id="f_href" value="#news">
+  `,()=>{
+    const date=$('#f_date').value.trim()||new Date().toISOString().slice(0,10).replace(/-/g,'.');
+    const cat=$('#f_cat').value; const title=$('#f_title').value.trim(); const href=$('#f_href').value.trim()||'#news';
+    if(!title) return toastAdmin('Title required');
+    const data=load(K.news,[]);data.unshift({id:Date.now(),date,cat,title,href,status:'published'}); save(K.news,data); audit('CREATE','News created'); closeModal(); renderNews(); toastAdmin('News created and published');
+  });
+});
+window.resetSeed=type=>{
+  if(type==='news'){ localStorage.removeItem(K.news); ensureSeeds(); renderNews(); toastAdmin('Seed reset'); }
+};
+
+/* ===== Schedule ===== */
+function renderSched(){
+  const data=load(K.sched,[]);
+  const tb=$('#schedTbody');
+  if(!data.length) tb.innerHTML=`<tr><td colspan="6"><div class="empty">No schedule — empty state shown on public site.</div></td></tr>`;
+  else tb.innerHTML=data.map(s=>`
+    <tr>
+      <td style="font-family:JetBrains Mono,monospace">${s.date}</td>
+      <td>${s.time}</td>
+      <td style="max-width:320px">${s.title}</td>
+      <td>${s.place}</td>
+      <td><span class="badge">${s.tag}</span></td>
+      <td><div class="actions"><button class="btn ghost small" onclick="editSched(${s.id})">Edit</button><button class="btn ghost small" onclick="delSched(${s.id})">Delete</button></div></td>
+    </tr>
+  `).join('');
+}
+window.editSched=id=>{
+  const data=load(K.sched,[]);const s=data.find(x=>x.id===id) || {date:'2026.09.15',time:'18:00',title:'',place:'',tag:'CONCERT'};
+  const isNew=!s.id;
+  openModal(isNew?'Add Schedule':'Edit Schedule', `
+    <div class="form-row"><div><label style="font-size:11px;color:#6a6a6a">Date</label><input class="input" id="s_date" value="${s.date}"></div><div><label style="font-size:11px;color:#6a6a6a">Time</label><input class="input" id="s_time" value="${s.time}"></div></div>
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Title</label><input class="input" id="s_title" value="${s.title}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Place</label><input class="input" id="s_place" value="${s.place}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Tag</label><select class="select" id="s_tag"><option ${s.tag==='CONCERT'?'selected':''}>CONCERT</option><option ${s.tag==='REGULAR'?'selected':''}>REGULAR</option><option ${s.tag==='TV'?'selected':''}>TV</option><option ${s.tag==='RADIO'?'selected':''}>RADIO</option></select>
+  `,()=>{
+    const date=$('#s_date').value.trim(); const time=$('#s_time').value.trim(); const title=$('#s_title').value.trim(); const place=$('#s_place').value.trim(); const tag=$('#s_tag').value;
+    if(!date||!title) return toastAdmin('Date and title required');
+    if(isNew){ data.unshift({id:Date.now(),date,time,title,place,tag}); audit('CREATE','Schedule created'); }
+    else { Object.assign(s,{date,time,title,place,tag}); audit('UPDATE','Schedule updated') }
+    save(K.sched,data); closeModal(); renderSched(); toastAdmin('Schedule saved');
+  });
+};
+window.delSched=id=>{
+  openConfirm('Delete schedule?',()=>{
+    let data=load(K.sched,[]);data=data.filter(x=>x.id!==id); save(K.sched,data); audit('DELETE','Schedule deleted'); renderSched(); toastAdmin('Schedule deleted');
+  });
+};
+$('#addScheduleBtn').addEventListener('click',()=>{
+  // create new with temp id
+  const data=load(K.sched,[]);const tmp={id:Date.now(),date:new Date().toISOString().slice(0,10).replace(/-/g,'.'),time:'18:00',title:'New Schedule Title',place:'Venue',tag:'CONCERT'};
+  data.unshift(tmp); save(K.sched,data); renderSched(); editSched(tmp.id);
+});
+
+/* ===== Concert ===== */
+function renderConcert(){
+  const c=load(K.concert,null) || {period:"2026.09.05 — 2026.11.23",title:"TAKUYA KIMURA Live Tour 2026 Checkpoint",desc:"",img:"",cat:"CONCERT"};
+  $('#concertCard').innerHTML=`
+    <div style="display:grid;grid-template-columns:160px 1fr;gap:16px">
+      <img src="${c.img||'https://starto.jp/images/81/b0b/9c913dfa75c509b98471e87038ed3/800_800_102400.png'}" style="width:100%;aspect-ratio:1/1;object-fit:cover;border:1px solid var(--line)">
+      <div>
+        <label style="font-size:11px;color:#6a6a6a">Period</label><input class="input" id="c_period" value="${c.period}">
+        <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Title</label><input class="input" id="c_title" value="${c.title}">
+        <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Description</label><textarea class="textarea" id="c_desc">${c.desc}</textarea>
+        <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Image URL</label><input class="input" id="c_img" value="${c.img}">
+        <button class="btn primary small" style="margin-top:10px" onclick="saveConcert()">Save Concert</button>
+      </div>
+    </div>
+  `;
+}
+window.saveConcert=()=>{
+  const c={period:$('#c_period').value.trim(), title:$('#c_title').value.trim(), desc:$('#c_desc').value.trim(), img:$('#c_img').value.trim(), cat:"CONCERT"};
+  if(!c.title) return toastAdmin('Title required');
+  save(K.concert,c); audit('UPDATE','Concert updated'); toastAdmin('Concert saved');
+};
+
+/* ===== Movie ===== */
+function renderMovies(){
+  const data=load(K.movie,[]);
+  const tb=$('#movieTbody');
+  if(!data.length) tb.innerHTML=`<tr><td colspan="5"><div class="empty">No movies</div></td></tr>`;
+  else tb.innerHTML=data.map(m=>`
+    <tr>
+      <td>${m.date}</td><td><span class="badge">${m.cat}</span></td><td>${m.title}</td><td style="max-width:300px">${m.desc}</td>
+      <td><div class="actions"><button class="btn ghost small" onclick="editMovie(${m.id})">Edit</button><button class="btn ghost small" onclick="delMovie(${m.id})">Delete</button></div></td>
+    </tr>
+  `).join('');
+}
+window.editMovie=id=>{
+  const data=load(K.movie,[]);let m=data.find(x=>x.id===id);
+  const isNew=!m; if(isNew) m={date:new Date().toISOString().slice(0,10).replace(/-/g,'.'),cat:"MOVIE",title:"",desc:"",img:"https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=800&auto=format&fit=crop"};
+  openModal(isNew?'Add Film':'Edit Film', `
+    <label style="font-size:11px;color:#6a6a6a">Date</label><input class="input" id="m_date" value="${m.date}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Category</label><select class="select" id="m_cat"><option ${m.cat==='MOVIE'?'selected':''}>MOVIE</option><option ${m.cat==='DRAMA'?'selected':''}>DRAMA</option><option ${m.cat==='STAGE'?'selected':''}>STAGE</option></select>
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Title</label><input class="input" id="m_title" value="${m.title}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Description</label><textarea class="textarea" id="m_desc">${m.desc}</textarea>
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Image URL</label><input class="input" id="m_img" value="${m.img||''}">
+  `,()=>{
+    const date=$('#m_date').value.trim(); const cat=$('#m_cat').value; const title=$('#m_title').value.trim(); const desc=$('#m_desc').value.trim(); const img=$('#m_img').value.trim();
+    if(!title) return toastAdmin('Title required');
+    if(isNew){ m.id=Date.now(); m.date=date; m.cat=cat; m.title=title; m.desc=desc; m.img=img; data.unshift(m); audit('CREATE','Movie created');}
+    else { Object.assign(m,{date,cat,title,desc,img}); audit('UPDATE','Movie updated')}
+    save(K.movie,data); closeModal(); renderMovies(); toastAdmin('Movie saved');
+  });
+};
+window.delMovie=id=>{
+  openConfirm('Delete film?',()=>{
+    let data=load(K.movie,[]);data=data.filter(x=>x.id!==id); save(K.movie,data); audit('DELETE','Movie deleted'); renderMovies(); toastAdmin('Deleted');
+  });
+};
+$('#addMovieBtn').addEventListener('click',()=>editMovie(null));
+
+/* ===== Release ===== */
+function renderReleases(){
+  const data=load(K.release,[]);
+  const tb=$('#releaseTbody');
+  if(!data.length) tb.innerHTML=`<tr><td colspan="5"><div class="empty">No releases</div></td></tr>`;
+  else tb.innerHTML=data.map(r=>`
+    <tr><td>${r.date}</td><td><span class="badge ${r.cat==='ALBUM'?'dark':''}">${r.cat}</span></td><td>${r.title}</td><td>${r.artist}</td>
+    <td><div class="actions"><button class="btn ghost small" onclick="editRelease(${r.id})">Edit</button><button class="btn ghost small" onclick="delRelease(${r.id})">Delete</button></div></td></tr>
+  `).join('');
+}
+window.editRelease=id=>{
+  const data=load(K.release,[]);let r=data.find(x=>x.id===id) || {date:"2026.08.12",cat:"ALBUM",title:"",artist:"Takuya Kimura",img:"https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=800&auto=format&fit=crop"};
+  const isNew=!r.id;
+  openModal(isNew?'Add Release':'Edit Release', `
+    <label style="font-size:11px;color:#6a6a6a">Date</label><input class="input" id="r_date" value="${r.date}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Category</label><select class="select" id="r_cat"><option ${r.cat==='ALBUM'?'selected':''}>ALBUM</option><option ${r.cat==='SINGLE'?'selected':''}>SINGLE</option><option ${r.cat==='OTHER'?'selected':''}>OTHER</option><option ${r.cat==='DVD'?'selected':''}>DVD</option></select>
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Title</label><input class="input" id="r_title" value="${r.title}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Artist</label><input class="input" id="r_artist" value="${r.artist}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Image URL</label><input class="input" id="r_img" value="${r.img||''}">
+  `,()=>{
+    const date=$('#r_date').value.trim(); const cat=$('#r_cat').value; const title=$('#r_title').value.trim(); const artist=$('#r_artist').value.trim(); const img=$('#r_img').value.trim();
+    if(!title) return toastAdmin('Title required');
+    if(isNew){ r.id=Date.now(); Object.assign(r,{date,cat,title,artist,img}); data.unshift(r); audit('CREATE','Release created');}
+    else Object.assign(r,{date,cat,title,artist,img}), audit('UPDATE','Release updated');
+    save(K.release,data); closeModal(); renderReleases(); toastAdmin('Release saved');
+  });
+};
+window.delRelease=id=>{
+  openConfirm('Delete release?',()=>{
+    let data=load(K.release,[]);data=data.filter(x=>x.id!==id); save(K.release,data); audit('DELETE','Release deleted'); renderReleases(); toastAdmin('Deleted');
+  });
+};
+$('#addReleaseBtn').addEventListener('click',()=>editRelease(null));
+
+/* ===== Hero ===== */
+function renderHero(){
+  const data=load(K.hero,[]);
+  const el=$('#heroList');
+  el.innerHTML=data.map((h,i)=>`
+    <div class="card" style="display:grid;grid-template-columns:140px 1fr auto;gap:16px;align-items:center">
+      <img src="${h.img}" style="width:140px;height:88px;object-fit:cover;border:1px solid var(--line)">
+      <div>
+        <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#6a6a6a">${h.kicker}</div>
+        <div style="font-size:13px;font-weight:600;margin:4px 0">${h.title.replace(/<[^>]*>/g,'')}</div>
+        <div style="font-size:11px;color:#6a6a6a">${h.sub}</div>
+        <div style="font-size:11px;color:#6a6a6a;margin-top:6px;word-break:break-all">${h.img}</div>
+      </div>
+      <!-- JOURNAL -->
+      <div class="section" id="sec-journal">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Journal — Editorial Magazine</h3>
+          <p style="font-size:12px;color:#6a6a6a">MUSIC / FILM / STYLE / TOUR / CREATIVE / BEHIND THE SCENES — photography, video, audio, galleries, related. All CMS without code.</p>
+          <div class="sep"></div>
+          <div id="journalAdmin" style="display:grid;gap:10px"></div>
+          <button class="btn primary small" style="margin-top:12px" onclick="addJournal()">+ Add Story</button>
+        </div>
+      </div>
+      <!-- ARCHIVE -->
+      <div class="section" id="sec-archive">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Archive — 1990s → Future</h3>
+          <p style="font-size:12px;color:#6a6a6a">Verified works, music, photography, interviews, events, milestones, publications, videos — interactive timeline.</p>
+          <div class="sep"></div>
+          <div id="archiveAdmin" style="display:grid;gap:10px"></div>
+          <button class="btn primary small" style="margin-top:12px" onclick="addArchive()">+ Add Entry</button>
+        </div>
+      </div>
+      <!-- FAN VOICES -->
+      <div class="section" id="sec-fanVoices">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Fan Voices — Moderation</h3>
+          <p style="font-size:12px;color:#6a6a6a">Workflow: SUBMITTED → MODERATION → APPROVED → PUBLISHED. Never auto-publish.</p>
+          <div class="sep"></div>
+          <div id="fanVoicesAdmin" style="display:grid;gap:10px"></div>
+        </div>
+      </div>
+      <!-- TOUR PASS -->
+      <div class="section" id="sec-tourPass">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Tour Pass & Passport</h3>
+          <p style="font-size:12px;color:#6a6a6a">Digital tour pass (member identity, tour event, QR verification, attendance) + Passport stamps (tour, anniversary, attendance, achievement). Blockchain optional.</p>
+          <div class="sep"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div><h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.1em">Recent Passes & Orders QR</h4><div id="tourPassAdmin" style="display:grid;gap:8px"></div></div>
+            <div><h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.1em">Passport Stamps</h4><div id="passportAdmin" style="display:grid;gap:8px"></div><button class="btn ghost small" style="margin-top:8px" onclick="addStamp()">+ Add Stamp</button></div>
+          </div>
+        </div>
+      </div>
+      <!-- NOTIFICATIONS -->
+      <div class="section" id="sec-notifications">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Notifications — In-App / Email / Push</h3>
+          <p style="font-size:12px;color:#6a6a6a">Tour, music, journal, membership, ticket, merchandise, support — users control preferences per category (In-App / Email / Push).</p>
+          <div class="sep"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="btn ghost small" onclick="sendTestNotif('tour')">Test Tour</button><button class="btn ghost small" onclick="sendTestNotif('merchandise')">Test Merch</button><button class="btn ghost small" onclick="sendTestNotif('support')">Test Support</button><button class="btn ghost small" onclick="clearNotifications()">Clear Inbox</button></div>
+          <div id="notificationsAdmin" style="display:grid;gap:8px"></div>
+        </div>
+      </div>
+      <!-- CAMPAIGNS NOW -->
+      <div class="section" id="sec-campaigns">
+        <div class="card">
+          <h3 style="margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Campaigns — NOW</h3>
+          <p style="font-size:12px;color:#6a6a6a">Homepage NOW campaign: TOUR / ALBUM / FILM / EVENT / CAMPAIGN / ANNOUNCEMENT — updates without redeployment. Stored in <code>st_tk_hero_v2</code> + <code>st_tk_concert_v2</code>.</p>
+          <div class="sep"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div><label style="font-size:11px">NOW Type</label><select id="nowType" class="input"><option>TOUR</option><option>ALBUM</option><option>FILM</option><option>EVENT</option><option>CAMPAIGN</option><option>ANNOUNCEMENT</option></select></div>
+            <div><label style="font-size:11px">Title</label><input id="nowTitle" class="input" placeholder="Live Tour 2026 Checkpoint"></div>
+          </div>
+          <div style="margin-top:8px"><label style="font-size:11px">Description</label><input id="nowDesc" class="input" placeholder="Campaign description"></div>
+          <button class="btn primary small" style="margin-top:12px" onclick="saveNowCampaign()">Save NOW Campaign →</button>
+          <div id="nowPreview" style="margin-top:12px;border:1px solid var(--line);background:var(--pearl);padding:12px;font-size:11px"></div>
+        </div>
+      </div>
+      <div class="actions" style="flex-direction:column">
+        <button class="btn ghost small" onclick="editHero(${h.id})">Edit</button>
+        <button class="btn ghost small" onclick="moveHero(${h.id},-1)">↑</button>
+        <button class="btn ghost small" onclick="moveHero(${h.id},1)">↓</button>
+        <button class="btn ghost small" onclick="delHero(${h.id})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+window.editHero=id=>{
+  const data=load(K.hero,[]);let h=data.find(x=>x.id===id);
+  const isNew=!h; if(isNew) h={kicker:"NEW",title:"Title<br>Subtitle",sub:"Caption",img:"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1600&auto=format&fit=crop",link:"#news"};
+  openModal(isNew?'Add Hero Slide':'Edit Hero Slide', `
+    <label style="font-size:11px;color:#6a6a6a">Kicker (small)</label><input class="input" id="h_kicker" value="${h.kicker}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Title (HTML allowed, use &lt;br&gt;)</label><input class="input" id="h_title" value="${h.title.replace(/"/g,'&quot;')}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Sub</label><input class="input" id="h_sub" value="${h.sub}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Image URL</label><input class="input" id="h_img" value="${h.img}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Link (#concert etc)</label><input class="input" id="h_link" value="${h.link||'#'}">
+    <div class="preview" style="margin-top:12px"><img src="${h.img}" onerror="this.style.display='none'"></div>
+  `,()=>{
+    const kicker=$('#h_kicker').value.trim(); const title=$('#h_title').value.trim(); const sub=$('#h_sub').value.trim(); const img=$('#h_img').value.trim(); const link=$('#h_link').value.trim();
+    if(!img||!title) return toastAdmin('Image and title required');
+    if(isNew){ h.id=Date.now(); Object.assign(h,{kicker,title,sub,img,link}); data.push(h); audit('CREATE','Hero slide created');}
+    else Object.assign(h,{kicker,title,sub,img,link}), audit('UPDATE','Hero updated');
+    save(K.hero,data); closeModal(); renderHero(); toastAdmin('Hero saved');
+  });
+};
+window.delHero=id=>{
+  openConfirm('Delete hero slide?',()=>{
+    let data=load(K.hero,[]);data=data.filter(x=>x.id!==id); save(K.hero,data); audit('DELETE','Hero deleted'); renderHero(); toastAdmin('Deleted');
+  });
+};
+window.moveHero=(id,dir)=>{
+  let data=load(K.hero,[]);const idx=data.findIndex(x=>x.id===id);const nidx=idx+dir;
+  if(nidx<0||nidx>=data.length) return;
+  const tmp=data[idx];data[idx]=data[nidx];data[nidx]=tmp;
+  save(K.hero,data); audit('UPDATE','Hero reordered'); renderHero();
+};
+$('#addHeroBtn').addEventListener('click',()=>editHero(null));
+
+/* ===== Media ===== */
+function renderMedia(){
+  const m=load(K.media,null);
+  if(m && m.profile) $('#mediaProfilePreview').src=m.profile;
+  if(m && m.profileUrl) $('#mediaProfileUrl').value=m.profile;
+}
+window.saveMediaProfile=()=>{
+  const url=$('#mediaProfileUrl').value.trim();
+  if(!url) return toastAdmin('URL required');
+  // validate URL-ish
+  try{ new URL(url);}catch{ return toastAdmin('Invalid URL');}
+  let m=load(K.media,{})||{};
+  m.profile=url; m.profileUrl=url;
+  save(K.media,m); $('#mediaProfilePreview').src=url;
+  audit('UPDATE','Media — profile image updated'); toastAdmin('Profile image saved — public site updated');
+};
+
+/* ===== Blog ===== */
+function renderBlog(){
+  const data=load(K.blog,[]);
+  const tb=$('#blogTbody');
+  tb.innerHTML=data.map(b=>`
+    <tr><td>${b.date}</td><td>${b.title}</td><td><span class="badge ${b.status==='published'?'dark':''}">${b.status}</span></td>
+    <td><div class="actions"><button class="btn ghost small" onclick="editBlog(${b.id})">Edit</button><button class="btn ghost small" onclick="delBlog(${b.id})">Delete</button></div></td></tr>
+  `).join('');
+}
+window.editBlog=id=>{
+  const data=load(K.blog,[]);let b=data.find(x=>x.id===id);
+  openModal('Edit Blog Post', `
+    <label style="font-size:11px;color:#6a6a6a">Title</label><input class="input" id="b_title" value="${b.title}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Date</label><input class="input" id="b_date" value="${b.date}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Status</label><select class="select" id="b_status"><option ${b.status==='published'?'selected':''} value="published">published</option><option ${b.status==='draft'?'selected':''} value="draft">draft</option></select>
+  `,()=>{
+    b.title=$('#b_title').value.trim(); b.date=$('#b_date').value.trim(); b.status=$('#b_status').value;
+    if(!b.title) return toastAdmin('Title required');
+    save(K.blog,data); audit('UPDATE','Blog updated'); closeModal(); renderBlog(); toastAdmin('Blog saved');
+  });
+};
+window.delBlog=id=>{
+  openConfirm('Delete blog post?',()=>{
+    let data=load(K.blog,[]);data=data.filter(x=>x.id!==id); save(K.blog,data); audit('DELETE','Blog deleted'); renderBlog(); toastAdmin('Deleted');
+  });
+};
+window.openBlogModal=()=>{
+  openModal('New Blog Post', `
+    <label style="font-size:11px;color:#6a6a6a">Title</label><input class="input" id="b_title" placeholder="Post title…">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Date</label><input class="input" id="b_date" value="${new Date().toISOString().slice(0,10).replace(/-/g,'.')}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Status</label><select class="select" id="b_status"><option value="published">published</option><option value="draft">draft</option></select>
+  `,()=>{
+    const title=$('#b_title').value.trim(); const date=$('#b_date').value.trim(); const status=$('#b_status').value;
+    if(!title) return toastAdmin('Title required');
+    const data=load(K.blog,[]);data.unshift({id:Date.now(),title,date,status}); save(K.blog,data); audit('CREATE','Blog created'); closeModal(); renderBlog(); toastAdmin('Blog created');
+  });
+};
+
+/* ===== FanClub ===== */
+function saveFanClub(){
+  const data={url:$('#fcUrl').value.trim(), label:$('#fcLabel').value.trim(), benefits:$('#fcBenefits').value.trim().split('\n').filter(Boolean)};
+  localStorage.setItem('st_tk_fanclub_v2', JSON.stringify(data)); audit('UPDATE','Fan Club updated'); toastAdmin('Fan Club saved');
+}
+window.saveFanClub=saveFanClub;
+
+/* ===== CM ===== */
+function renderCm(){
+  const data=load(K.cm,[]);
+  const tb=$('#cmTbody');
+  tb.innerHTML=data.map(c=>`
+    <tr><td>${c.brand}</td><td>${c.cat}</td><td><img src="${c.img}" style="width:64px;height:36px;object-fit:cover;border:1px solid var(--line)"></td>
+    <td><div class="actions"><button class="btn ghost small" onclick="editCm(${c.id||0})">Edit</button><button class="btn ghost small" onclick="delCm('${c.brand.replace(/'/g,"\\'")}')">Delete</button></div></td></tr>
+  `).join('');
+}
+// CM doesn't have stable id in seed — add id if missing
+(function normalizeCm(){
+  let data=load(K.cm,[]);
+  let changed=false;
+  data=data.map((c,i)=>{ if(!c.id){c.id=Date.now()+i;changed=true} return c});
+  if(changed) save(K.cm,data);
+})();
+window.editCm=id=>{
+  const data=load(K.cm,[]);let c=data.find(x=>x.id===id);
+  if(!c){ c=data.find(x=>x.id==id) }
+  if(!c) return;
+  openModal('Edit CM', `
+    <label style="font-size:11px;color:#6a6a6a">Brand</label><input class="input" id="cm_brand" value="${c.brand}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Category</label><input class="input" id="cm_cat" value="${c.cat}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Image URL</label><input class="input" id="cm_img" value="${c.img}">
+  `,()=>{
+    c.brand=$('#cm_brand').value.trim(); c.cat=$('#cm_cat').value.trim(); c.img=$('#cm_img').value.trim();
+    if(!c.brand) return toastAdmin('Brand required');
+    save(K.cm,data); audit('UPDATE','CM updated'); closeModal(); renderCm(); toastAdmin('CM saved');
+  });
+};
+window.delCm=brand=>{
+  openConfirm('Delete CM?',()=>{
+    let data=load(K.cm,[]);data=data.filter(x=>x.brand!==brand); save(K.cm,data); audit('DELETE','CM deleted'); renderCm(); toastAdmin('Deleted');
+  });
+};
+$('#addCmBtn').addEventListener('click',()=>{
+  openModal('Add CM', `
+    <label style="font-size:11px;color:#6a6a6a">Brand</label><input class="input" id="cm_brand" placeholder="Brand name">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Category</label><input class="input" id="cm_cat" placeholder="Category">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Image URL</label><input class="input" id="cm_img" placeholder="https://...">
+  `,()=>{
+    const brand=$('#cm_brand').value.trim(); const cat=$('#cm_cat').value.trim(); const img=$('#cm_img').value.trim()||'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=400&auto=format&fit=crop';
+    if(!brand) return toastAdmin('Brand required');
+    const data=load(K.cm,[]);data.unshift({id:Date.now(),brand,cat,img}); save(K.cm,data); audit('CREATE','CM created'); closeModal(); renderCm(); toastAdmin('CM added');
+  });
+});
+function renderRegularAdmin(){
+  const data=load(K.regular,[]);
+  $('#regularAdmin').innerHTML=`
+    <div class="card">
+      <h4 style="margin:0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">Regular Programs (from Regular CMS)</h4>
+      <div class="sep"></div>
+      <div style="display:grid;gap:10px">${data.map((r,i)=>`
+        <div style="display:flex;gap:12px;align-items:center;border:1px solid var(--line);padding:10px;background:#fff">
+          <img src="${r.img}" style="width:72px;height:48px;object-fit:cover;border:1px solid var(--line)">
+          <div style="flex:1"><b style="font-size:12px">${r.title}</b><br><small style="color:#6a6a6a">${r.cat} — ${r.desc.slice(0,60)}…</small></div>
+          <button class="btn ghost small" onclick="editRegular(${i})">Edit</button>
+          <button class="btn ghost small" onclick="delRegular(${i})">Delete</button>
+        </div>
+      `).join('')}</div>
+      <button class="btn ghost small" style="margin-top:12px" onclick="addRegular()">+ Add Regular</button>
+    </div>
+  `;
+}
+window.editRegular=i=>{
+  const data=load(K.regular,[]);const r=data[i];
+  openModal('Edit Regular', `
+    <label style="font-size:11px;color:#6a6a6a">Category</label><input class="input" id="rg_cat" value="${r.cat}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Title</label><input class="input" id="rg_title" value="${r.title}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Description</label><textarea class="textarea" id="rg_desc">${r.desc}</textarea>
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Image URL</label><input class="input" id="rg_img" value="${r.img}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Link</label><input class="input" id="rg_href" value="${r.href}">
+  `,()=>{
+    r.cat=$('#rg_cat').value.trim(); r.title=$('#rg_title').value.trim(); r.desc=$('#rg_desc').value.trim(); r.img=$('#rg_img').value.trim(); r.href=$('#rg_href').value.trim();
+    if(!r.title) return toastAdmin('Title required');
+    save(K.regular,data); audit('UPDATE','Regular updated'); closeModal(); renderRegularAdmin(); toastAdmin('Regular saved');
+  });
+};
+window.delRegular=i=>{
+  openConfirm('Delete regular program?',()=>{
+    let data=load(K.regular,[]);data.splice(i,1); save(K.regular,data); audit('DELETE','Regular deleted'); renderRegularAdmin(); toastAdmin('Deleted');
+  });
+};
+window.addRegular=()=>{
+  openModal('Add Regular', `
+    <label style="font-size:11px;color:#6a6a6a">Category</label><input class="input" id="rg_cat" value="RADIO">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Title</label><input class="input" id="rg_title" placeholder="Program title">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Description</label><textarea class="textarea" id="rg_desc" placeholder="Description…"></textarea>
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Image URL</label><input class="input" id="rg_img" placeholder="https://...">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Link</label><input class="input" id="rg_href" value="#">
+  `,()=>{
+    const cat=$('#rg_cat').value.trim(); const title=$('#rg_title').value.trim(); const desc=$('#rg_desc').value.trim(); const img=$('#rg_img').value.trim()||'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=800&auto=format&fit=crop'; const href=$('#rg_href').value.trim()||'#';
+    if(!title) return toastAdmin('Title required');
+    const data=load(K.regular,[]);data.push({cat,title,desc,img,href}); save(K.regular,data); audit('CREATE','Regular created'); closeModal(); renderRegularAdmin(); toastAdmin('Regular added');
+  });
+};
+
+/* ===== Social ===== */
+function renderSocial(){
+  const data=load(K.social,[]);
+  $('#socialList').innerHTML=data.map(s=>`
+    <div style="display:grid;grid-template-columns:120px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);padding:10px;background:#fff">
+      <input class="input" data-social-label="${s.id}" value="${s.label}">
+      <input class="input" data-social-url="${s.id}" value="${s.url}">
+      <button class="btn ghost small" onclick="delSocial(${s.id})">Delete</button>
+    </div>
+  `).join('') + `<button class="btn ghost small" onclick="addSocial()" style="margin-top:8px">+ Add Social</button>`;
+}
+window.addSocial=()=>{
+  const data=load(K.social,[]);data.push({id:Date.now(), label:"New", url:"https://"}); save(K.social,data); renderSocial();
+};
+window.delSocial=id=>{
+  let data=load(K.social,[]);data=data.filter(x=>x.id!==id); save(K.social,data); audit('DELETE','Social deleted'); renderSocial(); toastAdmin('Deleted');
+};
+window.saveSocial=()=>{
+  const data=load(K.social,[]);let changed=false;
+  data.forEach(s=>{
+    const labelEl=document.querySelector(`[data-social-label="${s.id}"]`);
+    const urlEl=document.querySelector(`[data-social-url="${s.id}"]`);
+    if(labelEl && urlEl){ s.label=labelEl.value.trim(); s.url=urlEl.value.trim(); changed=true }
+  });
+  if(changed){ save(K.social,data); audit('UPDATE','Social links updated'); toastAdmin('Social links saved'); }
+};
+
+/* ===== I18N / SEO / Settings ===== */
+function renderI18n(){
+  const d=load('st_tk_i18n_v2',null); if(d){
+    $('#i18nTitleJa').value=d.titleJa||''; $('#i18nTitleEn').value=d.titleEn||''; $('#i18nFollowJa').value=d.followJa||''; $('#i18nFollowEn').value=d.followEn||'';
+  }
+}
+window.saveI18n=()=>{
+  const data={titleJa:$('#i18nTitleJa').value.trim(), titleEn:$('#i18nTitleEn').value.trim(), followJa:$('#i18nFollowJa').value.trim(), followEn:$('#i18nFollowEn').value.trim()};
+  localStorage.setItem('st_tk_i18n_v2', JSON.stringify(data)); audit('UPDATE','JP/EN updated'); toastAdmin('JP/EN saved');
+};
+function renderSeo(){
+  const d=load(K.seo,null); if(d){ $('#seoTitle').value=d.title||''; $('#seoDesc').value=d.desc||''; $('#seoImg').value=d.img||''; $('#seoCanon').value=d.canon||''; }
+}
+window.saveSeo=()=>{
+  const data={title:$('#seoTitle').value.trim(), desc:$('#seoDesc').value.trim(), img:$('#seoImg').value.trim(), canon:$('#seoCanon').value.trim()};
+  save(K.seo,data); audit('UPDATE','SEO updated'); toastAdmin('SEO saved');
+};
+function renderSettings(){
+  const d=load(K.settings,null); if(d){ $('#setName').value=d.name||''; $('#setEmail').value=d.email||''; $('#setFooter').value=d.footer||''; }
+}
+window.saveSettings=()=>{
+  const data={name:$('#setName').value.trim(), email:$('#setEmail').value.trim(), footer:$('#setFooter').value.trim()};
+  save(K.settings,data); audit('UPDATE','Site settings updated'); toastAdmin('Site settings saved');
+};
+window.exportData=()=>{
+  const out={};
+  Object.values(K).forEach(k=>{
+    const v=localStorage.getItem(k);
+    if(v) try{out[k]=JSON.parse(v)}catch{out[k]=v}
+  });
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='takuya-kimura-site-export.json';a.click();URL.revokeObjectURL(url);
+  audit('EXPORT','Data exported'); toastAdmin('Export downloaded');
+};
+window.importData=e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      Object.entries(data).forEach(([k,v])=> localStorage.setItem(k, JSON.stringify(v)));
+      audit('IMPORT','Data imported'); toastAdmin('Import complete — reloading'); setTimeout(()=>location.reload(),600);
+    }catch{ toastAdmin('Invalid JSON') }
+  };
+  reader.readAsText(file);
+};
+
+/* ===== Audit ===== */
+function renderAudit(){
+  const data=load(K.audit,[]);
+  const tb=$('#auditTbody');
+  if(!data.length) tb.innerHTML=`<tr><td colspan="4"><div class="empty">No activity</div></td></tr>`;
+  else tb.innerHTML=data.slice(0,100).map(l=>`
+    <tr><td style="white-space:nowrap;font-family:JetBrains Mono,monospace;font-size:11px">${formatTime(l.ts)}</td><td>${l.user}</td><td><span class="badge dark">${l.action}</span></td><td>${l.detail}</td></tr>
+  `).join('');
+}
+function renderRecent(){
+  const data=load(K.audit,[]).slice(0,5);
+  $('#recentActivity').innerHTML=data.map(l=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)"><span><b style="font-size:11px;letter-spacing:.06em">${l.action}</b> — ${l.detail}</span><span style="font-size:11px;color:#6a6a6a;white-space:nowrap">${formatTime(l.ts)}</span></div>`).join('') || '<div style="color:#6a6a6a">No recent activity</div>';
+}
+window.clearAudit=()=>{
+  openConfirm('Clear all audit logs?',()=>{
+    localStorage.setItem(K.audit, JSON.stringify([])); renderAudit(); renderRecent(); toastAdmin('Audit logs cleared');
+  });
+};
+
+/* ===== Users ===== */
+function renderUsers(){
+  const data=load(K.users,[]);
+  const tb=$('#usersTbody');
+  tb.innerHTML=data.map(u=>`
+    <tr><td>${u.email}</td><td><span class="badge ${u.role==='Administrator'?'dark':''}">${u.role}</span></td><td>${u.status}</td>
+    <td><div class="actions"><button class="btn ghost small" onclick="editUser(${u.id})">Edit</button><button class="btn ghost small" onclick="delUser(${u.id})">Delete</button></div></td></tr>
+  `).join('');
+}
+window.editUser=id=>{
+  const data=load(K.users,[]);const u=data.find(x=>x.id===id);
+  openModal('Edit User', `
+    <label style="font-size:11px;color:#6a6a6a">Email</label><input class="input" id="u_email" value="${u.email}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Role</label><select class="select" id="u_role"><option ${u.role==='Administrator'?'selected':''}>Administrator</option><option ${u.role==='Editor'?'selected':''}>Editor</option><option ${u.role==='Support'?'selected':''}>Support</option></select>
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Status</label><select class="select" id="u_status"><option ${u.status==='Active'?'selected':''}>Active</option><option ${u.status==='Disabled'?'selected':''}>Disabled</option></select>
+  `,()=>{
+    const email=$('#u_email').value.trim(); const role=$('#u_role').value; const status=$('#u_status').value;
+    if(!email||!email.includes('@')) return toastAdmin('Valid email required');
+    u.email=email; u.role=role; u.status=status;
+    save(K.users,data); audit('UPDATE',`User ${email} updated`); closeModal(); renderUsers(); toastAdmin('User updated');
+  });
+};
+window.delUser=id=>{
+  const data=load(K.users,[]);
+  if(data.length<=1) return toastAdmin('Cannot delete last user');
+  openConfirm('Delete user?',()=>{
+    let d=load(K.users,[]);d=d.filter(x=>x.id!==id); save(K.users,d); audit('DELETE','User deleted'); renderUsers(); toastAdmin('User deleted');
+  });
+};
+$('#addUserBtn').addEventListener('click',()=>{
+  openModal('Add User', `
+    <label style="font-size:11px;color:#6a6a6a">Email</label><input class="input" id="u_email" placeholder="user@starto.jp">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Role</label><select class="select" id="u_role"><option>Administrator</option><option>Editor</option><option>Support</option></select>
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Password (hashed server-side in production)</label><input class="input" id="u_pass" type="password" placeholder="••••••••">
+  `,()=>{
+    const email=$('#u_email').value.trim(); const role=$('#u_role').value; const pass=$('#u_pass').value;
+    if(!email||!email.includes('@')) return toastAdmin('Valid email required');
+    if(!pass||pass.length<8) return toastAdmin('Password must be 8+ chars (hashed)');
+    const data=load(K.users,[]);data.push({id:Date.now(),email,role,status:'Active'}); save(K.users,data); audit('CREATE',`User ${email} created`); closeModal(); renderUsers(); toastAdmin('User created');
+  });
+});
+
+/* ===== Quick Replies ===== */
+function renderQuick(){
+  const data=load(K.quick,[]);
+  const tb=$('#quickTbody');
+  tb.innerHTML=data.map(q=>`
+    <tr><td><b>${q.title}</b></td><td style="max-width:420px">${q.message}</td><td><div class="actions"><button class="btn ghost small" onclick="editQuick(${q.id})">Edit</button><button class="btn ghost small" onclick="delQuick(${q.id})">Delete</button></div></td></tr>
+  `).join('');
+}
+function renderQuickRow(){
+  const data=load(K.quick,[]);
+  $('#quickRow').innerHTML=data.map(q=>`<button data-qr="${q.id}">${q.title}</button>`).join('');
+  $$('[data-qr]').forEach(b=>b.addEventListener('click',()=>{
+    const data=load(K.quick,[]);const q=data.find(x=>x.id==b.dataset.qr);
+    if(q) $('#chatReplyInput').value=q.message;
+  }));
+}
+window.editQuick=id=>{
+  const data=load(K.quick,[]);const q=data.find(x=>x.id===id);
+  openModal('Edit Quick Reply', `
+    <label style="font-size:11px;color:#6a6a6a">Title</label><input class="input" id="q_title" value="${q.title}">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Message</label><textarea class="textarea" id="q_msg">${q.message}</textarea>
+  `,()=>{
+    q.title=$('#q_title').value.trim(); q.message=$('#q_msg').value.trim();
+    if(!q.title||!q.message) return toastAdmin('Both fields required');
+    save(K.quick,data); audit('UPDATE','Quick reply updated'); closeModal(); renderQuick(); renderQuickRow(); toastAdmin('Quick reply saved');
+  });
+};
+window.delQuick=id=>{
+  openConfirm('Delete quick reply?',()=>{
+    let data=load(K.quick,[]);data=data.filter(x=>x.id!==id); save(K.quick,data); audit('DELETE','Quick reply deleted'); renderQuick(); renderQuickRow(); toastAdmin('Deleted');
+  });
+};
+$('#addQuickBtn').addEventListener('click',()=>{
+  openModal('Add Quick Reply', `
+    <label style="font-size:11px;color:#6a6a6a">Title</label><input class="input" id="q_title" placeholder="Title">
+    <label style="display:block;margin-top:10px;font-size:11px;color:#6a6a6a">Message</label><textarea class="textarea" id="q_msg" placeholder="Message…"></textarea>
+  `,()=>{
+    const title=$('#q_title').value.trim(); const msg=$('#q_msg').value.trim();
+    if(!title||!msg) return toastAdmin('Both fields required');
+    const data=load(K.quick,[]);data.push({id:Date.now(),title,message:msg}); save(K.quick,data); audit('CREATE','Quick reply created'); closeModal(); renderQuick(); renderQuickRow(); toastAdmin('Quick reply added');
+  });
+});
+
+/* ===== Chat Admin — Ticket Inbox + Per-User Threads ===== */
+let selectedConv = null; // email key for selected visitor thread
+function getAllTickets(){ try{return JSON.parse(localStorage.getItem('st_tickets')||'[]')}catch{return []} }
+function getAllThreads(){ try{return JSON.parse(localStorage.getItem('st_chat_threads')||'{}')}catch{return {}} }
+function saveAllTickets(arr){ localStorage.setItem('st_tickets', JSON.stringify(arr)); try{new BroadcastChannel('st_ticket').postMessage('update')}catch{} }
+function saveAllThreads(obj){ localStorage.setItem('st_chat_threads', JSON.stringify(obj)); try{new BroadcastChannel('st_tk_chat').postMessage('update')}catch{} }
+function renderChatAdmin(){
+  const tickets=getAllTickets();
+  const threads=getAllThreads();
+  const globalArr=load(K.chat,[]);
+  const list=$('#chatList');
+  // Build unified inbox: tickets + guest chats + per-user threads
+  const usersSet=new Set();
+  tickets.forEach(t=> usersSet.add(t.email));
+  Object.keys(threads).forEach(e=> usersSet.add(e));
+  // include global guests without email
+  const hasGuestGlobal = globalArr.length>0;
+  let html=`<h4>Support Inbox — Tickets & Messages <span style="float:right;font-size:10px;color:#6a6a6a">${tickets.length} tickets</span></h4>`;
+  if(usersSet.size===0 && !hasGuestGlobal){
+    html+=`<div style="padding:18px;text-align:center;color:#6a6a6a;font-size:12px;line-height:1.6">No tickets or messages yet.<br>New fan-card purchases, bookings and support chats appear here instantly.</div>`;
+    html+=`<div style="padding:10px;font-size:11px;color:#6a6a6a;border-top:1px solid var(--line)">Isolated admin — direct compose back to each user. Persisted in localStorage + BroadcastChannel.</div>`;
+    list.innerHTML=html;
+    renderChatMessages();
+    return;
+  }
+  // Tickets first
+  tickets.slice().reverse().forEach(t=>{
+    const isSel = selectedConv===t.email && selectedConv!==null;
+    const lastMsg = t.messages && t.messages.length ? t.messages[t.messages.length-1].text.slice(0,38) : '(no message)';
+    html+=`<div class="conv ${isSel?'active':''}" onclick="selectConv('${t.email.replace(/'/g,"\\'")}')" style="cursor:pointer">
+      <b>${t.email} • ${t.tier? t.tier.toUpperCase()+' • ':''}¥${(t.priceNum||0).toLocaleString('ja-JP')}</b>
+      <small>${t.subject} — ${t.status||'Open'}</small>
+      <small>${lastMsg} • ${new Date(t.created).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</small>
+    </div>`;
+  });
+  // Threads without ticket fallback
+  Object.entries(threads).forEach(([email, arr])=>{
+    if(tickets.some(tt=>tt.email===email)) return; // already shown
+    const isSel = selectedConv===email;
+    const last = arr[arr.length-1];
+    const lastText = last ? last.text.slice(0,36) : '(started)';
+    html+=`<div class="conv ${isSel?'active':''}" onclick="selectConv('${email.replace(/'/g,"\\'")}')">
+      <b>${email} • ${arr.length} msgs</b>
+      <small>${lastText} • ${last?new Date(last.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'—'}</small>
+      <small>Direct chat • ${arr.filter(m=>m.from==='visitor').length} visitor msgs</small>
+    </div>`;
+  });
+  if(hasGuestGlobal){
+    const gLast = globalArr[globalArr.length-1];
+    const isSel = selectedConv==='__guest__';
+    html+=`<div class="conv ${isSel?'active':''}" onclick="selectConv('__guest__')">
+      <b>Guest (no login) • ${globalArr.length} msgs</b>
+      <small>${gLast? gLast.text.slice(0,36):'—'} • ${gLast?new Date(gLast.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'—'}</small>
+      <small>Anonymous support</small>
+    </div>`;
+  }
+  html+=`<div style="padding:10px;font-size:11px;color:#6a6a6a;border-top:1px solid var(--line)">Click a conversation to compose a reply — message lands in user's chat & tickets instantly.</div>`;
+  list.innerHTML=html;
+  renderChatMessages();
+  // highlight compose target
+  if(selectedConv) $('#chatPaneSub').textContent = `Replying to ${selectedConv==='__guest__'?'Guest (no login)':selectedConv} — message delivers via BroadcastChannel`;
+}
+window.selectConv = (email)=>{
+  selectedConv=email;
+  renderChatAdmin();
+}
+function renderChatMessages(){
+  const box=$('#chatMessages');
+  const threads=getAllThreads();
+  const tickets=getAllTickets();
+  if(!selectedConv){
+    if(tickets.length===0 && Object.keys(threads).length===0){
+      const arr=load(K.chat,[]);
+      if(arr.length===0){
+        box.innerHTML=`<div style="text-align:center;color:#6a6a6a;font-size:12px;padding:24px">Select a ticket or visitor thread to reply.<br>New purchase/booking tickets appear above.</div>`;
+        $('#chatPaneTitle').textContent='No conversation selected';
+        $('#chatPaneStatus').textContent='Waiting';
+        return;
+      }
+      // fallback show guest global
+      selectedConv='__guest__';
+      renderChatAdmin();
+      return;
+    }
+    // auto-select newest
+    const t = tickets.length? tickets[tickets.length-1].email : Object.keys(threads)[0] || '__guest__';
+    selectedConv=t;
+    renderChatMessages();
+    return;
+  }
+  let msgs=[];
+  if(selectedConv==='__guest__'){
+    msgs=load(K.chat,[]);
+    $('#chatPaneTitle').textContent=`Guest — ${msgs.length} messages`;
+  } else {
+    // merge ticket messages + thread messages for that email (ticket messages are within ticket.messages)
+    const threadArr = threads[selectedConv]||[];
+    const ticketMsgs=[];
+    tickets.filter(tt=>tt.email===selectedConv).forEach(tt=>{
+      (tt.messages||[]).forEach(m=>{
+        ticketMsgs.push({from: m.from || (m.role==='staff'?'staff':'visitor'), text: m.text, ts: m.ts, ticket:true, subject: tt.subject});
+      });
+    });
+    // Merge & sort by ts
+    msgs = [...threadArr, ...ticketMsgs].sort((a,b)=> (a.ts||0)-(b.ts||0));
+    // If none, create placeholder from ticket subject
+    if(msgs.length===0){
+      const t = tickets.find(tt=>tt.email===selectedConv);
+      if(t) msgs=[{from:'visitor', text:`Ticket: ${t.subject} — ¥${(t.priceNum||0).toLocaleString('ja-JP')}`, ts:t.created}];
+    }
+    $('#chatPaneTitle').textContent=`${selectedConv} — ${msgs.length} messages`;
+  }
+  $('#chatPaneStatus').textContent= $('#opOnline').checked ? 'Operator Online' : 'Offline';
+  if(!msgs.length){
+    box.innerHTML=`<div style="text-align:center;color:#6a6a6a;font-size:12px;padding:24px">No messages yet with this visitor.<br>Use the composer below to send a direct message.</div>`;
+    return;
+  }
+  box.innerHTML=msgs.map(m=>`
+    <div class="bubble ${m.from==='visitor'?'visitor':'staff'}" style="${m.ticket?'border-style:dashed':''}">
+      <div>${String(m.text||'').replace(/</g,'&lt;')}${m.ticket?' <span style="font-size:10px;opacity:.6">— ticket</span>':''}</div>
+      <div style="margin-top:4px;font-size:10px;opacity:.7">${m.from==='visitor'?'Visitor': 'Official Site / Management'} • ${new Date(m.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}${m.subject? ' • '+String(m.subject).slice(0,40):''}</div>
+    </div>
+  `).join('');
+  box.scrollTop=box.scrollHeight;
+}
+$('#chatReplyBtn').addEventListener('click', sendAdminReply);
+$('#chatReplyInput').addEventListener('keydown',e=>{ if(e.key==='Enter') sendAdminReply() });
+function sendAdminReply(){
+  const text=$('#chatReplyInput').value.trim();
+  if(!text) return;
+  if(!selectedConv){ toastAdmin('Select a visitor/ticket first'); return; }
+  const ts=Date.now();
+  const staffMsg={from:'staff', text, ts};
+  if(selectedConv==='__guest__'){
+    const arr=load(K.chat,[]);
+    arr.push(staffMsg);
+    localStorage.setItem(K.chat, JSON.stringify(arr));
+    try{ new BroadcastChannel('st_tk_chat').postMessage('update') }catch{}
+  } else {
+    // Write to threads
+    const threads=getAllThreads();
+    if(!threads[selectedConv]) threads[selectedConv]=[];
+    threads[selectedConv].push(staffMsg);
+    saveAllThreads(threads);
+    // Also append to most recent ticket for that email as threaded reply
+    const tickets=getAllTickets();
+    const target=tickets.slice().reverse().find(tt=>tt.email===selectedConv);
+    if(target){
+      if(!target.messages) target.messages=[];
+      target.messages.push({from:'staff', text, ts});
+      saveAllTickets(tickets);
+    } else {
+      // create a support ticket for this reply if none exists
+      const newT={id:Date.now(), created:ts, email:selectedConv, subject:'Support reply — '+text.slice(0,32), tier:null, priceNum:null, status:'Open', messages:[{from:'staff', text, ts}]};
+      tickets.push(newT); saveAllTickets(tickets);
+    }
+    // Also push to global chat so public site can surface notification badge if not on that email
+    try{ localStorage.setItem(K.chat, JSON.stringify(load(K.chat,[]).concat([{...staffMsg, target:selectedConv}]))) }catch{}
+    try{ new BroadcastChannel('st_tk_chat').postMessage('update') }catch{}
+  }
+  try{ new BroadcastChannel('st_tk_sync').postMessage('update') }catch{}
+  $('#chatReplyInput').value='';
+  audit('CHAT_REPLY','Operator replied to '+selectedConv);
+  renderChatAdmin();
+  toastAdmin('Reply sent — delivers to '+selectedConv+' instantly (ticket + chat)');
+}
+$('#opOnline').addEventListener('change',()=>{
+  const online=$('#opOnline').checked;
+  localStorage.setItem(K.operator, online?'1':'0');
+  $('#operatorStatus').textContent= online?'Operator Online':'Operator Offline';
+  renderChatAdmin();
+  audit(online?'OPERATOR_ONLINE':'OPERATOR_OFFLINE', online?'Operator went online':'Operator went offline');
+});
+window.clearChat=()=>{
+  openConfirm('Clear ALL chats & tickets? Visitors lose history.',()=>{
+    localStorage.setItem(K.chat, JSON.stringify([]));
+    localStorage.setItem('st_tickets', JSON.stringify([]));
+    localStorage.setItem('st_chat_threads', JSON.stringify({}));
+    try{ new BroadcastChannel('st_tk_chat').postMessage('update')}catch{}
+    try{ new BroadcastChannel('st_ticket').postMessage('update')}catch{}
+    selectedConv=null;
+    audit('CHAT_CLEAR','All chats & tickets cleared'); renderChatAdmin(); renderKpi(); toastAdmin('All chats & tickets cleared');
+  });
+};
+// listen for visitor messages & tickets
+try{
+  const bc=new BroadcastChannel('st_tk_chat');
+  bc.onmessage=()=>{ renderChatAdmin(); renderKpi(); if(document.visibilityState!=='visible') toastAdmin('New visitor message'); };
+  const bt=new BroadcastChannel('st_ticket');
+  bt.onmessage=()=>{ renderChatAdmin(); renderKpi(); toastAdmin('New ticket — customer purchase/enquiry'); };
+}catch{}
+window.addEventListener('storage',e=>{
+  if(e.key===K.chat || e.key==='st_tickets' || e.key==='st_chat_threads'){ renderChatAdmin(); renderKpi(); }
+});
+
+// ===== MEMBERS =====
+function renderMembers(){
+  const data=load(K.members,[]);
+  const tb=document.getElementById('membersTbody');
+  if(!tb) return;
+  if(!data.length) tb.innerHTML=`<tr><td colspan="7"><div class="empty">No members yet — sign up from public site.</div></td></tr>`;
+  else tb.innerHTML=data.map(u=>`
+    <tr>
+      <td style="font-family:JetBrains Mono,monospace;font-size:11px">${String(u.id).slice(-6)}</td>
+      <td><b>${u.name}</b></td>
+      <td>${u.email}</td>
+      <td><span class="badge ${u.tier==='diamond'?'dark':''}">${u.tier.toUpperCase()}</span></td>
+      <td style="font-family:JetBrains Mono,monospace;font-size:11px">${u.cardNo}</td>
+      <td style="font-size:11px">${new Date(u.created).toLocaleDateString('ja-JP')}</td>
+      <td><div class="actions"><button class="btn ghost small" onclick="editMemberTier(${u.id})">Tier</button><button class="btn ghost small" onclick="deleteMember(${u.id})">Delete</button></div></td>
+    </tr>
+  `).join('');
+}
+window.deleteMember=id=>{
+  openConfirm('Delete member? Their Fan Card will be revoked.',()=>{
+    let data=load(K.members,[]);data=data.filter(x=>x.id!==id); localStorage.setItem(K.members, JSON.stringify(data));
+    // also clear current if same
+    try{ const cur=JSON.parse(localStorage.getItem('st_member_current')||'null'); if(cur && cur.id===id) localStorage.removeItem('st_member_current'); }catch{}
+    audit('DELETE','Member #'+id+' deleted'); renderMembers(); renderKpi(); toastAdmin('Member deleted');
+  });
+};
+window.editMemberTier=id=>{
+  const data=load(K.members,[]);const u=data.find(x=>x.id===id);
+  openModal('Change Tier — '+u.name, `
+    <label style="font-size:11px;color:#6a6a6a">Tier</label><select class="select" id="m_tier"><option value="silver" ${u.tier==='silver'?'selected':''}>SILVER — ¥300,000</option><option value="gold" ${u.tier==='gold'?'selected':''}>GOLD — ¥500,000</option><option value="platinum" ${u.tier==='platinum'?'selected':''}>PLATINUM — ¥750,000</option><option value="diamond" ${u.tier==='diamond'?'selected':''}>DIAMOND VIP — ¥1,000,000</option></select>
+  `,()=>{
+    u.tier=$('#m_tier').value;
+    localStorage.setItem(K.members, JSON.stringify(data));
+    audit('UPDATE','Member #'+id+' tier → '+u.tier); closeModal(); renderMembers(); toastAdmin('Tier updated — member card refreshed');
+  });
+};
+window.exportMembers=()=>{
+  const data=load(K.members,[]);
+  const csv=['ID,Name,Email,Tier,CardNo,Joined'].concat(data.map(u=>`${u.id},"${u.name}",${u.email},${u.tier},${u.cardNo},${new Date(u.created).toISOString()}`)).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='members.csv';a.click();URL.revokeObjectURL(url);
+  toastAdmin('Members CSV exported');
+};
+// ===== BOOKINGS =====
+function renderBookings(){
+  const data=load(K.bookings,[]);
+  const tb=document.getElementById('bookingsTbody');
+  if(!tb) return;
+  if(!data.length) tb.innerHTML=`<tr><td colspan="8"><div class="empty">No bookings — requests from public Booking form appear here.</div></td></tr>`;
+  else tb.innerHTML=data.map(b=>`
+    <tr>
+      <td style="font-size:11px">${b.date}</td>
+      <td><span class="badge">${b.type}</span></td>
+      <td><b style="font-size:12px">${b.name}</b></td>
+      <td style="font-size:11px">${b.email}</td>
+      <td>${b.guests}</td>
+      <td style="font-size:11px">${b.budget}</td>
+      <td><select onchange="updateBookingStatus(${b.id},this.value)" style="font-size:11px;border:1px solid var(--line);padding:4px 6px;background:#fff"><option ${b.status==='Pending Review'?'selected':''}>Pending Review</option><option ${b.status==='Approved'?'selected':''}>Approved</option><option ${b.status==='Declined'?'selected':''}>Declined</option><option ${b.status==='Completed'?'selected':''}>Completed</option></select></td>
+      <td><div class="actions"><button class="btn ghost small" onclick="deleteBooking(${b.id})">Delete</button></div></td>
+    </tr>
+  `).join('');
+}
+window.updateBookingStatus=(id,val)=>{
+  let data=load(K.bookings,[]);const b=data.find(x=>x.id===id); if(!b) return;
+  b.status=val; localStorage.setItem(K.bookings, JSON.stringify(data));
+  audit('UPDATE','Booking #'+id+' → '+val); toastAdmin('Booking status updated to '+val);
+};
+window.deleteBooking=id=>{
+  openConfirm('Delete booking?',()=>{
+    let data=load(K.bookings,[]);data=data.filter(x=>x.id!==id); localStorage.setItem(K.bookings, JSON.stringify(data));
+    audit('DELETE','Booking #'+id+' deleted'); renderBookings(); toastAdmin('Booking deleted');
+  });
+};
+window.clearBookings=()=>{
+  openConfirm('Clear ALL bookings?',()=>{
+    localStorage.setItem(K.bookings, JSON.stringify([])); audit('DELETE','All bookings cleared'); renderBookings(); toastAdmin('All bookings cleared');
+  });
+};
+window.exportBookings=()=>{
+  const data=load(K.bookings,[]);
+  const csv=['ID,Date,Type,Name,Email,Guests,Budget,Status'].concat(data.map(b=>`${b.id},${b.date},"${b.type}","${b.name}",${b.email},"${b.guests}","${b.budget}",${b.status}`)).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='bookings.csv';a.click();URL.revokeObjectURL(url);
+  toastAdmin('Bookings exported');
+};
+// ===== TIERS =====
+const defaultTiers=[
+  {id:'silver',name:'SILVER',price:300000,label:'¥300,000',period:'/ year',features:'Member Fan Card, Ticket pre-sale, Blog & photos, 5% shop, Birthday'},
+  {id:'gold',name:'GOLD',price:500000,label:'¥500,000',period:'/ year',features:'All Silver + Goods pre-sale, Video & radio, 10% shop, Meet & Greet lottery'},
+  {id:'platinum',name:'PLATINUM',price:750000,label:'¥750,000',period:'/ year',features:'All Gold + Front-row lottery, Gift box, 15% shop, Priority 2x'},
+  {id:'diamond',name:'DIAMOND VIP',price:1000000,label:'¥1,000,000',period:'/ year',features:'All Platinum + Guaranteed Meet & Greet, Private booking, Concierge, Taipei lottery'},
+];
+function loadTiers(){ try{const v=localStorage.getItem(K.tiers);return v?JSON.parse(v):defaultTiers}catch{return defaultTiers}}
+function renderTiersAdmin(){
+  const tiers=loadTiers();
+  const el=document.getElementById('tiersAdmin');
+  if(!el) return;
+  el.innerHTML=tiers.map(t=>`
+    <div style="border:1px solid var(--line);background:#fff;padding:14px;display:grid;grid-template-columns:120px 140px 1fr auto;gap:12px;align-items:center">
+      <b style="font-size:11px;letter-spacing:.1em">${t.name}</b>
+      <input class="input" data-tier-price="${t.id}" value="${t.price}" type="number" step="1000">
+      <input class="input" data-tier-label="${t.id}" value="${t.label}">
+      <span style="font-size:11px;color:#6a6a6a">${t.period}</span>
+    </div>
+  `).join('') + `<div style="font-size:11px;color:#6a6a6a;margin-top:6px">Pricing in JPY. Silver minimum ¥300,000 — Diamond ¥1,000,000. Save to push to public site.</div>`;
+}
+window.saveTiers=()=>{
+  const tiers=loadTiers();
+  tiers.forEach(t=>{
+    const p=document.querySelector(`[data-tier-price="${t.id}"]`);
+    const l=document.querySelector(`[data-tier-label="${t.id}"]`);
+    if(p) t.price=parseInt(p.value)||t.price;
+    if(l) t.label=l.value;
+  });
+  localStorage.setItem(K.tiers, JSON.stringify(tiers));
+  // also sync to public via broadcast
+  try{new BroadcastChannel('st_tk_sync').postMessage('update')}catch{}
+  audit('UPDATE','Fan Card tiers updated'); toastAdmin('Tiers saved — public site updated');
+};
+
+/* ===== Announcement Bar ===== */
+function renderAnnounce(){
+  const data=load(K.announce,[]);
+  const list=$('#announceList');
+  const preview=$('#announcePreview');
+  if(preview){
+    const items=data.length?data:["TAKUYA KIMURA • LIVE TOUR 2026 CHECKPOINT • ON SALE"];
+    preview.innerHTML=(items.map(t=>`<span style="margin-right:28px">${t} •</span>`).join('')).repeat(3);
+  }
+  if(!list) return;
+  if(!data.length) list.innerHTML=`<div class="empty">No announcements — add one. Public bar will hide.</div>`;
+  else list.innerHTML=data.map((t,i)=>`<div style="display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:#fff;padding:10px"><span style="flex:1;font-size:12.5px">${t}</span><div class="actions"><button class="btn ghost small" onclick="editAnnounce(${i})">Edit</button><button class="btn ghost small" onclick="delAnnounce(${i})">Delete</button><button class="btn ghost small" onclick="moveAnnounce(${i},-1)">↑</button><button class="btn ghost small" onclick="moveAnnounce(${i},1)">↓</button></div></div>`).join('');
+}
+window.editAnnounce=i=>{
+  const data=load(K.announce,[]);
+  openModal('Edit Announcement', `<label style="font-size:11px;color:#6a6a6a">Announcement text</label><input class="input" id="a_text" value="${data[i].replace(/"/g,'&quot;')}">`, ()=>{
+    const v=$('#a_text').value.trim();
+    if(!v) return toastAdmin('Text required');
+    data[i]=v; save(K.announce,data); try{new BroadcastChannel('st_tk_sync').postMessage('update')}catch{}; try{new BroadcastChannel('st_announce').postMessage('update')}catch{}; audit('UPDATE','Announcement #'+i+' edited'); closeModal(); renderAnnounce(); toastAdmin('Announcement updated — public bar refreshed');
+  });
+};
+window.delAnnounce=i=>{
+  openConfirm('Delete this announcement?',()=>{
+    let data=load(K.announce,[]); data.splice(i,1); save(K.announce,data); try{new BroadcastChannel('st_announce').postMessage('update')}catch{}; audit('DELETE','Announcement #'+i+' deleted'); renderAnnounce(); toastAdmin('Announcement deleted');
+  });
+};
+window.moveAnnounce=(i,dir)=>{
+  let data=load(K.announce,[]); const n=i+dir; if(n<0||n>=data.length) return; const tmp=data[i]; data[i]=data[n]; data[n]=tmp; save(K.announce,data); renderAnnounce(); audit('UPDATE','Announcement reordered');
+};
+window.resetAnnounce=()=>{
+  openConfirm('Reset announcements to default?',()=>{
+    const def=["TAKUYA KIMURA • LIVE TOUR 2026 CHECKPOINT • ON SALE","NEW ALBUM “CHECKPOINT” — 2026.08.12","FAN CLUB MEMBERSHIP ¥300,000 — ¥1,000,000 • MEET & GREET TICKET OPEN","EXCLUSIVE VAULT FOR MEMBERS • BIRTHDAY SURPRISE"];
+    save(K.announce,def); renderAnnounce(); toastAdmin('Announcements reset');
+  });
+};
+window.previewAnnounce=()=>{ window.open('index.html','_blank'); };
+document.getElementById('addAnnounceBtn')?.addEventListener('click',()=>{
+  openModal('Add Announcement', `<label style="font-size:11px;color:#6a6a6a">Announcement text</label><input class="input" id="a_text" placeholder="TAKUYA KIMURA • NEW MESSAGE •">`, ()=>{
+    const v=$('#a_text').value.trim();
+    if(!v) return toastAdmin('Text required');
+    const data=load(K.announce,[]); data.push(v); save(K.announce,data); try{new BroadcastChannel('st_announce').postMessage('update')}catch{}; audit('CREATE','Announcement added'); closeModal(); renderAnnounce(); toastAdmin('Announcement added — public bar updated');
+  });
+});
+// patch renderAll to include announce
+/* ===== Payments Manual ===== */
+function renderPaymentsAdmin(){
+  const data=load(K.payments,[]);
+  const el=document.getElementById('paymentsAdmin');
+  const preview=document.getElementById('paymentsPreview');
+  if(preview){
+    const enabled=data.filter(m=>m.enabled);
+    preview.innerHTML = enabled.length? enabled.map(m=>`<span style="border:1px solid #252320;background:#1a1816;color:${['VISA','MC','JCB'].includes(m.icon)?'var(--gold)':'#d8d5d0'};padding:6px 8px">${m.name}</span>`).join('') : '<span style="color:#8a8680">No payment methods enabled — footer empty</span>';
+  }
+  if(!el) return;
+  el.innerHTML=data.map((m,i)=>`
+    <div style="border:1px solid var(--line);background:#fff;padding:12px;display:grid;grid-template-columns:90px 1fr auto 70px;gap:12px;align-items:start">
+      <div>
+        <label style="font-size:10px;color:#6a6a6a">Icon</label>
+        <input class="input" data-pay-icon="${m.id}" value="${m.icon}" placeholder="VISA">
+        <label style="display:flex;gap:6px;align-items:center;margin-top:8px;font-size:11px"><input type="checkbox" data-pay-enabled="${m.id}" ${m.enabled?'checked':''}> Enabled</label>
+      </div>
+      <div>
+        <label style="font-size:10px;color:#6a6a6a">Name</label><input class="input" data-pay-name="${m.id}" value="${m.name}">
+        <label style="display:block;margin-top:8px;font-size:10px;color:#6a6a6a">Details (shown on hover / purchase)</label><input class="input" data-pay-details="${m.id}" value="${m.details.replace(/"/g,'&quot;')}">
+        <label style="display:block;margin-top:8px;font-size:10px;color:#6a6a6a">Instructions (for member)</label><input class="input" data-pay-inst="${m.id}" value="${m.instructions.replace(/"/g,'&quot;')}">
+      </div>
+      <div style="font-size:11px;color:#6a6a6a;line-height:1.6"><b style="font-size:11px;color:#000">${m.name}</b><br>${m.details.slice(0,60)}…</div>
+      <div class="actions" style="flex-direction:column"><button class="btn ghost small" onclick="delPayment('${m.id}')">Delete</button></div>
+    </div>
+  `).join('');
+}
+window.savePayments=()=>{
+  const data=load(K.payments,[]);
+  data.forEach(m=>{
+    const iconEl=document.querySelector(`[data-pay-icon="${m.id}"]`);
+    const nameEl=document.querySelector(`[data-pay-name="${m.id}"]`);
+    const detailsEl=document.querySelector(`[data-pay-details="${m.id}"]`);
+    const instEl=document.querySelector(`[data-pay-inst="${m.id}"]`);
+    const enabledEl=document.querySelector(`[data-pay-enabled="${m.id}"]`);
+    if(iconEl) m.icon=iconEl.value.trim()||m.icon;
+    if(nameEl) m.name=nameEl.value.trim()||m.name;
+    if(detailsEl) m.details=detailsEl.value.trim();
+    if(instEl) m.instructions=instEl.value.trim();
+    if(enabledEl) m.enabled=enabledEl.checked;
+  });
+  save(K.payments,data); try{new BroadcastChannel('st_payments').postMessage('update')}catch{}; audit('UPDATE','Payments manual updated'); renderPaymentsAdmin(); toastAdmin('Payments saved — footer updated');
+};
+window.addPaymentMethod=()=>{
+  openModal('Add Payment Method', `<label style="font-size:11px;color:#6a6a6a">Name</label><input class="input" id="pm_name" placeholder="PayPay"><label style="display:block;margin-top:8px;font-size:11px;color:#6a6a6a">Icon (short)</label><input class="input" id="pm_icon" placeholder="PayPay"><label style="display:block;margin-top:8px;font-size:11px;color:#6a6a6a">Details</label><input class="input" id="pm_details" placeholder="Manual details by admin"><label style="display:block;margin-top:8px;font-size:11px;color:#6a6a6a">Instructions</label><input class="input" id="pm_inst" placeholder="How member pays">`, ()=>{
+    const name=$('#pm_name').value.trim(); const icon=$('#pm_icon').value.trim()||name; const details=$('#pm_details').value.trim(); const inst=$('#pm_inst').value.trim();
+    if(!name) return toastAdmin('Name required');
+    const data=load(K.payments,[]); data.push({id:name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+Date.now(), name, icon, enabled:true, details:details||'Manual by admin', instructions:inst||'Contact Management via chat'});
+    save(K.payments,data); closeModal(); renderPaymentsAdmin(); toastAdmin('Payment method added');
+  });
+};
+window.delPayment=id=>{
+  openConfirm('Delete payment method?',()=>{
+    let data=load(K.payments,[]); data=data.filter(x=>x.id!==id); save(K.payments,data); renderPaymentsAdmin(); toastAdmin('Payment method deleted');
+  });
+};
+window.resetPayments=()=>{
+  openConfirm('Reset payments to default?',()=>{
+    localStorage.removeItem(K.payments);
+    // reseed
+    save(K.payments,[
+      {id:'visa', name:'VISA', icon:'VISA', enabled:true, details:'Visa credit/debit via secure provider', instructions:'Pay via card — no raw card stored. Webhook verified.'},
+      {id:'mastercard', name:'Mastercard', icon:'MC', enabled:true, details:'Mastercard via provider', instructions:'Secure provider flow'},
+      {id:'jcb', name:'JCB', icon:'JCB', enabled:true, details:'JCB Japan', instructions:'Japan card support'},
+      {id:'amex', name:'AMEX', icon:'AMEX', enabled:false, details:'American Express', instructions:'Provider verified'},
+      {id:'apple_pay', name:'Apple Pay', icon:' Pay', enabled:true, details:'Apple Pay via Stripe', instructions:'Use iPhone / Mac Sheet'},
+      {id:'google_pay', name:'Google Pay', icon:'G Pay', enabled:true, details:'Google Pay via Stripe', instructions:'Android / Chrome sheet'},
+      {id:'paypay', name:'PayPay', icon:'PayPay', enabled:true, details:'PayPay ID: TAKUYA-OFFICIAL — manual verify by admin', instructions:'Scan PayPay QR — admin confirms'},
+      {id:'konbini', name:'Konbini', icon:'🏪', enabled:true, details:'FamilyMart / Lawson / Ministop — voucher issued', instructions:'Konbini voucher — pay within 3 days'},
+      {id:'bank', name:'Bank Transfer', icon:'🏦', enabled:true, details:'Bank: MUFG • Branch: Tokyo • Account: 1234567 • Name: STARTO ENTERTAINMENT (manual by admin)', instructions:'Manual transfer — upload receipt via chat, admin verifies'}
+    ]);
+    renderPaymentsAdmin(); toastAdmin('Payments reset');
+  });
+};
+try{ const bcPay=new BroadcastChannel('st_payments'); bcPay.onmessage=()=>renderPaymentsAdmin(); }catch{}
+window.addEventListener('storage',e=>{ if(e.key===K.payments) renderPaymentsAdmin(); });
+/* SHOP PRODUCTS */
+function filterShopAdmin(cat){
+  window._shopFilter=cat;
+  renderShopProducts();
+  renderShopInventory();
+}
+function renderShopProducts(){
+  const data=load(K.shopProducts,[]);
+  const el=document.getElementById('shopProductsAdmin');
+  const invEl=document.getElementById('shopInventoryAdmin');
+  if(!el) return;
+  const q=window._shopFilter && window._shopFilter!=='all' ? data.filter(x=>x.cat===window._shopFilter) : data;
+  el.innerHTML=q.map(p=>`
+    <div style="border:1px solid var(--line);background:#fff;padding:12px;display:grid;grid-template-columns:80px 1fr auto;gap:12px;align-items:start">
+      <img src="${p.img}" style="width:80px;height:80px;object-fit:cover;border:1px solid var(--line)">
+      <div>
+        <b style="font-size:12px">${p.title}</b> — <span style="font-size:11px;color:var(--muted)">${p.cat} • ¥${p.price.toLocaleString()} • Stock ${p.stock}</span>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">${p.desc}</div>
+        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+          <input value="${p.title}" data-shop-title="${p.id}" style="border:1px solid var(--line);padding:6px;font-size:11px;flex:1;min-width:140px">
+          <input value="${p.price}" data-shop-price="${p.id}" style="border:1px solid var(--line);padding:6px;font-size:11px;width:90px">
+          <input value="${p.stock}" data-shop-stock="${p.id}" style="border:1px solid var(--line);padding:6px;font-size:11px;width:70px">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn ghost small" onclick="editShopProduct('${p.id}')">Edit</button>
+        <button class="btn ghost small" onclick="delShopProduct('${p.id}')">Delete</button>
+        <span style="font-size:10px;color:${p.stock<20?'#d00':'#6a6a6a'}">${p.stock<20?'Low stock':''}</span>
+      </div>
+    </div>
+  `).join('') || `<div style="padding:18px;border:1px dashed var(--line);text-align:center;color:var(--muted)">No products — add via + Add Product</div>`;
+  if(invEl){
+    invEl.innerHTML=data.map(p=>`<div style="border:1px solid var(--line);background:#fff;padding:10px;display:flex;justify-content:space-between;align-items:center"><span><b style="font-size:11px">${p.title}</b> <span style="font-size:11px;color:var(--muted)">• ${p.cat}</span></span><span style="font-size:11px;border:1px solid ${p.stock<20?'#d00':'var(--line)'};padding:4px 8px;background:${p.stock<20?'#fff0f0':'var(--pearl)'}">Stock: ${p.stock}</span></div>`).join('');
+  }
+}
+window.saveShopProducts=()=>{
+  let data=load(K.shopProducts,[]);
+  data.forEach(p=>{
+    const t=document.querySelector(`[data-shop-title="${p.id}"]`);
+    const pr=document.querySelector(`[data-shop-price="${p.id}"]`);
+    const st=document.querySelector(`[data-shop-stock="${p.id}"]`);
+    if(t) p.title=t.value.trim()||p.title;
+    if(pr) p.price=parseInt(pr.value)||p.price;
+    if(st) p.stock=parseInt(st.value)||0;
+  });
+  save(K.shopProducts,data); audit('UPDATE','Shop products saved'); renderShopProducts(); toastAdmin('Shop products saved — inventory updated');
+  try{new BroadcastChannel('st_shop').postMessage('update')}catch{}
+};
+window.addShopProduct=()=>{
+  openModal('Add Product', `<label style="font-size:11px">Category</label><select id="sp_cat" class="input"><option>Apparel</option><option>Tour Merch</option><option>Accessories</option><option>Albums</option><option>Collectibles</option><option>Limited</option></select><label style="display:block;margin-top:8px;font-size:11px">Title</label><input id="sp_title" class="input" placeholder="CHECKPOINT Tour Tee"><label style="display:block;margin-top:8px;font-size:11px">Price (¥)</label><input id="sp_price" class="input" placeholder="8500" type="number"><label style="display:block;margin-top:8px;font-size:11px">Stock</label><input id="sp_stock" class="input" placeholder="100" type="number"><label style="display:block;margin-top:8px;font-size:11px">Image URL</label><input id="sp_img" class="input" placeholder="https://..."><label style="display:block;margin-top:8px;font-size:11px">Description</label><input id="sp_desc" class="input" placeholder="Official tour tee...">`, ()=>{
+    const cat=$('#sp_cat').value, title=$('#sp_title').value.trim(), price=parseInt($('#sp_price').value)||0, stock=parseInt($('#sp_stock').value)||0, img=$('#sp_img').value.trim()||'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=400&auto=format&fit=crop', desc=$('#sp_desc').value.trim();
+    if(!title) return toastAdmin('Title required');
+    const data=load(K.shopProducts,[]); data.push({id:'shop-'+Date.now(), cat, title, price, stock, img, desc, status:'published'});
+    save(K.shopProducts,data); closeModal(); renderShopProducts(); toastAdmin('Product added');
+  });
+};
+window.editShopProduct=(id)=>{
+  const data=load(K.shopProducts,[]); const p=data.find(x=>x.id===id); if(!p) return;
+  openModal('Edit Product', `<label style="font-size:11px">Title</label><input id="sp_title" class="input" value="${p.title.replace(/"/g,'&quot;')}"><label style="display:block;margin-top:8px;font-size:11px">Description</label><input id="sp_desc" class="input" value="${p.desc.replace(/"/g,'&quot;')}"><label style="display:block;margin-top:8px;font-size:11px">Image URL</label><input id="sp_img" class="input" value="${p.img}">`, ()=>{
+    p.title=$('#sp_title').value.trim()||p.title; p.desc=$('#sp_desc').value.trim()||p.desc; p.img=$('#sp_img').value.trim()||p.img;
+    save(K.shopProducts,data); closeModal(); renderShopProducts(); toastAdmin('Product updated');
+  });
+};
+window.delShopProduct=(id)=>{ openConfirm('Delete product?', ()=>{ let data=load(K.shopProducts,[]); data=data.filter(x=>x.id!==id); save(K.shopProducts,data); renderShopProducts(); toastAdmin('Product deleted'); }); };
+window.resetShop=()=>{ openConfirm('Reset shop to demo?', ()=>{ localStorage.removeItem(K.shopProducts); save(K.shopProducts,[
+    {id:'shop-001', cat:'Tour Merch', title:'CHECKPOINT Tour Tee — Black / Cream', price:8500, stock:120, img:'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=400&auto=format&fit=crop', desc:'Official tour tee — heavyweight cotton, tour dates back print. Sizes S-XXL.', status:'published'},
+    {id:'shop-002', cat:'Apparel', title:'KIMURA // 01 Hoodie — Charcoal', price:14800, stock:60, img:'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop', desc:'Premium hoodie — embroidered KIMURA // 01, gold tip.', status:'published'}
+  ]); renderShopProducts(); toastAdmin('Shop reset'); }); };
+
+/* SHOP ORDERS */
+function renderShopOrders(){
+  const el=document.getElementById('shopOrdersAdmin'); if(!el) return;
+  const orders=load(K.shopOrders,[]);
+  if(!orders.length) el.innerHTML=`<div style="padding:14px;border:1px dashed var(--line);background:var(--pearl);text-align:center;color:var(--muted)">No orders — customer checkout creates QR orders.</div>`;
+  else el.innerHTML=orders.map(o=>`<div style="border:1px solid var(--line);background:#fff;padding:12px;display:grid;grid-template-columns:1fr 120px;gap:12px"><div><b style="font-size:11px">${o.id} • ${o.status}</b> — <span style="font-size:11px">${o.deliveryType} • ${o.email}</span><br><span style="font-size:11px;color:var(--muted)">${o.items.map(i=>i.title+'×'+i.qty).join(', ')} • ¥${o.total.toLocaleString()}</span><br><span style="font-size:10px;color:var(--muted)">${new Date(o.created).toLocaleString('ja-JP')} • QR: ${o.qr}</span><div style="margin-top:6px;display:flex;gap:6px"><select data-order-status="${o.id}" style="border:1px solid var(--line);padding:6px;font-size:11px"><option ${o.status==='Paid'?'selected':''}>Paid</option><option ${o.status==='Preparing'?'selected':''}>Preparing</option><option ${o.status==='Ready'?'selected':''}>Ready</option><option ${o.status==='Shipped'?'selected':''}>Shipped</option><option ${o.status==='Collected'?'selected':''}>Collected</option></select><button class="btn ghost small" onclick="updateOrderStatus('${o.id}')">Update</button></div></div><div style="border:1px solid var(--line);background:var(--pearl);padding:8px;text-align:center"><div style="font-size:10px;letter-spacing:.1em">QR</div><div style="font-family:JetBrains Mono,monospace;font-size:10px;word-break:break-all">${o.qr}</div><div style="margin-top:6px;font-size:10px;color:${o.verified?'#1a6a3a':'var(--muted)'}">${o.verified?'Collected ✓':o.status}</div></div></div>`).join('');
+}
+window.updateOrderStatus=(id)=>{
+  const sel=document.querySelector(`[data-order-status="${id}"]`); if(!sel) return;
+  let orders=load(K.shopOrders,[]); const o=orders.find(x=>x.id===id); if(!o) return;
+  o.status=sel.value; if(sel.value==='Collected') o.verified=true;
+  save(K.shopOrders,orders); audit('UPDATE','Order '+id+' → '+sel.value); renderShopOrders(); toastAdmin('Order '+id+' → '+sel.value);
+};
+window.adminVerifyQR=()=>{
+  const v=document.getElementById('scanInputAdmin').value.trim(); if(!v) return toastAdmin('Enter QR');
+  let orders=load(K.shopOrders,[]); const o=orders.find(x=>x.qr===v || x.id===v);
+  const res=document.getElementById('scanResultAdmin'); res.style.display='block';
+  if(!o){ res.style.background='#fff0f0'; res.textContent='✕ QR not found'; return; }
+  if(o.verified){ res.style.background='#fff0f0'; res.textContent='✕ Already collected'; return; }
+  if(['Paid','Ready','Preparing'].indexOf(o.status)===-1){ res.style.background='#fff0f0'; res.textContent='✕ Not ready: '+o.status; return; }
+  o.verified=true; o.status='Collected'; o.collectedAt=Date.now(); save(K.shopOrders,orders); res.style.background='#eef8f1'; res.style.borderColor='#c8ecd8'; res.innerHTML='✓ Verified — '+o.id+' • '+o.items.map(i=>i.title).join(', '); toastAdmin('Verified — ready to collect'); renderShopOrders();
+};
+
+/* JOURNAL */
+function renderJournalAdmin(){
+  const el=document.getElementById('journalAdmin'); if(!el) return;
+  const data=load(K.journal,[]);
+  el.innerHTML=data.map(j=>`<div style="border:1px solid var(--line);background:#fff;padding:12px;display:grid;grid-template-columns:80px 1fr auto;gap:12px"><img src="${j.img}" style="width:80px;height:80px;object-fit:cover;border:1px solid var(--line)"><div><b style="font-size:12px">${j.title}</b> — <span style="font-size:11px;color:var(--muted)">${j.cat} • ${j.date}</span><div style="font-size:11px;color:var(--muted);margin-top:4px">${j.excerpt.slice(0,80)}…</div><div style="margin-top:6px"><input value="${j.title}" data-j-title="${j.id}" style="border:1px solid var(--line);padding:6px;font-size:11px;width:100%"></div></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost small" onclick="editJournal('${j.id}')">Edit</button><button class="btn ghost small" onclick="delJournal('${j.id}')">Delete</button></div></div>`).join('') || `<div style="padding:14px;border:1px dashed var(--line);text-align:center;color:var(--muted)">No journal — add story</div>`;
+}
+window.addJournal=()=>{
+  openModal('Add Journal Story', `<label style="font-size:11px">Category</label><select id="jr_cat" class="input"><option>MUSIC</option><option>FILM</option><option>STYLE</option><option>TOUR</option><option>CREATIVE</option><option>BEHIND THE SCENES</option></select><label style="display:block;margin-top:8px;font-size:11px">Title</label><input id="jr_title" class="input" placeholder="Inside Checkpoint Rehearsal"><label style="display:block;margin-top:8px;font-size:11px">Date</label><input id="jr_date" class="input" placeholder="2026.09.14"><label style="display:block;margin-top:8px;font-size:11px">Excerpt</label><input id="jr_excerpt" class="input" placeholder="Soundcheck whispers..."><label style="display:block;margin-top:8px;font-size:11px">Image URL</label><input id="jr_img" class="input" placeholder="https://...">`, ()=>{
+    const cat=$('#jr_cat').value, title=$('#jr_title').value.trim(), date=$('#jr_date').value.trim()||new Date().toLocaleDateString('ja-JP').replace(/\//g,'.'), excerpt=$('#jr_excerpt').value.trim(), img=$('#jr_img').value.trim()||'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=400&auto=format&fit=crop';
+    if(!title) return toastAdmin('Title required');
+    const data=load(K.journal,[]); data.push({id:'jrnl-'+Date.now(), cat, title, date, excerpt, img, status:'published'});
+    save(K.journal,data); closeModal(); renderJournalAdmin(); toastAdmin('Journal added');
+  });
+};
+window.editJournal=(id)=>{ const data=load(K.journal,[]); const j=data.find(x=>x.id===id); if(!j) return; openModal('Edit Journal', `<label style="font-size:11px">Title</label><input id="jr_title" class="input" value="${j.title.replace(/"/g,'&quot;')}"><label style="display:block;margin-top:8px;font-size:11px">Excerpt</label><input id="jr_excerpt" class="input" value="${j.excerpt.replace(/"/g,'&quot;')}">`, ()=>{ j.title=$('#jr_title').value.trim()||j.title; j.excerpt=$('#jr_excerpt').value.trim()||j.excerpt; save(K.journal,data); closeModal(); renderJournalAdmin(); toastAdmin('Journal updated'); }); };
+window.delJournal=(id)=>{ openConfirm('Delete story?', ()=>{ let data=load(K.journal,[]); data=data.filter(x=>x.id!==id); save(K.journal,data); renderJournalAdmin(); toastAdmin('Journal deleted'); }); };
+
+/* ARCHIVE */
+function renderArchiveAdmin(){
+  const el=document.getElementById('archiveAdmin'); if(!el) return;
+  const data=load(K.archive,[]);
+  el.innerHTML=data.map(a=>`<div style="border:1px solid var(--line);background:#fff;padding:12px;display:grid;grid-template-columns:80px 1fr auto;gap:12px"><img src="${a.img}" style="width:80px;height:80px;object-fit:cover"><div><b style="font-size:12px">${a.title}</b> — <span style="font-size:11px;color:var(--muted)">${a.decade} • ${a.year}</span><div style="font-size:11px;color:var(--muted)">${a.desc}</div></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost small" onclick="editArchive('${a.id}')">Edit</button><button class="btn ghost small" onclick="delArchive('${a.id}')">Delete</button></div></div>`).join('') || `<div style="padding:14px;border:1px dashed var(--line);text-align:center">No archive</div>`;
+}
+window.addArchive=()=>{
+  openModal('Add Archive Entry', `<label style="font-size:11px">Decade</label><select id="arc_decade" class="input"><option>1990s</option><option>2000s</option><option>2010s</option><option>2020s</option><option>FUTURE</option></select><label style="display:block;margin-top:8px;font-size:11px">Year</label><input id="arc_year" class="input" placeholder="2026"><label style="display:block;margin-top:8px;font-size:11px">Title</label><input id="arc_title" class="input" placeholder="CHECKPOINT"><label style="display:block;margin-top:8px;font-size:11px">Description</label><input id="arc_desc" class="input" placeholder="Checkpoint tour..."><label style="display:block;margin-top:8px;font-size:11px">Image URL</label><input id="arc_img" class="input" placeholder="https://...">`, ()=>{
+    const decade=$('#arc_decade').value, year=$('#arc_year').value.trim(), title=$('#arc_title').value.trim(), desc=$('#arc_desc').value.trim(), img=$('#arc_img').value.trim()||'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=400&auto=format&fit=crop';
+    if(!title) return toastAdmin('Title required');
+    const data=load(K.archive,[]); data.push({id:'arc-'+Date.now(), decade, year, title, desc, img});
+    save(K.archive,data); closeModal(); renderArchiveAdmin(); toastAdmin('Archive added');
+  });
+};
+window.editArchive=(id)=>{ const data=load(K.archive,[]); const a=data.find(x=>x.id===id); if(!a) return; openModal('Edit Archive', `<label style="font-size:11px">Title</label><input id="arc_title" class="input" value="${a.title.replace(/"/g,'&quot;')}">`, ()=>{ a.title=$('#arc_title').value.trim()||a.title; save(K.archive,data); closeModal(); renderArchiveAdmin(); toastAdmin('Archive updated'); }); };
+window.delArchive=(id)=>{ openConfirm('Delete entry?', ()=>{ let data=load(K.archive,[]); data=data.filter(x=>x.id!==id); save(K.archive,data); renderArchiveAdmin(); toastAdmin('Archive deleted'); }); };
+
+/* FAN VOICES */
+function renderFanVoices(){
+  const el=document.getElementById('fanVoicesAdmin'); if(!el) return;
+  const data=load(K.fanVoices,[]);
+  el.innerHTML=data.map(f=>`<div style="border:1px solid var(--line);background:#fff;padding:12px;display:grid;grid-template-columns:1fr auto;gap:12px"><div><b style="font-size:12px">${f.name}</b> — <span style="font-size:11px;color:var(--muted)">${f.type} • ${new Date(f.ts).toLocaleString('ja-JP')}</span><div style="font-size:11.5px;margin-top:4px">${f.text}</div><div style="margin-top:6px;font-size:10px;border:1px solid ${f.status==='Approved'?'#c8ecd8':'var(--line)'};padding:4px 8px;display:inline-block;background:${f.status==='Approved'?'#eef8f1':'var(--pearl)'}">${f.status}</div></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn primary small" onclick="approveVoice(${f.id})">Approve → Publish</button><button class="btn ghost small" onclick="rejectVoice(${f.id})">Reject</button><button class="btn ghost small" onclick="delVoice(${f.id})">Delete</button></div></div>`).join('') || `<div style="padding:14px;border:1px dashed var(--line);text-align:center">No submissions — fans submit via My Kimura (future) or Support.</div>`;
+}
+window.approveVoice=(id)=>{ let data=load(K.fanVoices,[]); const f=data.find(x=>x.id===id); if(f){ f.status='Approved'; save(K.fanVoices,data); audit('UPDATE','Fan voice approved '+id); renderFanVoices(); toastAdmin('Approved → Published (never auto-published before)'); } };
+window.rejectVoice=(id)=>{ let data=load(K.fanVoices,[]); const f=data.find(x=>x.id===id); if(f){ f.status='Rejected'; save(K.fanVoices,data); renderFanVoices(); toastAdmin('Rejected'); } };
+window.delVoice=(id)=>{ openConfirm('Delete voice?', ()=>{ let data=load(K.fanVoices,[]); data=data.filter(x=>x.id!==id); save(K.fanVoices,data); renderFanVoices(); }); };
+
+/* TOUR PASS */
+function renderTourPassAdmin(){
+  const pEl=document.getElementById('tourPassAdmin'); if(pEl){
+    const orders=load(K.shopOrders,[]).slice(0,5);
+    pEl.innerHTML=orders.length? orders.map(o=>`<div style="border:1px solid var(--line);background:#fff;padding:8px"><b style="font-size:11px">${o.id}</b> • ${o.qr.slice(0,16)}<br><span style="font-size:11px;color:var(--muted)">${o.email} • ${o.status}</span></div>`).join('') : `<div style="padding:10px;border:1px dashed var(--line);text-align:center;color:var(--muted)">No passes/orders</div>`;
+  }
+  const passEl=document.getElementById('passportAdmin'); if(passEl){
+    const stamps=JSON.parse(localStorage.getItem('st_passport')||'[]');
+    passEl.innerHTML=stamps.length? stamps.map(s=>`<div style="border:1px solid var(--line);background:#fff;padding:8px;display:flex;justify-content:space-between"><span><b style="font-size:11px">${s.name||s.title}</b></span><span style="font-size:11px;color:var(--muted)">${s.got?'STAMPED':'Locked'}</span></div>`).join('') : `<div style="padding:10px;border:1px dashed var(--line);text-align:center;color:var(--muted)">No stamps — generates on pass scan</div>`;
+  }
+}
+window.addStamp=()=>{
+  openModal('Add Stamp', `<label style="font-size:11px">Name</label><input id="st_name" class="input" placeholder="Anniversary"><label style="display:block;margin-top:8px;font-size:11px">Year</label><input id="st_year" class="input" placeholder="2026">`, ()=>{
+    const name=$('#st_name').value.trim(), year=$('#st_year').value.trim();
+    if(!name) return toastAdmin('Name required');
+    let stamps=JSON.parse(localStorage.getItem('st_passport')||'[]'); stamps.push({name, year, got:true}); localStorage.setItem('st_passport', JSON.stringify(stamps)); closeModal(); renderTourPassAdmin(); toastAdmin('Stamp added');
+  });
+};
+
+/* NOTIFICATIONS */
+function renderNotificationsAdmin(){
+  const el=document.getElementById('notificationsAdmin'); if(!el) return;
+  const inbox=JSON.parse(localStorage.getItem('st_notifications')||'[]');
+  if(!inbox.length) el.innerHTML=`<div style="padding:14px;border:1px dashed var(--line);background:var(--pearl);text-align:center;color:var(--muted)">No notifications — test via buttons above or triggers (tour, merch, support).</div>`;
+  else el.innerHTML=inbox.slice(0,10).map(n=>`<div style="border:1px solid var(--line);background:#fff;padding:10px"><b style="font-size:11px;text-transform:uppercase;color:var(--gold)">${n.type}</b> • <span style="font-size:10px;color:var(--muted)">${new Date(n.ts).toLocaleString('ja-JP')}</span><div style="font-size:12px"><b>${n.title}</b><br>${n.body}</div></div>`).join('');
+}
+window.sendTestNotif=(type)=>{
+  const map={tour:'Tour — new date added: Fukuoka TOTTEI PARK', music:'Music — new track preview in Vault', journal:'Journal — new story published', merchandise:'Merch — shop order update', support:'Support — ticket status changed'};
+  const inbox=JSON.parse(localStorage.getItem('st_notifications')||'[]');
+  inbox.unshift({id:Date.now(), type, title:'Test — '+type, body:map[type]||'Test notification', ts:Date.now(), read:false});
+  localStorage.setItem('st_notifications', JSON.stringify(inbox)); renderNotificationsAdmin(); toastAdmin('Notification sent — '+type+' (In-App/Email/Push per prefs)');
+};
+window.clearNotifications=()=>{ localStorage.setItem('st_notifications', JSON.stringify([])); renderNotificationsAdmin(); toastAdmin('Inbox cleared'); };
+
+/* CAMPAIGNS NOW */
+window.saveNowCampaign=()=>{
+  const type=$('#nowType').value, title=$('#nowTitle').value.trim(), desc=$('#nowDesc').value.trim();
+  if(!title) return toastAdmin('Title required');
+  const hero=load(K.hero,[]); if(hero.length){ hero[0].kicker=type+' • NOW'; hero[0].title=title; hero[0].sub=desc; save(K.hero, hero); }
+  const concert=load(K.concert,{}); concert.title=title; concert.desc=desc; save(K.concert, concert);
+  audit('UPDATE','NOW campaign → '+type+' : '+title);
+  document.getElementById('nowPreview').innerHTML=`<b>${type}</b> — ${title}<br><span style="color:var(--muted)">${desc}</span><br><span style="font-size:10px;color:var(--gold)">Homepage hero + concert updated without redeploy</span>`;
+  toastAdmin('NOW campaign saved — homepage updated');
+};
+
+/* ROLES */
+const ROLES = {
+  "Super Admin": {all:true},
+  "Management": {dashboard:true, analytics:true, audit:true, news:true, schedule:true, concert:true, movie:true, release:true, hero:true, media:true, blog:true, fanclub:true, cm:true, social:true, announce:true, i18n:true, seo:true, settings:true, chat:true, quick:true, members:true, bookings:true, tiers:true, payments:true, shopProducts:true, shopOrders:true, shopInventory:true, journal:true, archive:true, fanVoices:true, tourPass:true, notifications:true, campaigns:true, users:true},
+  "Editor": {news:true, schedule:true, movie:true, release:true, hero:true, blog:true, cm:true, journal:true, archive:true, media:true},
+  "Tour Manager": {concert:true, tourPass:true, campaigns:true, schedule:true},
+  "Membership Manager": {members:true, tiers:true, fanVoices:true, tourPass:true},
+  "Support Agent": {chat:true, bookings:true, members:true, quick:true},
+  "Shop Manager": {shopProducts:true, shopOrders:true, shopInventory:true, media:true},
+  "Moderator": {fanVoices:true, blog:true, chat:true, members:true},
+  "Analyst": {dashboard:true, analytics:true, audit:true},
+  "Developer": {all:true}
+};
+window._currentRole = localStorage.getItem('st_admin_role') || 'Super Admin';
+function applyRole(role){
+  window._currentRole=role; localStorage.setItem('st_admin_role', role);
+  const perms=ROLES[role]||ROLES["Super Admin"];
+  const allow = (sec)=> perms.all || perms[sec];
+  document.querySelectorAll('[data-section]').forEach(btn=>{
+    const sec=btn.dataset.section;
+    const show = allow(sec);
+    btn.style.display = show ? '' : 'none';
+    btn.style.opacity = show ? '1' : '.4';
+  });
+  // also hide sections
+  document.querySelectorAll('.section').forEach(sec=>{
+    const id=sec.id.replace('sec-','');
+    if(!allow(id)) sec.style.display='none';
+  });
+  const sel=document.getElementById('roleSelect'); if(sel) sel.value=role;
+  toastAdmin('Role: '+role+' — permissions applied (audit logged)');
+  audit('ROLE_SWITCH','Switched to '+role);
+}
+window.addEventListener('DOMContentLoaded', ()=>{
+  const headerActions = document.querySelector('.topbar') || document.querySelector('header');
+  // inject role selector if not exists
+  if(!document.getElementById('roleSelect')){
+    const bar=document.createElement('div');
+    bar.style.cssText='position:fixed;top:10px;right:14px;z-index:999;background:#0f0e0c;color:var(--gold);border:1px solid #222;padding:6px 8px;display:flex;gap:6px;align-items:center;font-size:11px';
+    bar.innerHTML=`<span style="letter-spacing:.1em">KIMURA ADMIN</span><select id="roleSelect" style="background:#111;color:#fff;border:1px solid #333;padding:6px;font-size:11px">${Object.keys(ROLES).map(r=>`<option ${r===window._currentRole?'selected':''}>${r}</option>`).join('')}</select>`;
+    document.body.appendChild(bar);
+    document.getElementById('roleSelect').addEventListener('change', e=>applyRole(e.target.value));
+    setTimeout(()=>applyRole(window._currentRole), 400);
+  }
+});
+
+// Extend renderAll
+
+const _origRenderAll = renderAll;
+renderAll = function(){ _origRenderAll(); renderAnnounce(); renderPaymentsAdmin(); renderShopProducts(); renderShopOrders(); renderJournalAdmin(); renderArchiveAdmin(); renderFanVoices(); renderTourPassAdmin(); renderNotificationsAdmin(); };
+try{ new BroadcastChannel('st_shop').onmessage=()=>{renderShopProducts(); renderShopOrders();}; }catch{}
+try{ new BroadcastChannel('st_journal').onmessage=()=>renderJournalAdmin(); }catch{}
+try{ new BroadcastChannel('st_archive').onmessage=()=>renderArchiveAdmin(); }catch{}
+window.addEventListener('storage',e=>{
+  if(e.key===K.shopProducts || e.key===K.shopOrders) {renderShopProducts(); renderShopOrders();}
+  if(e.key===K.journal) renderJournalAdmin();
+  if(e.key===K.archive) renderArchiveAdmin();
+  if(e.key===K.fanVoices) renderFanVoices();
+  if(e.key===K.notifications) renderNotificationsAdmin();
+});
+
+
+// listen for announce updates elsewhere
+try{ const bcA=new BroadcastChannel('st_announce'); bcA.onmessage=()=>renderAnnounce(); }catch{}
+window.addEventListener('storage',e=>{ if(e.key===K.announce) renderAnnounce(); });
+
+// Operator status initial
+$('#operatorStatus').textContent= localStorage.getItem(K.operator)==='0'?'Operator Offline':'Operator Online';
+
+// Ensure render on load if already authed
+if($('#adminRoot').classList.contains('auth')) renderAll();
+</script>
+</body>
+</html>

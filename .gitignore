@@ -1,0 +1,33 @@
+# Deps / build
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+.output/
+.cache/
+.parcel-cache/
+.turbo/
+out/
+coverage/
+__pycache__/
+.venv/
+.venv*/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+Thumbs.db
+
+# Workspace caches (ephemeral)
+.arena/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.vite/
+.svelte-kit/
+
+# Keep public assets
+!public/
+!public/**

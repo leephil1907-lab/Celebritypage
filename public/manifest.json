@@ -1,0 +1,17 @@
+{
+  "name": "Takuya Kimura — Official Digital World",
+  "short_name": "TK Official",
+  "description": "The evolving digital home for Takuya Kimura — STARTO ENTERTAINMENT official. Live Tour 2026 Checkpoint, Fan Club Vault, Tour Passport, private Meet & Greet and ticket-based support from Management.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbf6ee",
+  "theme_color": "#0f0e0c",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ],
+  "lang": "ja",
+  "categories": ["entertainment","music","lifestyle"]
+}
