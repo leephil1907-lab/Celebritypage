@@ -49,6 +49,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/site.css">
+  <script src="/js/precise-data.js"></script>
+  <script src="/js/transitions.js"></script>
+  <script src="/js/chat-knowledge.js"></script>
 </head>
 <body>
 <div id="pageTrans" style="position:fixed;inset:0;z-index:9998;background:#0f0e0c;color:var(--gold);display:grid;place-items:center;transform:translateY(100%);transition:transform .7s cubic-bezier(.22,1,.36,1);pointer-events:none"><div style="text-align:center"><div style="font-family:'Cormorant Garamond',serif;font-size:42px;letter-spacing:.24em;font-weight:300">KIMURA // <span id="ptNum">01</span></div><div style="font-size:10px;letter-spacing:.22em;opacity:.6;margin-top:8px" id="ptLabel">HOME — Official Digital World</div><div style="width:80px;height:1px;background:var(--gold);margin:16px auto"></div></div></div>
@@ -87,7 +90,7 @@
 
 <header class="header" id="header">
   <div class="header-inner">
-    <a class="brand" href="/"><div class="brand-mark">ST</div><div class="brand-text"><b>STARTO ENTERTAINMENT</b><em>TAKUYA KIMURA • OFFICIAL</em></div></a>
+    <a class="brand" href="/"><div class="brand-mark"><img src="/images/logo-tk-gold.png" alt="TK" width="40" height="40" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.parentElement.textContent='TK'"></div><div class="brand-text"><b>STARTO ENTERTAINMENT</b><em>TAKUYA KIMURA • OFFICIAL</em></div></a>
     <ul class="nav" aria-label="Primary">
       <li><a href="/" class="active">HOME <span style="opacity:.45;margin-left:4px;font-size:9px">01</span></a></li>
       <li><a href="/work/">WORK <i class="caret"></i></a><div class="dropdown"><a href="/work/">Archive <small>Film • TV • Drama • Special</small></a><a href="/work/#film">Filmography <small>TOKYO TAXI • Kyojo</small></a><a href="/work/#selected">Selected Works <small>Verified</small></a></div></li>
@@ -138,7 +141,7 @@
     <div class="footer-top">
       <div style="padding-right:12px">
         <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:36px;height:36px;background:var(--gold);color:#0f0e0c;display:grid;place-items:center;font-weight:800;font-size:11px;letter-spacing:.08em">ST</div>
+          <div style="width:36px;height:36px;background:#0f0e0c;border:1px solid var(--gold);display:grid;place-items:center;overflow:hidden"><img src="/images/logo-tk-gold.png" alt="TK" style="width:100%;height:100%;object-fit:cover"></div>
           <div><b style="letter-spacing:.22em;font-size:12px;color:#fff">STARTO ENTERTAINMENT</b><br><span style="font-size:10px;letter-spacing:.14em;color:var(--gold)">TAKUYA KIMURA • OFFICIAL DIGITAL WORLD</span></div>
         </div>
         <p style="margin:14px 0 0;font-size:12px;color:#9a958f;line-height:1.8">Cinematic • Elegant • Japanese • Premium.<br>An evolving digital home for Takuya Kimura — Fan Club, Vault, Tour Pass & private sessions. Ticket-based support from Official Site / Management.</p>
