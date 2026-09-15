@@ -57,13 +57,13 @@
       if(!r.ok) throw new Error('Products fetch failed');
       return await r.json();
     },
-    // setProducts is admin-only via /api/upload + /api/products — no localStorage
+    // setProducts is Management-only via /api/upload + /api/products — no localStorage
     getCart(){ try{ return JSON.parse(localStorage.getItem(SK.cart))||[] }catch{ return [] } },
     setCart(v){ localStorage.setItem(SK.cart, JSON.stringify(v)); try{ new BroadcastChannel('st_shop').postMessage('cart')}catch{} },
     async addToCart(id, qty=1){
       const products = await Shop.getProducts();
       const p=products.find(x=>String(x.id)===String(id) || String(x.sku)===String(id));
-      if(!p){ toast('Product not found — awaiting admin publish'); return; }
+      if(!p){ toast('Product not found — awaiting Management publish'); return; }
       const variant = p.variants?.find(v=>String(v.id)===String(id)) || p;
       const stock = variant.inventory?.quantity ?? variant.quantity ?? p.quantity ?? 0;
       const reserved = variant.inventory?.reserved ?? variant.reserved ?? 0;

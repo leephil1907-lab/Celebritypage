@@ -3,13 +3,22 @@
   function getSec(email){
     const k='st_security:'+email;
     let v=null; try{ v=JSON.parse(localStorage.getItem(k)||'null'); }catch{}
+    // migrate old 'Admin verification' + Vercel label
+    if(v && v.sessions){
+      let changed=false;
+      v.sessions.forEach(s=>{
+        if(s.device && s.device.toLowerCase().includes('admin')){ s.device='Security check'; changed=true; }
+        if(s.ip==='Vercel') s.ip='—';
+      });
+      if(changed) try{ localStorage.setItem(k, JSON.stringify(v)); }catch{}
+    }
     if(!v){
       v = {
         twoFA: false,
         passUpdated: Date.now() - 1000*60*60*24*7,
         sessions: [
           {device:'This browser — '+navigator.userAgent.slice(0,32), ip:'local', time: Date.now(), current:true},
-          {device:'Verification', ip:'Vercel', time: Date.now()-1000*60*60*5, current:false}
+          {device:'Security check', ip:'—', time: Date.now()-1000*60*60*5, current:false}
         ],
         logins: [
           {at: Date.now()-1000*60*30, via:'Password', ok:true, ip:'local'},
