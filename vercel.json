@@ -76,8 +76,7 @@
       "permanent": true
     }
   ],
-  "installCommand": "echo 'skip install \u2014 static public'",
-  "buildCommand": "echo 'skip build \u2014 public is static' && ls -la public | head -n 20",
-  "outputDirectory": "public",
-  "framework": null
+  "installCommand": "echo 'skip install \u2014 plain HTML/JS, no deps'",
+  "buildCommand": "echo 'skip build \u2014 public is pure static HTML/CSS/JS' && ls -la public | head -n 20",
+  "outputDirectory": "public"
 }

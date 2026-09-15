@@ -2,5 +2,5 @@
   "name": "celebritypage-static",
   "private": true,
   "version": "1.0.0",
-  "description": "Celebritypage — Takuya Kimura STARTO static site (public/)"
+  "description": "Celebritypage \u2014 plain HTML/CSS/JS static site (no framework, no bundler, public/ is output)"
 }
