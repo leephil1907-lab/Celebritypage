@@ -406,3 +406,6 @@ h2 em{font-style:normal;font-weight:500;color:var(--gold3)}
   #earlyAccessBox div[style*="display:flex"]{ flex-direction:column !important; }
   #secBox div[style*="grid-template-columns:1fr 1fr"]{ grid-template-columns:1fr !important; }
 }
+
+/* DISABLE LOADER — user requested remove */
+#loader{ display:none !important; visibility:hidden !important; opacity:0 !important; pointer-events:none !important; transform:translateY(-100%) !important; animation:none !important; }
