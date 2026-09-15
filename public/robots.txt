@@ -1,6 +1,6 @@
 User-agent: *
 Allow: /
-Sitemap: https://takuya-kimura.jp/sitemap.xml
+Sitemap: https://celebritypage.vercel.app/sitemap.xml
 
 # Disallow no-value params, but allow locale
 Disallow: /*?*token=

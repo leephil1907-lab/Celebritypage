@@ -63,12 +63,7 @@
       ]
     }
   ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://api.takuya-kimura.jp/api/:path*"
-    }
-  ],
+  "rewrites": [],
   "redirects": [
     {
       "source": "/join/detail/:path*",
