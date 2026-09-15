@@ -347,7 +347,26 @@ function renderDaily(){
 }
 renderDaily();
 
-window.addEventListener('load',()=>setTimeout(()=>$('#loader').classList.add('hide'),700));
+// Loader — robust hide (ENTER SITE + auto)
+function hideLoader(){
+  const el=document.getElementById('loader');
+  if(!el) return;
+  if(el.classList.contains('hide') && el.style.display==='none') return;
+  el.classList.add('hide');
+  el.style.transform='translateY(-100%)';
+  el.style.opacity='0';
+  el.style.pointerEvents='none';
+  setTimeout(()=>{ el.style.display='none'; el.style.visibility='hidden'; }, 850);
+}
+window.hideLoader = hideLoader;
+window.addEventListener('load',()=>setTimeout(hideLoader,400));
+setTimeout(hideLoader, 900);
+setTimeout(hideLoader, 1900);
+document.addEventListener('DOMContentLoaded',()=>{
+  const el=document.getElementById('loader');
+  if(el){ el.addEventListener('click', hideLoader); el.style.cursor='pointer'; }
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') hideLoader(); });
+});
 const header=$('#header');
 window.addEventListener('scroll',()=>header.classList.toggle('scrolled',window.scrollY>16),{passive:true});
 

@@ -560,11 +560,17 @@ renderDaily();
 // Loader — hide after load, but also fallback after 2.5s max (so it never covers site)
 function hideLoader(){
   const el=document.getElementById('loader');
-  if(el && !el.classList.contains('hide')){
-    el.classList.add('hide');
-    setTimeout(()=>{ el.style.display='none'; }, 900);
-  }
+  if(!el) return;
+  if(el.classList.contains('hide') && el.style.display==='none') return;
+  el.classList.add('hide');
+  // force hide via inline styles as fallback even if CSS fails
+  el.style.transform='translateY(-100%)';
+  el.style.opacity='0';
+  el.style.pointerEvents='none';
+  setTimeout(()=>{ el.style.display='none'; el.style.visibility='hidden'; }, 850);
 }
+// expose globally for inline onclick
+window.hideLoader = hideLoader;
 window.addEventListener('load',()=>setTimeout(hideLoader,400));
 setTimeout(hideLoader, 900); // aggressive fallback so loader NEVER blocks
 setTimeout(hideLoader, 1900); // double safety // fallback: always hide after 2.8s even if load fails
