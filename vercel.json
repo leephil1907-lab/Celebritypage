@@ -5,38 +5,78 @@
     {
       "source": "/css/site.css",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
-        { "key": "Content-Type", "value": "text/css; charset=utf-8" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "Content-Type",
+          "value": "text/css; charset=utf-8"
+        }
       ]
     },
     {
       "source": "/images/optimized/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
-        { "key": "Content-Type", "value": "image/webp" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "Content-Type",
+          "value": "image/webp"
+        }
       ]
     },
     {
       "source": "/image-search/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
       ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
-        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        }
       ]
     }
   ],
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://api.takuya-kimura.jp/api/:path*" }
+    {
+      "source": "/api/:path*",
+      "destination": "https://api.takuya-kimura.jp/api/:path*"
+    }
   ],
   "redirects": [
-    { "source": "/join/detail/:path*", "destination": "/join/", "permanent": true }
-  ]
+    {
+      "source": "/join/detail/:path*",
+      "destination": "/join/",
+      "permanent": true
+    }
+  ],
+  "installCommand": "echo 'skip install \u2014 static site'",
+  "buildCommand": "echo 'skip build \u2014 public is static'",
+  "outputDirectory": "public"
 }

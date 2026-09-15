@@ -1,7 +1,7 @@
 {
   "name": "takuya-kimura-backend",
   "version": "1.0.0",
-  "description": "STARTO — Takuya Kimura Official — Production API (Postgres + R2 + Stripe + Email)",
+  "description": "STARTO \u2014 Takuya Kimura Official \u2014 Production API (Postgres + R2 + Stripe + Email)",
   "type": "module",
   "main": "server.js",
   "scripts": {
@@ -29,7 +29,7 @@
     "sharp": "^0.33.4",
     "nodemailer": "^6.9.14",
     "zod": "^3.23.8",
-    "rate-limiter-flexible": "^3.0.8",
+    "rate-limiter-flexible": "^3.0.6",
     "pino": "^9.3.2",
     "pino-http": "^10.2.0",
     "dotenv": "^16.4.5"
