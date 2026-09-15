@@ -32,10 +32,12 @@ a{color:inherit;text-decoration:none}button{font:inherit}img{display:block;max-w
 .nav>li:hover>a::after,.nav>li>a.active::after{transform:scaleX(1)}
 .caret{width:0;height:0;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid currentColor;opacity:.5;transition:transform .25s}
 .nav>li:hover .caret{transform:rotate(180deg);opacity:1}
-.dropdown{position:absolute;top:100%;left:50%;transform:translateX(-50%) translateY(8px);background:#fff;border:1px solid var(--line);box-shadow:0 18px 48px rgba(10,10,10,.12);min-width:220px;padding:10px;opacity:0;pointer-events:none;transition:all .32s var(--ease);z-index:5}
-.nav>li:hover .dropdown{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
-.dropdown.mega{width:560px;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px;left:0;transform:translateY(8px)}
-.nav>li:hover .dropdown.mega{transform:translateY(0)}
+.dropdown{position:absolute;top:100%;left:50%;transform:translateX(-50%) translateY(10px);background:#fff;border:1px solid var(--line);box-shadow:0 20px 56px rgba(10,10,10,.14);min-width:230px;padding:12px;opacity:0;pointer-events:none;transition:all .38s cubic-bezier(.22,1,.36,1);z-index:10;border-radius:10px;overflow:hidden}
+.nav>li:hover .dropdown,.nav>li:focus-within .dropdown,.nav>li.open .dropdown{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+.dropdown.mega{width:min(560px,90vw);display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;left:50%;transform:translateX(-50%) translateY(12px);border-radius:12px}
+.nav>li:hover .dropdown.mega,.nav>li.open .dropdown.mega{transform:translateX(-50%) translateY(0)}
+.dropdown a{border-radius:8px}
+.dropdown a:active{transform:scale(.98)}
 .dropdown a{display:block;padding:10px 12px;font-size:11.5px;letter-spacing:.06em;border:1px solid transparent;transition:all .2s}
 .dropdown a:hover{background:var(--pearl);border-color:#eceae6;transform:translateX(2px)}
 .dropdown small{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:3px}
@@ -266,3 +268,10 @@ a{color:inherit;text-decoration:none}button{font:inherit}img{display:block;max-w
 .drawer-panel:focus-within{outline:2px solid var(--gold);outline-offset:-2px}
 .share-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .drawer[aria-hidden="true"]{pointer-events:none}
+
+.fan-card{backface-visibility:hidden;will-change:transform}
+.fan-card.flipped{transform:perspective(900px) rotateY(180deg) !important}
+
+/* Motion — ensure site is not static */
+.motion-ready .hero-slide{will-change:transform}
+.motion-ready .tier,.motion-ready .vault-card{will-change:transform,opacity}
