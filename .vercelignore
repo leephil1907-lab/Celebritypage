@@ -1,0 +1,13 @@
+backend
+database
+admin-panel
+admin_new_block.js
+gen_pages2.py
+image-search
+uploads
+*.md
+*.py
+.vercel
+.npm
+.git
+.gitignore
