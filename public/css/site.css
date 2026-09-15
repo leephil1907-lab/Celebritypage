@@ -398,3 +398,9 @@ h2 em{font-style:normal;font-weight:500;color:var(--gold3)}
 /* Vault elite hover */
 .vault-card{transition:transform .4s var(--ease),box-shadow .4s}
 .vault-card:hover{transform:translateY(-4px) scale(1.01);box-shadow:0 20px 40px rgba(15,14,12,.12)}
+
+/* Dashboard comfort — security + early access responsive */
+@media(max-width:680px){
+  #earlyAccessBox div[style*="display:flex"]{ flex-direction:column !important; }
+  #secBox div[style*="grid-template-columns:1fr 1fr"]{ grid-template-columns:1fr !important; }
+}
