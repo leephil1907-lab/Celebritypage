@@ -507,7 +507,21 @@ function renderDaily(){
 }
 renderDaily();
 
-window.addEventListener('load',()=>setTimeout(()=>$('#loader').classList.add('hide'),700));
+// Loader — hide after load, but also fallback after 2.5s max (so it never covers site)
+function hideLoader(){
+  const el=document.getElementById('loader');
+  if(el && !el.classList.contains('hide')){
+    el.classList.add('hide');
+    setTimeout(()=>{ el.style.display='none'; }, 900);
+  }
+}
+window.addEventListener('load',()=>setTimeout(hideLoader,700));
+setTimeout(hideLoader, 2800); // fallback: always hide after 2.8s even if load fails
+// Click loader to dismiss
+document.addEventListener('DOMContentLoaded',()=>{
+  const el=document.getElementById('loader');
+  if(el) el.addEventListener('click', hideLoader);
+});
 const header=$('#header');
 window.addEventListener('scroll',()=>header.classList.toggle('scrolled',window.scrollY>16),{passive:true});
 
