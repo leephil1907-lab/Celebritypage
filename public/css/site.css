@@ -275,3 +275,72 @@ a{color:inherit;text-decoration:none}button{font:inherit}img{display:block;max-w
 /* Motion — ensure site is not static */
 .motion-ready .hero-slide{will-change:transform}
 .motion-ready .tier,.motion-ready .vault-card{will-change:transform,opacity}
+
+/* === MOBILE PREMIUM FIX — not scattered, fully responsive === */
+@media(max-width:1100px){
+  .header-inner{height:64px;padding:0 16px;gap:12px}
+  .brand-text b{font-size:10px}
+  .brand-text em{font-size:8px}
+  .topbar{padding:8px 16px;font-size:9px;flex-wrap:wrap;gap:8px}
+  .topbar-right{flex-wrap:wrap;gap:8px}
+}
+
+@media(max-width:680px){
+  :root{--pad:16px;--max:100%}
+  .header-inner{height:58px}
+  .brand-mark{width:32px;height:32px;font-size:10px}
+  .hero{height:72vh;min-height:520px}
+  .hero-content{left:16px;right:16px;bottom:16px;grid-template-columns:1fr;gap:16px}
+  .hero-content h1{font-size:32px;line-height:1.1}
+  .hero-content h1 em{font-size:14px}
+  .hero-content p{font-size:12px;max-width:100%}
+  .hero-side-card{min-width:100%;padding:14px}
+  .hero-kicker{font-size:9px;padding:6px 8px}
+  .section{padding:32px 16px 0}
+  .section h2{font-size:22px}
+  .tier-grid{grid-template-columns:1fr;gap:12px}
+  .tier{padding:16px}
+  .card-preview{grid-template-columns:1fr;gap:16px}
+  .fan-card{aspect-ratio:1.58/1;padding:14px}
+  .fan-card h4{font-size:18px}
+  .card-controls{padding:14px}
+  .about-grid{grid-template-columns:1fr;gap:16px}
+  .about-stats{grid-template-columns:1fr 1fr;gap:12px}
+  .booking{grid-template-columns:1fr;gap:16px}
+  .vault{grid-template-columns:1fr;gap:12px}
+  .surprise-banner{grid-template-columns:1fr;gap:16px;padding:16px}
+  .news-item{grid-template-columns:1fr;gap:8px;padding:14px 0}
+  .news-date{font-size:11px}
+  .release-grid{grid-template-columns:1fr 1fr;gap:12px}
+  .regular-grid{grid-template-columns:1fr;gap:12px}
+  .cm-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .footer-top{grid-template-columns:1fr;gap:20px}
+  .footer-bottom{flex-direction:column;align-items:flex-start;gap:12px}
+  /* Drawer — premium on mobile */
+  .drawer-panel{width:92%;max-width:360px;grid-template-columns:1fr !important}
+  .drawer-panel > div:first-child{padding:20px}
+  .drawer-panel > div:last-child{padding:20px}
+  /* Chat — full width on mobile */
+  .chat-window{left:12px;right:12px;width:auto;bottom:78px;max-height:68vh}
+  .chat-launcher{right:14px;bottom:14px;width:52px;height:52px}
+  /* Modal — full screen on mobile */
+  .modal{padding:12px}
+  .modal-card{max-width:100%;margin:0}
+  .tabs{flex-wrap:wrap}
+  .marquee{font-size:10px}
+}
+
+@media(max-width:380px){
+  .hero-content h1{font-size:26px}
+  .section h2{font-size:18px}
+  .tier-grid{gap:10px}
+  .fan-card{padding:12px}
+  :root{--pad:12px}
+}
+
+/* Ensure touch targets are minimum 44px */
+@media (pointer: coarse){
+  .nav a, .dropdown a, .btn, .hamburger{min-height:44px;display:grid;place-items:center}
+  .tier{cursor:pointer}
+  .fan-card{cursor:pointer;touch-action:manipulation}
+}
