@@ -45,3 +45,8 @@ qa/*.png
 *.pid
 .claude/
 .tmp/
+
+# QA screenshots and the Vercel CLI state — never part of the deploy
+qa/
+.vercel/
+.vercel-tmp/

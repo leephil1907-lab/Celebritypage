@@ -1,0 +1,51 @@
+<% /* FAN WALL — what the crowd wrote, and the composer that feeds the queue */ %>
+<%- include('../partials/sections/pagehero', { ph: {
+  kicker: lang === 'ja' ? 'ファン ウォール • 会場からの一文' : 'FAN WALL • NOTES FROM THE ROOM',
+  title: lang === 'ja' ? '会場からの' : 'What the room', title2: lang === 'ja' ? 'ノート' : 'left behind',
+  sub: lang === 'ja' ? 'メンバーの笔记は、デスクが読んでから壁に出します。拍手は一人一度、取り消せます。' : 'Members write, the desk reads, then it goes up. Applause counts once per member and can be taken back.',
+  images: ['/image-search/takuya-kimura-live-tour-checkpoint-2026--1.gif', '/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg', '/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg'],
+  cta: [[lang === 'ja' ? 'ノートを送る' : 'Leave a note', '#compose'], [t('cta.allShows'), '/tour/#shows']],
+  side: { kicker: lang === 'ja' ? '壁の状態' : 'THE WALL', title: `${total} ${lang === 'ja' ? '枚が壁に' : 'notes published'}`,
+    body: (lang === 'ja' ? `掲載は1日あたり最大${notes.length}件ずつ更新\n審査待ちのノートは会員ページに出ます` : `Published newest first • ${pages} page${pages > 1 ? 's' : ''}\nYour own notes wait for review in your account`),
+    cta: [[lang === 'ja' ? '抽選へ' : 'Lotteries', '/tour/#lottery'], [lang === 'ja' ? 'ツアー' : 'Tour', '/tour/']] }
+} }) %>
+
+<% if (featured && featured.length) { %>
+<section class="section section-tight" id="featured">
+  <div class="section-head" data-reveal>
+    <div><h2><%= lang === 'ja' ? '壁の一番上' : 'Pinned at the top of the wall' %></h2><p><%= lang === 'ja' ? 'デスクが選んだ、このツアーの一文' : 'Chosen by the desk — the lines the tour will keep' %></p></div>
+    <span class="tagchip gold"><%= featured.length %></span>
+  </div>
+  <div class="wall-featured">
+    <% featured.forEach(function (n, i) { %>
+    <figure class="wf-item" data-reveal data-reveal-delay="<%= i * 80 %>">
+      <blockquote><%= n.message %></blockquote>
+      <figcaption class="mono dim">— <%= n.name %><% if (n.city) { %> • <%= n.city %><% } %> • <%= n.applause %> ♪</figcaption>
+    </figure>
+    <% }) %>
+  </div>
+</section>
+<% } %>
+
+<section class="section" id="notes">
+  <div class="section-head" data-reveal>
+    <div><h2><%= t('sec.wall') %></h2><p><%= lang === 'ja' ? '審査を通過したノートだけが表示されます' : 'Only notes the desk has read appear here' %></p></div>
+    <span class="tagchip"><%= total %></span>
+  </div>
+  <div data-section="wall"><%- include('../partials/sections/wall') %></div>
+  <% if (pages > 1) { %>
+  <nav class="wall-pager mono" aria-label="<%= lang === 'ja' ? 'ページの切り替え' : 'Wall pages' %>">
+    <% for (let i = 1; i <= pages; i += 1) { %>
+    <a class="<%= i === current ? 'is-on' : '' %>" href="/wall/?p=<%= i %>" <%= i === current ? 'aria-current="page"' : '' %>><%= String(i).padStart(2, '0') %></a>
+    <% } %>
+  </nav>
+  <% } %>
+</section>
+
+<section class="section section-tight" id="the-night">
+  <div class="section-head" data-reveal>
+    <div><h2><%= lang === 'ja' ? 'ノートを書いた夜' : 'The night a note is about' %></h2><p><%= lang === 'ja' ? 'セットリストと見比べると、その場の空気が復元されます' : 'Read a note against the setlist it came from' %></p></div>
+    <a class="link-arrow" href="/tour/#shows"><%= t('cta.allShows') %> →</a>
+  </div>
+  <%- include('../partials/sections/shows', { shows: highlights }) %>
+</section>

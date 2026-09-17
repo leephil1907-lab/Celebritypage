@@ -132,10 +132,38 @@ complete deploy. Sessions live in SQLite, so a restart does not log members out.
 | `DB_FILE` | `data/celebrity.db` | SQLite path (`:memory:` works for tests) |
 | `SITE_URL` | empty | absolute origin for canonical, OG, sitemap, robots, hreflang. Empty follows the request host, which is correct on every preview; set it once you have a real domain behind a proxy |
 | `BUILD_ID` | content hash | cache-busting token, also written to `public/build.json` |
+| `COMBINED` | empty | `1` puts the console at `/admin` on the site's own port instead of a second listener |
+| `DATA_DIR` / `UPLOAD_DIR` | `data/` / `uploads/` | where state is written; both fall back to the temp dir when the filesystem is read-only |
 
 `settings.site.url` (Admin → Settings → `site.url`) overrides `SITE_URL` when you would rather not
 touch the environment. Both are empty in a fresh install on purpose: a hard-coded origin is the usual
 reason a staging preview starts emitting production canonicals.
+
+### Vercel
+
+`vercel.json` and `api/index.js` are the deploy path: one Node function runs the same Express app,
+and `npm run build` regenerates `public/` from `client/` during the build. Import the repository,
+accept the defaults (framework: **Other**, build `npm run build`, output `public`), and the site is
+live — `/admin` is the desk console on the same origin, which is what `COMBINED=1` does locally too.
+
+Three things are worth knowing before you point anything real at it:
+
+- **Set `SITE_URL`** to the deployment URL (Admin → Settings → `site.url` also works). Canonicals,
+  OG tags, the sitemap and JSON-LD are absolute, and a preview domain that emits production
+  canonicals is the mistake this avoids.
+- **Server-side state is per instance.** Vercel's filesystem is read-only apart from `/tmp`, so the
+  SQLite file and uploads land there and are lost when an instance is recycled: content, members and
+  waitlist sign-ups start from the seed again. That is fine for a demo, a preview or a read-mostly
+  brochure; it is not a database. Attach Vercel Postgres/KV (or run the container image on any host
+  with a volume) before treating a write as durable, and note that `POST /api/*` writes will fail
+  with a 500 on a function that somehow gets no `/tmp`.
+- **Live sync degrades, on purpose.** The console and the site keep an SSE connection open
+  (`/api/events`); a serverless function caps how long that can run, so open tabs simply stop
+  receiving the "content changed" ping and refresh on navigation. `maxDuration` in `vercel.json`
+  sets the ceiling.
+
+Nothing in the build or the runtime reaches for a CDN, a tile server or an image API — the fonts,
+icons and photography are all in `public/`, so a deployment with no network access still renders.
 
 ### Container
 
@@ -189,10 +217,16 @@ against production with `AUDIT_BASE=https://your-domain npm run audit` (`QA_BASE
 `admin@starto.jp / Starto2026!` and the three seeded members (`aiko|marc|yuki@example.com / Starto2026!`)
 are seed data. Rotate them in Admin → Members (or delete those rows) before the site is public.
 
-## Legacy
+## Repository housekeeping
 
-`legacy/` keeps the pre-server era so nothing is lost: `legacy/static-era/` holds the original static
-site (`admin-panel`, the `backend/` Postgres experiment, the root `image-search/` downloads and the old
-DEPLOYMENT/PRODUCTION notes), `legacy/static-pages/` and `legacy/public-js/` the earlier hand-written
-pages and scripts, `legacy/index.static.html` / `static-home.html` the first mock-ups. The app loads
-none of it — `git log`/`git show` still has them at their original paths if you want them back.
+The tree contains only what the running site reads: `server/` (the app), `views/` (templates),
+`client/` + `public/` (source and built assets), `scripts/` (build, integrity check, audit, browser
+QA), `tests/`, and the two deployment paths above.
+
+Removed once the server replaced them, because they were dead weight and nothing referenced them:
+`legacy/` (the static-era HTML, its duplicate `image-search/` downloads and the abandoned `backend/`
+Postgres experiment), `public/favicon.png` (1.8 MB, unreferenced — `public/favicon.ico` plus
+`icon-192/512.png` are what the head and the manifest ask for), the QA screenshots that had been
+committed under `qa/` (the browser suite writes them again on every run and they are ignored now), and
+four stray `uploads/IMG_*.jpg` that no row and no template pointed at. `git log --stat` and
+`git show HEAD~1:legacy` still have all of it; nothing was rewritten or squashed away.

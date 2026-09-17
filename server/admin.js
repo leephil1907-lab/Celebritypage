@@ -11,12 +11,15 @@ import * as C from './content.js';
 import * as A from './auth.js';
 import { publish, stream as sseStream, clientCount } from './bus.js';
 import { RESOURCES, safeJson } from './resources.js';
+import { UPLOAD_DIR } from './db.js';
+import { drawRaffle, slugify } from './lib/tourkit.js';
 import { securityHeaders, gzip, asyncH, bodyParser, notFound, errorHandler, staticAssets } from './lib/http.js';
 import { makeRender, ROOT } from './app.js';
 
 const SECTION_FOR = {
-  hero: 'hero', news: 'news', schedule: 'schedule', releases: 'releases', tour: 'tour-dates',
+  hero: 'hero', news: 'news', schedule: 'schedule', releases: 'releases', tour: ['tour-dates', 'countdown'],
   vault: 'vault', tiers: 'tiers', products: 'products', journal: 'journal', stats: null, works: null, archive: null,
+  shows: 'shows', wall: 'wall', raffles: ['raffles', 'countdown'],
 };
 
 const csv = (rows, cols) => {
@@ -24,17 +27,33 @@ const csv = (rows, cols) => {
   return [cols.join(','), ...rows.map((r) => cols.map((c) => esc(typeof r[c] === 'object' ? JSON.stringify(r[c]) : r[c])).join(','))].join('\n');
 };
 
-export function createAdminApp() {
+/**
+ * `mounted: true` means another app already opened the request — the headers, the compression and
+ * the body parser are transport concerns of the host, and running them twice corrupts the stream
+ * (a gzipped body inside a gzipped body). Sessions stay here, because who is signed in is the
+ * console's own business.
+ */
+export function createAdminApp({ mounted = false } = {}) {
   const app = express();
   makeRender(app);
   app.set('views', path.join(ROOT, 'views'));
   app.locals.admin = true;
-  app.use(securityHeaders);
-  app.use(gzip);
-  app.use(bodyParser);
+  if (!mounted) {
+    app.use(securityHeaders);
+    app.use(gzip);
+    app.use(bodyParser);
+  }
   app.use(A.sessionMiddleware);
+  // the console is also mounted under /admin on a single-origin deploy (see api/index.js)
+  app.use((req, res, next) => {
+    const base = req.baseUrl || '';
+    res.locals.base = base;
+    const send = res.redirect.bind(res);
+    res.redirect = (target) => send(typeof target === 'string' && target.startsWith('/') && !target.startsWith('//') ? base + target : target);
+    next();
+  });
   app.use('/static', staticAssets(path.join(ROOT, 'public'), { maxAge: '5m' }));
-  app.use('/uploads', staticAssets(path.join(ROOT, 'uploads'), { maxAge: '1d' }));
+  app.use('/uploads', staticAssets(UPLOAD_DIR, { maxAge: '1d' }));
 
   const gate = (req, res, next) => {
     if (req.user?.role === 'admin') return next();
@@ -91,13 +110,30 @@ export function createAdminApp() {
     const r = RESOURCES[req.params.key];
     if (!r) return next();
     const rows = resourceRows(req.params.key);
-    res.render('admin/resource', { title: r.label, admin: true, key: req.params.key, resource: r, rows, editing: req.query.edit ? rows.find((x) => String(x.id) === String(req.query.edit)) : null });
+    const queued = r.queue ? Number(db.get(`SELECT COUNT(*) AS n FROM ${r.table} WHERE ${r.queue.where}`)?.n || 0) : null;
+    res.render('admin/resource', { title: r.label, admin: true, key: req.params.key, resource: r, rows, queued, editing: req.query.edit ? rows.find((x) => String(x.id) === String(req.query.edit)) : null });
   });
+
+  /* the waitlist is the one queue the desk reads instead of writes — hand it over as CSV */
+  app.get('/content/notify/export.csv', asyncH(async (req, res) => {
+    const rows = db.all(`SELECT n.created_at, n.email, n.status, n.source, n.tier_hint, t.date, t.city
+      FROM notify_list n LEFT JOIN tour_dates t ON t.id = n.tour_date_id ORDER BY t.date, n.id`);
+    const head = ['date', 'city', 'email', 'status', 'source', 'tier_hint', 'added_at'];
+    const cell = (v) => { const t = v === null || v === undefined ? '' : String(v); return /[",\r\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+    const body = [head.join(',')].concat(rows.map((r) => [r.date, r.city, r.email, r.status, r.source, r.tier_hint, r.created_at].map(cell).join(','))).join('\r\n');
+    db.audit(req.user.email, 'NOTIFY.EXPORT', 'notify_list', `${rows.length} rows`);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="waitlist-${new Date().toISOString().slice(0, 10)}.csv"`);
+    res.send(body + '\r\n');
+  }));
 
   app.post('/content/:key', A.csrfGuard, asyncH(async (req, res) => {
     const r = RESOURCES[req.params.key];
     if (!r) return res.status(404).json({ error: 'not_found' });
-    const values = coerce(r, req.body);
+    if (r.readonly) return res.status(405).json({ error: 'readonly', message: `${r.label} is read-only here: the site writes it, the desk may only remove a row.` });
+    let values = coerce(r, req.body);
+    const derive = DERIVED[req.params.key];
+    if (derive) values = derive(values, req.body.id ? Number(req.body.id) : null);
     const id = req.body.id ? Number(req.body.id) : null;
     if (id) {
       db.update(r.table, id, { ...values, ...(hasCol(r.table, 'updated_at') ? { updated_at: nowSql() } : {}) });
@@ -122,6 +158,7 @@ export function createAdminApp() {
 
   app.post('/content/:key/:id/toggle', A.csrfGuard, (req, res) => {
     const r = RESOURCES[req.params.key];
+    if (r && r.readonly) return res.status(405).json({ error: 'readonly', message: `${r.label} is read-only here.` });
     const field = String(req.body.field || 'status');
     const row = db.get(`SELECT * FROM ${r.table} WHERE id=@id`, { id: Number(req.params.id) });
     if (!row) return res.status(404).json({ error: 'not_found' });
@@ -130,6 +167,21 @@ export function createAdminApp() {
     emitChange(req.params.key, `${r.label} #${req.params.id} → ${nextVal}`);
     res.json({ ok: true, value: nextVal });
   });
+
+  app.post('/content/:key/:id/:verb', A.csrfGuard, asyncH(async (req, res) => {
+    const verbs = MODERATE[req.params.key];
+    const fn = verbs && verbs[req.params.verb];
+    if (!fn) return res.status(404).json({ error: 'unknown_action', message: 'That screen has no such action.' });
+    const out = fn(Number(req.params.id), req);
+    if (out.fail) {
+      db.audit(req.user.email, `${req.params.key.toUpperCase()}.${String(req.params.verb).toUpperCase()} (rejected)`, RESOURCES[req.params.key].table, `${req.params.id}: ${out.fail[1]}`);
+      return res.status(out.fail[0]).json({ error: 'refused', message: out.fail[1] });
+    }
+    db.audit(req.user.email, `${req.params.key.toUpperCase()}.${String(req.params.verb).toUpperCase()}`, RESOURCES[req.params.key].table, out.audit || `${req.params.id} ${out.msg}`);
+    emitChange(req.params.key, out.msg);
+    if (req.body?._html) return res.redirect(`/content/${req.params.key}?ok=1`);
+    res.json({ ok: true, message: out.msg, rows: out.rows });
+  }));
 
   /* ---------- members ---------- */
   app.get('/members', (req, res) => {
@@ -291,7 +343,7 @@ export function createAdminApp() {
       const buf = Buffer.from(m[3], 'base64');
       const cap = m[1] === 'video' ? 24 * 1024 * 1024 : 8 * 1024 * 1024;
       if (buf.length > cap) return res.status(413).json({ error: 'too_big', message: `Max ${(cap / 1024 / 1024).toFixed(0)} MB per ${m[1]}.` });
-      const dir = path.join(ROOT, 'uploads');
+      const dir = UPLOAD_DIR;
       fs.mkdirSync(dir, { recursive: true });
       const ext = { 'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp', 'image/gif': '.gif',
         'video/mp4': '.mp4', 'video/webm': '.webm', 'video/mov': '.mp4' }[`${m[1]}/${m[2]}`] || `.${m[2]}`;
@@ -344,8 +396,71 @@ function resourceRows(key) {
   });
 }
 
+/**
+ * Two screens need more than create/update/delete: the wall is a queue, and a draw has to be run.
+ * They hang off the same resource path so the CSRF gate, the audit trail and the live publish
+ * all stay where they already are — nothing here bypasses them.
+ */
+const MODERATE = {
+  wall: {
+    approve: (id, req) => ({ msg: `Note #${id} published`, rows: changes(db.run(`UPDATE fan_wall SET status='approved', reviewed_at=datetime('now'), reviewed_by=@e WHERE id=@id`, { id, e: req.user.email })), to: 'wall' }),
+    reject: (id, req) => ({ msg: `Note #${id} rejected`, rows: changes(db.run(`UPDATE fan_wall SET status='rejected', reviewed_at=datetime('now'), reviewed_by=@e WHERE id=@id`, { id, e: req.user.email })), to: 'wall' }),
+    feature: (id) => {
+      const nextVal = db.get(`SELECT featured FROM fan_wall WHERE id=@id`, { id })?.featured ? 0 : 1;
+      db.run(`UPDATE fan_wall SET featured=@v WHERE id=@id`, { v: nextVal, id });
+      return { msg: `Note #${id} ${nextVal ? 'pinned' : 'unpinned'}`, rows: 1, to: 'wall' };
+    },
+  },
+  raffles: {
+    /** every entry code is ordered by a seeded shuffle; the seed is stored, so the result is replayable */
+    draw: (id, req) => {
+      const r = db.get(`SELECT * FROM raffles WHERE id=@id`, { id });
+      if (!r) return { fail: [404, 'No such draw.'] };
+      const entries = db.all(`SELECT id, code FROM raffle_entries WHERE raffle_id=@r ORDER BY code`, { r: id });
+      if (!entries.length) return { fail: [422, 'Nobody has entered this draw yet — nothing to draw.'] };
+      if (r.status === 'drawn' && !req.body?.again) return { fail: [409, 'This draw has already run. Post again with ?again=1 to re-run it.'] };
+      const seed = String(r.seed || `DRAW-${id}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`);
+      const res = drawRaffle(entries, { winners: r.winners, alternates: r.alternates, seed });
+      db.run(`UPDATE raffle_entries SET status='missed' WHERE raffle_id=@r`, { r: id });
+      const mark = (list, status) => (list || []).filter((x) => x !== undefined && x !== null)
+        .forEach((entryId) => db.run(`UPDATE raffle_entries SET status=@s WHERE id=@i AND raffle_id=@r`, { s: status, i: entryId, r: id }));
+      mark(res.winners, 'winner');
+      mark(res.alternateIds, 'alternate');
+      db.run(`UPDATE raffles SET status='drawn', seed=@s, drawn_at=datetime('now') WHERE id=@id`, { s: seed, id });
+      return { msg: `Draw #${id} run — ${res.winners.length} winners and ${res.alternateIds.length} alternates on seed ${seed}`, rows: entries.length, to: 'raffles', audit: `seed=${seed} winners=${res.winners.length}` };
+    },
+    close: (id) => {
+      db.run(`UPDATE raffles SET status='closed' WHERE id=@id`, { id });
+      return { msg: `Draw #${id} closed to entries`, rows: 1, to: 'raffles' };
+    },
+  },
+};
+
+const changes = (info) => Number(info?.changes ?? 0) || 0;
+
+/** a slug that is not taken twice — the archive is addressable, so collisions have to resolve */
+function uniqueSlug(table, want, exceptId) {
+  const base = String(want || 'show').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 56) || 'show';
+  let slug = base;
+  for (let i = 2; i < 50; i += 1) {
+    const hit = db.get(`SELECT id FROM ${table} WHERE slug=@s${exceptId ? ' AND id<>@e' : ''}`, exceptId ? { s: slug, e: Number(exceptId) } : { s: slug });
+    if (!hit) return slug;
+    slug = `${base}-${i}`;
+  }
+  return `${base}-${Date.now().toString(36)}`;
+}
+
+/* fields the form cannot be trusted with — filled in on the way through, never silently overwritten */
+const DERIVED = {
+  shows: (values, id) => ({ ...values, slug: values.slug ? String(values.slug).trim() : uniqueSlug('shows', `${values.tour || 'show'}-${values.date || ''}-${values.city || ''}`, id) }),
+  raffles: (values) => ({ ...values, tour_date_id: Number(values.tour_date_id) || null, show_id: Number(values.show_id) || null }),
+  tour: (values) => ({ ...values, checkin_code: String(values.checkin_code || '').trim().toUpperCase() || null, doors_at: String(values.doors_at || '').trim() || null }),
+};
+
+
+
 function emitChange(key, message) {
-  const sections = [SECTION_FOR[key], key === 'products' ? 'shop-grid' : null].filter(Boolean);
+  const sections = [SECTION_FOR[key], key === 'products' ? 'shop-grid' : null].filter(Boolean).flat();
   publish('content:changed', { sections: sections.length ? sections : ['*'], reason: message, resource: key }, { persist: false });
 }
 

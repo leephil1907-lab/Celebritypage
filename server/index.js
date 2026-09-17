@@ -7,10 +7,9 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { open, getDb, close, ROOT } from './db.js';
+import { open, getDb, close, ROOT, DB_FILE, STATE_ON_SCRATCH } from './db.js';
 import { seed } from './seed.js';
-import { createPublicApp } from './app.js';
-import { createAdminApp } from './admin.js';
+import { createApps, COMBINED } from './host.js';
 import { heartbeat, clientCount } from './bus.js';
 import { sweepSessions, activeSessionCount } from './auth.js';
 
@@ -33,22 +32,22 @@ sweep.unref?.();
 const beat = setInterval(() => heartbeat(), 20000);
 beat.unref?.();
 
-const publicApp = createPublicApp();
-const adminApp = createAdminApp();
+const { app: publicApp, adminApp, mount } = createApps();
 
 const server = publicApp.listen(PORT, HOST, () => {
   console.log(`\n  ● site   http://localhost:${PORT}   (bind ${HOST})`);
-  console.log(`  ● admin  http://localhost:${ADMIN_PORT}   admin@starto.jp / Starto2026!`);
-  console.log(`  ● db     ${path.relative(ROOT, path.join(ROOT, 'data', 'celebrity.db'))}  •  ${activeSessionCount()} active session(s)\n`);
+  console.log(COMBINED
+    ? `  ● admin  http://localhost:${PORT}${mount}/   admin@starto.jp / Starto2026! (single origin)`
+    : `  ● admin  http://localhost:${ADMIN_PORT}   admin@starto.jp / Starto2026!`);
+  console.log(`  ● db     ${path.relative(ROOT, DB_FILE) || DB_FILE}  •  ${activeSessionCount()} active session(s)`);
+  if (STATE_ON_SCRATCH) console.log('  ● note   the repo data/ dir is not writable here — state lives in the temp dir for this process');
+  console.log('');
 });
-const adminServer = adminApp.listen(ADMIN_PORT, HOST, () => {
+const adminServer = adminApp ? adminApp.listen(ADMIN_PORT, HOST, () => {
   console.log(`[boot] admin console listening on :${ADMIN_PORT}`);
-});
-
-for (const kind of ['error']) {
-  server.on(kind, (e) => console.error('[public] ' + e.message));
-  adminServer.on(kind, (e) => console.error('[admin] ' + e.message));
-}
+}) : null;
+if (adminServer) adminServer.on('error', (e) => console.error('[admin] ' + e.message));
+server.on('error', (e) => console.error('[public] ' + e.message));
 
 /* ---------- clean shutdown ---------- */
 let stopping = false;
@@ -61,7 +60,7 @@ function shutdown(signal) {
   let left = 2;
   const done = () => { if (--left <= 0) { close(); process.exit(0); } };
   server.close(done);
-  adminServer.close(done);
+  if (adminServer) adminServer.close(done); else { left -= 1; }
   setTimeout(() => { close(); process.exit(0); }, 1500).unref?.();
 }
 process.on('SIGINT', () => shutdown('SIGINT'));

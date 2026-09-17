@@ -202,7 +202,7 @@ export function initCardPreview() {
     el.addEventListener('click', (e) => {
       if (e.target.closest('button,a')) return;
       if (sel) { sel.value = el.dataset.tier; paint(); }
-      toast(`${el.dataset.tier.toUpperCase()} preview — choose Purchase to open a ticket`);
+      toast(`${el.dataset.tier.toUpperCase()} preview — ${document.querySelector('.tier [data-purchase-tier], .ctl-cta [data-purchase-tier]') ? 'choose Purchase to open a ticket' : (JA() ? '無料登録してから購入できます' : 'a free account comes first')}`);
     });
   });
   paint();
@@ -551,6 +551,316 @@ export function initLive() {
   src.onerror = () => { /* EventSource auto-reconnects */ };
 }
 
+/* =========================================================================
+   TOUR KIT — countdown, fan wall, door check-in, meet & greet draws.
+   Every one of these has a plain form behind it (POST /wall/, /tour/checkin,
+   /tour/raffle/:id/enter, /wall/:id/clap), so this code only upgrades the
+   experience: it never becomes the only way to do the thing.
+   ========================================================================= */
+
+const JA = () => String(document.documentElement.lang || 'ja').startsWith('ja');
+
+function say(el, text, tone = 'info') {
+  if (!el) return;
+  el.textContent = text || '';
+  el.classList.toggle('is-ok', tone === 'ok');
+  el.classList.toggle('is-err', tone === 'err');
+}
+
+/** re-pull one server-rendered section and re-mount behaviour into it */
+export async function refreshSection(name) {
+  const hosts = $$(`[data-section="${name}"]`);
+  if (!hosts.length) return false;
+  for (const h of hosts) {
+    try {
+      const r = await fetch(`/api/section/${name}`, { headers: { 'x-fragment': '1' }, credentials: 'same-origin' });
+      if (!r.ok) continue;
+      h.innerHTML = await r.text();
+      document.dispatchEvent(new CustomEvent('dom:refresh', { detail: { section: name } }));
+    } catch { /* the next SSE event will retry */ }
+  }
+  mount(document);
+  return true;
+}
+
+/* ---------- countdowns ---------- */
+let cdTimer = null;
+const cdLeft = (target) => Math.max(0, Math.floor((target - Date.now()) / 1000));
+const cdPad = (n) => String(n).padStart(2, '0');
+
+function paintCountdowns() {
+  $$('[data-count-grid]').forEach((el) => {
+    const target = Number(el.dataset.countTo || 0);
+    const s = cdLeft(target);
+    const parts = { days: Math.floor(s / 86400), hours: Math.floor((s % 86400) / 3600), minutes: Math.floor((s % 3600) / 60), seconds: s % 60 };
+    $$('[data-count-part]', el).forEach((u) => {
+      const key = u.dataset.countPart;
+      const next = key in parts ? cdPad(parts[key]) : '00';
+      if (u.textContent !== next) {
+        u.textContent = next;
+        u.classList.remove('is-tick');
+        void u.offsetWidth;                       // restart the beat without a re-render
+        u.classList.add('is-tick');
+      }
+    });
+    el.classList.toggle('is-past', target > 0 && s <= 0);
+  });
+  // the home dashboard keeps the single-line form: hh:mm:ss (with a day prefix if it is far off)
+  $$('[data-countdown]').forEach((el) => {
+    const s = cdLeft(Number(el.dataset.countdown || 0));
+    const text = (s >= 86400 ? `${Math.floor(s / 86400)}d ` : '') + `${cdPad(Math.floor((s % 86400) / 3600))}:${cdPad(Math.floor((s % 3600) / 60))}:${cdPad(s % 60)}`;
+    if (el.textContent.trim() !== text) el.textContent = s <= 0 ? (JA() ? '締切' : 'CLOSED') : text;
+    el.classList.toggle('is-past', s <= 0);
+  });
+}
+
+export function initCountdowns(root = document) {
+  const any = $$('[data-count-grid]', root).length + $$('[data-countdown]', root).length;
+  if (!any) return;
+  paintCountdowns();
+  if (!cdTimer) {
+    cdTimer = setInterval(() => { if (!document.hidden) paintCountdowns(); }, 1000);
+    document.addEventListener('visibilitychange', paintCountdowns, { passive: true });
+  }
+}
+
+/* ---------- fan wall ---------- */
+const WALL_MAX = 280;
+
+export function initWall(root = document) {
+  $$('[data-wall-form]', root).forEach((f) => {
+    if (f.__wall) return;
+    f.__wall = true;
+    const ta = f.querySelector('[data-wall-message]');
+    const counter = f.querySelector('[data-wall-count]');
+    const note = f.querySelector('[data-wall-msg]');
+    const count = () => {
+      if (!ta || !counter) return;
+      const left = WALL_MAX - ta.value.length;
+      counter.textContent = String(Math.max(0, left));
+      counter.classList.toggle('is-low', left <= 40);
+    };
+    ta?.addEventListener('input', () => {
+      if (ta.value.length > WALL_MAX) ta.value = ta.value.slice(0, WALL_MAX);
+      count();
+    });
+    count();
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!ta || !ta.value.trim()) { say(note, JA() ? '一文を書いてから送ってください' : 'Write the note first', 'err'); ta.focus(); return; }
+      const btn = f.querySelector('button[type=submit]');
+      btn?.classList.add('is-busy');
+      try {
+        const r = await api('wall', { method: 'POST', body: {
+          message: ta.value, name: f.querySelector('[name=name]')?.value, city: f.querySelector('[name=city]')?.value, mood: f.querySelector('[name=mood]')?.value,
+        } });
+        say(note, r.message || (JA() ? '送りました — デスクが確認します' : 'Sent — the desk reads it next'), 'ok');
+        toast(JA() ? 'ウォールに送りました（審査待ち）' : 'Note sent to the desk for review', 'ok');
+        ta.value = ''; count();
+        await refreshSection('wall');
+      } catch (err) {
+        say(note, err.message || (JA() ? '送れませんでした' : 'That could not be sent'), 'err');
+      } finally {
+        btn?.classList.remove('is-busy');
+      }
+    });
+  });
+
+  $$('[data-clap-form]', root).forEach((form) => {
+    if (form.__clap) return;
+    form.__clap = true;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('[data-wall-clap]');
+      if (!btn) return;
+      btn.classList.add('is-busy');
+      try {
+        const r = await api(`wall/${btn.dataset.wallClap}/clap`, { method: 'POST', body: {} });
+        const n = form.querySelector('[data-clap-count]');
+        if (n) n.textContent = String(r.applause);
+        btn.classList.toggle('is-on', !!r.clapped);
+        btn.setAttribute('aria-pressed', r.clapped ? 'true' : 'false');
+      } catch (err) {
+        toast(err.message || 'Applause is only for published notes', 'err');
+      } finally {
+        btn.classList.remove('is-busy');
+      }
+    });
+  });
+}
+
+/* ---------- door check-in ---------- */
+export function initCheckin(root = document) {
+  $$('[data-checkin-form]', root).forEach((f) => {
+    if (f.__ci) return;
+    f.__ci = true;
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = f.querySelector('[name=code]')?.value || '';
+      const btn = f.querySelector('button[type=submit]');
+      const card = f.closest('.tour-card') || f;
+      const out = f.querySelector('[data-checkin-msg]') || card.querySelector('[data-checkin-msg]');
+      btn?.classList.add('is-busy');
+      try {
+        const r = await api('passport/checkin', { method: 'POST', body: { code } });
+        say(out, r.message || (JA() ? '押印しました' : 'Stamped'), 'ok');
+        toast(r.message || (JA() ? 'パスポートに押しました' : 'Passport stamped'), 'ok');
+        if (r.show) {
+          const a = document.createElement('a');
+          a.className = 'link-arrow mono small';
+          a.href = r.show;
+          a.textContent = (JA() ? 'この夜の記録 →' : 'Report from that night →');
+          f.replaceWith(a);
+        } else {
+          f.replaceWith(Object.assign(document.createElement('span'), { className: 'tagchip gold', textContent: JA() ? '押印済み' : 'STAMPED' }));
+        }
+        refreshSection('tour-dates').then((again) => { if (again) refreshSection('countdown'); });
+      } catch (err) {
+        say(out, err.message || (JA() ? '押印できませんでした' : 'That could not be stamped'), 'err');
+      } finally {
+        btn?.classList.remove('is-busy');
+      }
+    });
+  });
+}
+
+/* ---------- the waitlist: ask to be told, or take yourself off, without a reload ---------- */
+const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+const joinForm = (host) => host.querySelector('[data-notify-form]');
+const leaveForm = (host) => host.querySelector('[data-leave-form]');
+
+function hiddenField(form, name, value) {
+  let input = form.querySelector(`[name=${name}]`);
+  if (!input) {
+    input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    form.append(input);
+  }
+  input.value = value == null ? '' : String(value);
+  return input;
+}
+
+export function initNotify(root = document) {
+  $$('[data-notify-form]', root).forEach((f) => {
+    if (f.__vn) return;
+    f.__vn = true;
+    const host = f.closest('.tc-wait, .cd-wait') || f.parentElement || f;
+    const out = host.querySelector('[data-notify-msg]');
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = f.querySelector('[name=email]');
+      const btn = f.querySelector('button[type=submit]');
+      const email = (input?.value || '').trim();
+      const dateId = f.dataset.date || f.querySelector('[name=tour_date_id]')?.value || '';
+      if (!EMAIL_OK.test(email)) {
+        input?.classList.add('is-bad');
+        say(out, JA() ? 'メールアドレスをもう一度確認してください' : 'That address does not look complete yet', 'err');
+        input?.focus();
+        return;
+      }
+      input?.classList.remove('is-bad');
+      btn?.classList.add('is-busy');
+      try {
+        const r = await api('notify', { method: 'POST', body: { email, tour_date_id: dateId, company: f.querySelector('[name=company]')?.value || '' } });
+        say(out, r.message || (JA() ? '発売の際にお知らせします' : 'You are on the list for this night'), 'ok');
+        toast(r.message || (JA() ? '登録しました' : 'Saved'), 'ok');
+        const count = host.querySelector('[data-wait-count]');
+        if (count && r.waiting != null) count.textContent = String(r.waiting);
+        if (r.token) {
+          let leave = leaveForm(host);
+          if (!leave) {
+            leave = document.createElement('form');
+            leave.className = 'vn-leave';
+            leave.dataset.leaveForm = '';
+            leave.append(document.createTextNode(JA() ? 'この夜はもう待っていません： ' : 'No longer waiting for this night: '));
+            const b = document.createElement('button');
+            b.className = 'btn btn-2 btn-xs';
+            b.type = 'submit';
+            b.textContent = JA() ? '退会する · leave' : 'leave · 退会';
+            leave.append(b);
+            host.append(leave);
+          }
+          hiddenField(leave, 'token', r.token);
+          hiddenField(leave, 'tour_date_id', dateId);
+          leave.hidden = false;
+          f.hidden = true;
+          initNotify(host);
+        }
+      } catch (err) {
+        say(out, err.message || (JA() ? '登録できませんでした' : 'That address could not be saved'), 'err');
+      } finally {
+        btn?.classList.remove('is-busy');
+      }
+    });
+  });
+
+  $$('[data-leave-form]', root).forEach((f) => {
+    if (f.__vl) return;
+    f.__vl = true;
+    const host = f.closest('.tc-wait, .cd-wait') || f.parentElement || f;
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = f.querySelector('button');
+      const token = f.querySelector('[name=token]')?.value || '';
+      if (!token) { window.location.reload(); return; }
+      btn?.classList.add('is-busy');
+      try {
+        const r = await api('notify/leave', { method: 'POST', body: { token, tour_date_id: f.querySelector('[name=tour_date_id]')?.value || '' } });
+        say(host.querySelector('[data-notify-msg]'), r.message || (JA() ? 'リストから外れました' : 'Taken off the list'), 'ok');
+        f.hidden = true;
+        const join = joinForm(host);
+        if (join) { join.hidden = false; join.querySelector('[name=email]')?.focus(); }
+        refreshSection('countdown');
+      } catch (err) {
+        say(host.querySelector('[data-notify-msg]'), err.message, 'err');
+      } finally {
+        btn?.classList.remove('is-busy');
+      }
+    });
+  });
+}
+
+/* ---------- meet & greet draws ---------- */
+export function initDraws(root = document) {
+  $$('[data-raffle-form]', root).forEach((f) => {
+    if (f.__rf) return;
+    f.__rf = true;
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = f.querySelector('button[type=submit]');
+      const out = f.querySelector('[data-raffle-msg]');
+      btn?.classList.add('is-busy');
+      try {
+        const r = await api('raffle/enter', { method: 'POST', body: Object.fromEntries(new FormData(f)) });
+        toast(r.message || (JA() ? '抽選に参加しました' : 'You are in the draw'), 'ok');
+        const line = document.createElement('p');
+        line.className = 'dc-mine';
+        line.append(document.createTextNode(JA() ? '参加番号 ' : 'YOUR CODE '));
+        const code = document.createElement('b');
+        code.className = 'mono';
+        code.textContent = r.code || r.message || '';
+        line.append(code);
+        f.replaceWith(line);
+        refreshSection('raffles');
+      } catch (err) {
+        if (out) say(out, err.message || (JA() ? '参加できませんでした' : 'That entry was not accepted'), 'err');
+        else toast(err.message || (JA() ? '参加できませんでした' : 'That entry was not accepted'), 'err');
+        btn?.classList.remove('is-busy');
+      }
+    });
+  });
+}
+
+/* ---------- flash banners ---------- */
+export function initFlash(root = document) {
+  $$('[data-flash-hide]', root).forEach((b) => {
+    if (b.__fx) return;
+    b.__fx = true;
+    b.addEventListener('click', () => b.closest('.form-flash')?.remove());
+  });
+}
+
 /* ---------- boot ---------- */
 export function mount(root = document) {
   initFanCards(root);
@@ -559,6 +869,12 @@ export function mount(root = document) {
   initShop();
   initChat();
   initVault();
+  initCountdowns(root);
+  initWall(root);
+  initCheckin(root);
+  initNotify(root);
+  initDraws(root);
+  initFlash(root);
   const shellBooted = document.body.dataset.shellBooted;
   if (!shellBooted) { document.body.dataset.shellBooted = '1'; initShell(); initLive(); }
   else { initShellRebind(); }
@@ -567,6 +883,7 @@ export function mount(root = document) {
 }
 
 function initShellRebind() {
+  $$('[data-open-member]').forEach((b) => { if (!b.__mb) { b.__mb = true; b.addEventListener('click', (e) => { e.preventDefault(); openMember(b.dataset.openMember || 'login'); }); } });
   $$('.m-form').forEach((f) => { if (!f.__bound) { f.__bound = true; f.addEventListener('submit', (e) => { e.preventDefault(); submitMember(f, { okTab: f.dataset.action === 'signup' ? 'dashboard' : null }); }); } });
   $$('.m-tab').forEach((b) => { if (!b.__bound) { b.__bound = true; b.addEventListener('click', () => switchMember(b.dataset.tab)); } });
 }

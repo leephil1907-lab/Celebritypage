@@ -1,0 +1,10 @@
+<% /* one banner for whatever a form just did — the text is chosen server side, never echoed from the client */ %>
+<% const f = (typeof flash !== 'undefined' && flash) || null; %>
+<% if (f) { %>
+<p class="form-flash is-<%= f.kind %>" data-reveal role="status">
+  <span class="mono dim small">FORM •</span>
+  <b><%= f.text %></b>
+  <% if (f.to) { %><a class="link-arrow mono small" href="<%= f.to %>"><%= lang === 'ja' ? '見る' : 'view' %> →</a><% } %>
+  <button type="button" class="fl-x" data-flash-hide aria-label="<%= lang === 'ja' ? '閉じる' : 'Dismiss' %>">×</button>
+</p>
+<% } %>

@@ -38,6 +38,11 @@ export const PAGE_DEFS = {
     en: { title: 'TOUR — Live 2026 Checkpoint', desc: 'Fukuoka to Seoul to Taipei: dates, venues, fan-club lottery, goods and the QR Tour Passport.' },
     ja: { title: 'TOUR — Live 2026 Checkpoint', desc: '福岡・ソウル・台北の全公演日程、会場、ファンクラブ先行、グッズ、QRツアーパスポートのご案内。' },
   },
+  wall: {
+    path: '/wall/', priority: '0.7', changefreq: 'daily', index: true,
+    en: { title: 'FAN WALL — notes from the crowd', desc: 'What members wrote after each night of Live Tour 2026 Checkpoint — read by the fan-club desk before anything goes up.' },
+    ja: { title: 'FAN WALL — 会場からのノート', desc: 'Live Tour 2026 Checkpoint の各公演後にメンバーが書いたノート。事務局が確認してから掲載します。' },
+  },
   journal: {
     path: '/journal/', priority: '0.8', changefreq: 'daily', index: true,
     en: { title: 'JOURNAL — Editorial', desc: 'Tour, film, music and style writing from the official desk.' },
@@ -285,6 +290,27 @@ function structuredData({ locals, o, site, title, description, image, indexable,
     });
   }
 
+  /* a single night: an Event node with the setlist as its musicArrangement */
+  if (locals.show) {
+    const sh = locals.show;
+    const past = Number(sh.at_ms || 0) && Number(sh.at_ms) < Date.now();
+    nodes.push({
+      '@type': 'MusicEvent',
+      '@id': `${canonical}#event`,
+      name: sh.title || `${sh.tour} — ${sh.city}`,
+      startDate: isoDate(sh.date),
+      ...(past ? {} : { eventStatus: 'https://schema.org/EventScheduled' }),
+      eventAttendanceMode: sh.attended ? 'https://schema.org/OfflineEventAttendanceMode' : 'https://schema.org/OnlineEventAttendanceMode',
+      location: { '@type': 'Place', name: sh.venue || sh.city || '', address: { '@type': 'PostalAddress', addressLocality: sh.city || '', addressCountry: 'JP' } },
+      performer: { '@id': `${o}/#person` },
+      organizer: { '@id': `${o}/#organization` },
+      image: url(image),
+      url: canonical,
+      ...(Array.isArray(sh.setlist) && sh.setlist.length ? { musicArrangement: sh.setlist.map((t) => ({ '@type': 'MusicComposition', name: t })) } : {}),
+      ...(sh.photos ? { image: abs(o, (sh.gallery && sh.gallery[0]) || image) } : {}),
+    });
+  }
+
   if (Array.isArray(locals.tour) && locals.tour.length) {
     nodes.push({
       '@type': 'ItemList',
@@ -365,7 +391,8 @@ export function sitemapXml(req) {
     const mod = cap(key === 'home' ? lastmod('news', 'date')
       : key === 'journal' ? lastmod('journal_posts', 'published_at')
         : key === 'shop' ? lastmod('products', 'updated_at')
-          : key === 'tour' ? lastmod('tour_dates', 'date') : today) || today;
+          : key === 'wall' ? lastmod('fan_wall', 'created_at')
+            : key === 'tour' ? (lastmod('shows', 'date') || lastmod('tour_dates', 'date')) : today) || today;
     urls.push(`  <url>
     <loc>${esc(loc)}</loc>
     <xhtml:link rel="alternate" hreflang="ja" href="${esc(localeUrl(o, def.path, 'ja'))}"/>
@@ -391,6 +418,20 @@ export function sitemapXml(req) {
   </url>`);
   }
 
+  // every archived night is a real page with a real setlist — it earns a URL of its own
+  let nights = [];
+  try { nights = all(`SELECT slug, date, city, tour FROM shows WHERE status='published' ORDER BY date DESC LIMIT 200`); } catch { /* table may be mid-migration */ }
+  for (const n of nights) {
+    urls.push(`  <url>
+    <loc>${esc(abs(o, `/tour/show/${n.slug}`))}</loc>
+    <xhtml:link rel="alternate" hreflang="ja" href="${esc(localeUrl(o, `/tour/show/${n.slug}`, 'ja'))}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="${esc(localeUrl(o, `/tour/show/${n.slug}`, 'en'))}"/>
+    <lastmod>${cap(isoDate(n.date)) || today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`);
+  }
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${urls.join('\n')}
@@ -407,6 +448,7 @@ Allow: /work/
 Allow: /music/
 Allow: /tour/
 Allow: /journal/
+Allow: /wall/
 Allow: /archive/
 Allow: /shop/
 Allow: /join/

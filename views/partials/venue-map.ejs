@@ -1,0 +1,49 @@
+<% /*
+  venue-map.ejs — the locator beside a tour row.
+  No tiles, no third-party request: the pin is placed by projecting the row's own lat/lng into a
+  box that is a fixed span around it, so the graticule, the pin and the scale bar are all derived
+  from the same numbers the admin console edits. Where a date has no coordinates the row simply
+  leaves the map out — an empty frame would be a lie.
+*/
+const m = d.map;
+if (!m) return;
+const W = 128, H = 92, PAD = 10;
+const px = (lng) => PAD + ((lng - m.box.lngMin) / (m.box.lngMax - m.box.lngMin)) * (W - PAD * 2);
+const py = (lat) => (H - PAD) - ((lat - m.box.latMin) / (m.box.latMax - m.box.latMin)) * (H - PAD * 2);
+const cx = px(m.lng), cy = py(m.lat);
+const half = Math.max(2, Math.round(m.scale_km / 2));
+%>
+<figure class="vmap">
+  <svg class="vm-svg" viewBox="0 0 <%= W %> <%= H %>" width="<%= W %>" height="<%= H %>" role="img"
+    aria-label="<%= d.venue || d.city %> — <%= m.lat.toFixed(4) %>, <%= m.lng.toFixed(4) %><%= m.from_gate ? ', ' + m.from_gate + ' km from the tour’s first room' : '' %>">
+    <rect class="vm-bg" x="0" y="0" width="<%= W %>" height="<%= H %>" rx="9"></rect>
+    <% /* the graticule: one line per degree-fraction the box contains */ %>
+    <g class="vm-grid" aria-hidden="true">
+      <% m.grid.forEach(function (lng) { %><line x1="<%= px(lng).toFixed(2) %>" y1="<%= PAD - 4 %>" x2="<%= px(lng).toFixed(2) %>" y2="<%= H - PAD + 4 %>"></line><% }) %>
+      <% m.gridLat.forEach(function (lat) { %><line x1="<%= PAD - 4 %>" y1="<%= py(lat).toFixed(2) %>" x2="<%= W - PAD + 4 %>" y2="<%= py(lat).toFixed(2) %>"></line><% }) %>
+    </g>
+    <g class="vm-rings" aria-hidden="true">
+      <circle cx="<%= cx.toFixed(2) %>" cy="<%= cy.toFixed(2) %>" r="10"></circle>
+      <circle cx="<%= cx.toFixed(2) %>" cy="<%= cy.toFixed(2) %>" r="21"></circle>
+    </g>
+    <% /* a scale bar for the half-span of the box, so the zoom is legible */ %>
+    <g class="vm-scale" aria-hidden="true">
+      <line x1="<%= PAD %>" y1="<%= H - 7 %>" x2="<%= PAD + (W - PAD * 2) / 2 %>" y2="<%= H - 7 %>"></line>
+      <text class="vm-scale-t" x="<%= PAD + 1 %>" y="<%= H - 11 %>"><%= half %> km</text>
+    </g>
+    <g class="vm-pin">
+      <line x1="<%= cx.toFixed(2) %>" y1="<%= (cy - 15).toFixed(2) %>" x2="<%= cx.toFixed(2) %>" y2="<%= (cy - 3).toFixed(2) %>"></line>
+      <circle class="vm-halo" cx="<%= cx.toFixed(2) %>" cy="<%= cy.toFixed(2) %>" r="7"></circle>
+      <circle class="vm-dot" cx="<%= cx.toFixed(2) %>" cy="<%= cy.toFixed(2) %>" r="3.1"></circle>
+    </g>
+  </svg>
+  <figcaption class="vm-cap">
+    <b><%= d.venue || d.city %></b>
+    <% if (m.district) { %><span class="dim small"><%= m.district %></span><% } %>
+    <span class="mono dim vm-co"><%= m.lat.toFixed(3) %>, <%= m.lng.toFixed(3) %><% if (m.from_gate) { %> • <%= m.from_gate.toLocaleString('en-US') %> km<% } %></span>
+  </figcaption>
+  <span class="vm-links">
+    <a class="mono small" href="<%= m.osm %>" target="_blank" rel="noopener noreferrer">Map ↗</a>
+    <a class="mono small" href="<%= m.gmaps %>" target="_blank" rel="noopener noreferrer"><%= lang === 'ja' ? '経路' : 'Directions' %> ↗</a>
+  </span>
+</figure>

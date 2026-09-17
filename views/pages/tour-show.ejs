@@ -1,0 +1,113 @@
+<% /* A single night in the archive: the running order, the frames, and what the desk wrote after */ %>
+<%- include('../partials/sections/pagehero', { ph: {
+  kicker: `${show.tour} • ${show.date}`,
+  title: show.city, title2: show.venue || (lang === 'ja' ? '公演記録' : 'show report'),
+  sub: show.note || (lang === 'ja' ? 'この夜のリハーサルから、 Encore まで' : 'From the soundcheck to the encore, as it happened'),
+  images: show.gallery && show.gallery.length ? show.gallery : ['/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg'],
+  cta: [[lang === 'ja' ? 'セットリスト' : 'Setlist', '#setlist'], [lang === 'ja' ? 'デスクの記録' : 'The report', '#report']],
+  side: { kicker: lang === 'ja' ? 'この夜' : 'THIS NIGHT', title: `${show.songs} ${lang === 'ja' ? '曲 • ' + show.duration_min + '分' : 'songs • ' + show.duration_min + ' min'}`,
+    body: show.attended ? (lang === 'ja' ? `${show.attended.toLocaleString('en-US')} 人来場 (${show.fill_pct}%)\n${show.photos} コマを Vault に保存` : `${show.attended.toLocaleString('en-US')} in the room (${show.fill_pct}%)\n${show.photos} frames kept in the vault`) : (lang === 'ja' ? 'リハーサル・配信の記録' : 'A rehearsal stream, no room'),
+    cta: [[lang === 'ja' ? 'パスポート' : 'Passport', '/tour/#pass'], [t('cta.allShows'), '/tour/#shows']] }
+} }) %>
+
+<section class="section" id="setlist">
+  <div class="section-head" data-reveal>
+    <div><h2><%= lang === 'ja' ? 'セットリスト' : 'The setlist' %></h2><p><%= lang === 'ja' ? '会場で見られた順のまま — Encore は別枠' : 'In the order the room heard it — the encore is kept apart' %></p></div>
+    <span class="tagchip gold"><%= show.songs %> <%= lang === 'ja' ? '曲' : 'songs' %></span>
+  </div>
+  <div class="set-wrap" data-reveal>
+    <ol class="set-list">
+      <% show.setlist.forEach(function (t, i) { %>
+      <li><span class="sl-n mono"><%= String(i + 1).padStart(2, '0') %></span><b><%= t %></b></li>
+      <% }) %>
+    </ol>
+    <% if (show.encore && show.encore.length) { %>
+    <ol class="set-list is-encore" start="<%= show.setlist.length + 1 %>">
+      <li class="sl-head"><span class="mono"><%= lang === 'ja' ? 'アンコール' : 'ENCORE' %></span></li>
+      <% show.encore.forEach(function (t, i) { %>
+      <li><span class="sl-n mono"><%= String(show.setlist.length + 1 + i).padStart(2, '0') %></span><b><%= t %></b></li>
+      <% }) %>
+    </ol>
+    <% } %>
+  </div>
+  <% if (show.songs > 6) { %>
+  <p class="set-note mono dim small"><%= lang === 'ja' ? `うち ${Math.ceil(show.songs / 3)} 曲は CHECKPOINT から` : `${Math.ceil(show.songs / 3)} of these are from CHECKPOINT` %></p>
+  <% } %>
+</section>
+
+<% if (show.photos) { %>
+<section class="section section-tight" id="frames">
+  <div class="section-head" data-reveal>
+    <div><h2><%= lang === 'ja' ? '会場からの写真' : 'Frames from the night' %></h2><p><%= lang === 'ja' ? 'クリックで lightbox — 動画は Vault 内' : 'Click for the lightbox — video stays in the Vault' %></p></div>
+    <span class="tagchip"><%= show.photos %></span>
+  </div>
+  <div class="show-gallery" data-lightbox data-reveal-stagger>
+    <% show.gallery.forEach(function (g, gi) { %>
+    <figure class="sg-item" data-lb-item data-lb-full="<%= g %>" data-lb-cap="<%= show.tour %> — <%= show.city %> · frame <%= gi + 1 %> of <%= show.photos %>">
+      <img <%- imgAttrs(g, { alt: `${show.tour} — ${show.city}, ${show.date} (frame ${gi + 1})`, sizes: '(max-width:720px) 92vw, 320px' }) %>>
+    </figure>
+    <% }) %>
+  </div>
+</section>
+<% } %>
+
+<section class="section" id="report">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? 'デスクの記録' : 'What the desk wrote' %></h2><p class="mono dim small"><%= show.tour %> • <%= show.date %> • <%= show.city %></p></div></div>
+  <div class="report" data-reveal><p><%= show.report || (lang === 'ja' ? 'この夜の記録は準備中です。' : 'The report for this night is being written.') %></p></div>
+  <dl class="show-facts" data-reveal>
+    <% if (show.capacity) { %><div><dt class="mono dim small"><%= lang === 'ja' ? '会場収容' : 'capacity' %></dt><dd><%= show.capacity.toLocaleString('en-US') %></dd></div><% } %>
+    <% if (show.attended) { %><div><dt class="mono dim small"><%= lang === 'ja' ? '来場者' : 'attended' %></dt><dd><%= show.attended.toLocaleString('en-US') %> <span class="dim small">(<%= show.fill_pct %>%)</span></dd></div><% } %>
+    <div><dt class="mono dim small"><%= lang === 'ja' ? '演奏時間' : 'running time' %></dt><dd><%= show.duration_min %> <%= lang === 'ja' ? '分' : 'min' %></dd></div>
+    <div><dt class="mono dim small"><%= lang === 'ja' ? '公演ツアー' : 'tour' %></dt><dd><%= show.tour %></dd></div>
+  </dl>
+</section>
+
+<% if (show.tour_dates && show.tour_dates.length) { %>
+<section class="section section-tight" id="city-dates">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? `${show.city} の日程` : `Other nights in ${show.city}` %></h2><p><%= lang === 'ja' ? '残席と抽選はデータベースから' : 'Capacity and lottery state come live from the database' %></p></div></div>
+  <div class="mini-dates" data-reveal>
+    <% show.tour_dates.forEach(function (d) { %>
+    <article class="md-row">
+      <span class="mono dim"><%= d.date %> • <%= d.time || '—' %></span>
+      <b><%= d.venue || d.city %></b>
+      <span class="tagchip <%= d.sold_out ? 'solid' : 'gold' %>"><%= d.sold_out ? (lang === 'ja' ? '終了' : 'SOLD OUT') : `${d.remaining}/${d.capacity}` %></span>
+      <a class="link-arrow mono small" href="/tour/#date-<%= d.id %>"><%= lang === 'ja' ? '日程' : 'Date' %> →</a>
+    </article>
+    <% }) %>
+  </div>
+</section>
+<% } %>
+
+<% if (user) { %>
+<section class="section section-tight" id="passport-night">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? 'この夜のスタンプ' : 'This night in your passport' %></h2><p><%= lang === 'ja' ? '会場コードを入れると、台帳が押されます' : 'Enter the code from the board by the door and the stamp is yours' %></p></div>
+    <span class="tagchip <%= passport.have ? 'gold' : '' %>"><%= passport.have %> / <%= passport.total %></span></div>
+  <form class="checkin" method="post" action="/tour/checkin" data-checkin-form>
+    <input type="hidden" name="back" value="/tour/show/<%= show.slug %>">
+    <label class="mono dim small"><span><%= lang === 'ja' ? '会場コード' : 'VENUE CODE' %></span>
+      <input name="code" inputmode="text" autocomplete="off" placeholder="<%= show.tour_dates && show.tour_dates[0] && show.tour_dates[0].code ? show.tour_dates[0].code : 'CITY-MMDD' %>" maxlength="16" required></label>
+    <button type="submit" class="btn gold"><%= t('cta.checkin') %></button>
+    <p class="ci-msg mono dim small" data-checkin-msg role="status" aria-live="polite"></p>
+  </form>
+</section>
+<% } %>
+
+<% if (raffles && raffles.length) { %>
+<section class="section section-tight" id="night-draw">
+  <div class="section-head" data-reveal><div><h2><%= t('sec.lottery') %></h2><p><%= lang === 'ja' ? 'この夜に紐づく抽選' : 'Draws tied to this night' %></p></div></div>
+  <%- include('../partials/sections/raffles', { raffles: raffles }) %>
+</section>
+<% } %>
+
+<section class="section section-tight" id="nearby">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? '前後の夜' : 'Around this night' %></h2></div></div>
+  <nav class="show-nav">
+    <% if (show.older) { %><a class="sn-link" href="/tour/show/<%= show.older.slug %>"><span class="mono dim small"><%= lang === 'ja' ? '前の夜' : 'EARLIER' %></span><b><%= show.older.title %></b><span class="mono"><%= show.older.date %></span></a><% } %>
+    <% if (show.newer) { %><a class="sn-link is-right" href="/tour/show/<%= show.newer.slug %>"><span class="mono dim small"><%= lang === 'ja' ? '次の夜' : 'LATER' %></span><b><%= show.newer.title %></b><span class="mono"><%= show.newer.date %></span></a><% } %>
+  </nav>
+  <% if (siblings && siblings.length) { %>
+  <div class="show-sibs" data-reveal-stagger>
+    <% siblings.forEach(function (s) { %><a class="tagchip" href="/tour/show/<%= s.slug %>"><%= s.date %> <%= s.city %></a><% }) %>
+  </div>
+  <% } %>
+</section>

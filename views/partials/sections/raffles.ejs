@@ -1,0 +1,38 @@
+<% /* Meet & greet draws — entry is one per member, the order is a published seed */ %>
+<% const list = (typeof raffles !== 'undefined' && raffles) || []; %>
+<% if (list.length) { %>
+<div class="draw-grid">
+  <% list.forEach(function (r, i) { %>
+  <article class="draw-card is-<%= r.status %>" data-reveal data-reveal-delay="<%= i * 60 %>">
+    <header>
+      <span class="tagchip <%= r.status === 'open' ? 'gold' : (r.status === 'drawn' ? 'solid' : '') %>"><%= r.status === 'open' ? (lang === 'ja' ? '受付中' : 'OPEN') : (r.status === 'drawn' ? (lang === 'ja' ? '結果発表' : 'DRAWN') : r.status.toUpperCase()) %></span>
+      <% if (r.date) { %><span class="mono dim"><%= r.date %></span><% } %>
+    </header>
+    <b><%= r.title %></b>
+    <p class="dim small"><%= r.prize %></p>
+    <dl class="dc-facts mono">
+      <div><dt><%= lang === 'ja' ? '当選' : 'winners' %></dt><dd><%= r.winners %><% if (r.alternates) { %> +<%= r.alternates %> <%= lang === 'ja' ? '補欠' : 'alt' %><% } %></dd></div>
+      <div><dt><%= lang === 'ja' ? '応募' : 'entries' %></dt><dd><%= r.entries %></dd></div>
+      <div><dt><%= lang === 'ja' ? '対象' : 'from tier' %></dt><dd><%= String(r.tier_min).toUpperCase() %>+</dd></div>
+      <% if (r.closes_at) { %><div><dt><%= lang === 'ja' ? '締切' : 'closes' %></dt><dd><%= r.closes_at.slice(0, 10) %></dd></div><% } %>
+    </dl>
+    <% if (r.entered) { %>
+    <p class="dc-mine"><%= lang === 'ja' ? '参加番号' : 'YOUR CODE' %> <b class="mono"><%= r.my_code %></b>
+      <% if (r.my_status === 'winner') { %><span class="tagchip gold"><%= lang === 'ja' ? '当選' : 'WINNER' %></span><% } else if (r.my_status === 'alternate') { %><span class="tagchip"><%= lang === 'ja' ? '補欠' : 'ALTERNATE' %></span><% } else if (r.my_status === 'missed') { %><span class="tagchip dim"><%= lang === 'ja' ? '不通過' : 'NOT DRAWN' %></span><% } %></p>
+    <% } else if (r.status === 'open' && r.eligible && user) { %>
+    <form method="post" action="/tour/raffle/<%= r.id %>/enter" data-raffle-form>
+      <input type="hidden" name="raffle_id" value="<%= r.id %>">
+      <button type="submit" class="btn gold full"><%= t('cta.enterDraw') %></button>
+    </form>
+    <% } else if (r.status === 'open' && !user) { %>
+    <a class="btn primary full" href="/join/"><%= t('cta.join') %></a>
+    <% } else if (r.status === 'open' && !r.eligible) { %>
+    <p class="dc-lock mono dim small"><%= lang === 'ja' ? `${String(r.tier_min).toUpperCase()}会員以上が参加できます` : `${String(r.tier_min).toUpperCase()} members and above can enter.` %></p>
+    <% } %>
+    <a class="link-arrow mono small" href="/tour/raffle/<%= r.id %>"><%= r.status === 'drawn' ? t('cta.winners') : (lang === 'ja' ? '抽選の詳細' : 'Draw details') %> →</a>
+  </article>
+  <% }) %>
+</div>
+<% } else { %>
+<div class="empty"><%= lang === 'ja' ? '現在受付中の抽選はありません' : 'No draws open right now — they are announced in News.' %></div>
+<% } %>

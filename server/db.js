@@ -3,16 +3,49 @@
  * Real persistence: members, sessions, carts, tickets, bookings, orders, CMS content, audit log.
  */
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(__dirname, '..');
-const DATA_DIR = path.join(ROOT, 'data');
-const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, 'celebrity.db');
+/**
+ * Some hosts (Vercel, CI sandboxes) hand the function a read-only filesystem and only /tmp is
+ * writable. A state directory that cannot be written must not stop the site from booting, so the
+ * data dir and the upload dir each fall back to a single scratch root and say so on the console.
+ */
+/**
+ * Never create first: a directory that already exists but cannot be written (the read-only task
+ * dir on Vercel) is answered by one access() call, and mkdir is only tried for a path that is
+ * simply missing. On an odd virtual filesystem mkdir can block, so it is the last resort.
+ */
+function usableDir(dir) {
+  try {
+    fs.accessSync(dir, fs.constants.W_OK);
+    return true;
+  } catch (e) {
+    if (!e || e.code !== 'ENOENT') return false;
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      fs.accessSync(dir, fs.constants.W_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
 
-fs.mkdirSync(DATA_DIR, { recursive: true });
+const SCRATCH = path.join(os.tmpdir(), 'starto-celebritypage');
+const WANTED_DATA = process.env.DATA_DIR || path.join(ROOT, 'data');
+const WANTED_UPLOADS = process.env.UPLOAD_DIR || path.join(ROOT, 'uploads');
+export const DATA_DIR = usableDir(WANTED_DATA) ? WANTED_DATA : path.join(SCRATCH, 'data');
+export const UPLOAD_DIR = usableDir(WANTED_UPLOADS) ? WANTED_UPLOADS : path.join(SCRATCH, 'uploads');
+const DB_FILE = process.env.DB_FILE && usableDir(path.dirname(process.env.DB_FILE))
+  ? process.env.DB_FILE
+  : path.join(DATA_DIR, 'celebrity.db');
+/** true when state cannot live in the repo — the boot line says so out loud */
+export const STATE_ON_SCRATCH = DATA_DIR.startsWith(SCRATCH) || UPLOAD_DIR.startsWith(SCRATCH);
 
 const SCHEMA = `
 PRAGMA journal_mode = WAL;
@@ -120,6 +153,22 @@ CREATE TABLE IF NOT EXISTS tour_dates (
   capacity INTEGER DEFAULT 20, remaining INTEGER DEFAULT 20,
   tier_required TEXT, status TEXT NOT NULL DEFAULT 'on_sale', sort INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS notify_list (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  tour_date_id INTEGER REFERENCES tour_dates(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  tier_hint TEXT,                                  -- what they said they are, free text from the form
+  source TEXT NOT NULL DEFAULT 'site',             -- site | kiosk | admin
+  token TEXT NOT NULL UNIQUE,                      -- one-click unsubscribe, no login needed
+  status TEXT NOT NULL DEFAULT 'subscribed',       -- subscribed | unsubscribed
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  unsubscribed_at TEXT,
+  UNIQUE (email, tour_date_id)
+);
+CREATE INDEX IF NOT EXISTS idx_notify_date ON notify_list(tour_date_id, status);
+CREATE INDEX IF NOT EXISTS idx_notify_email ON notify_list(email);
 
 CREATE TABLE IF NOT EXISTS vault_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -230,6 +279,79 @@ CREATE TABLE IF NOT EXISTS outbox (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   event TEXT NOT NULL, payload TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+/* ---------- live-show archive: setlist, gallery, the report ---------- */
+CREATE TABLE IF NOT EXISTS shows (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT NOT NULL UNIQUE,
+  tour TEXT NOT NULL,
+  date TEXT NOT NULL,                              -- YYYY.MM.DD (site convention)
+  city TEXT NOT NULL, venue TEXT,
+  capacity INTEGER DEFAULT 0, attended INTEGER DEFAULT 0,
+  duration_min INTEGER DEFAULT 120,
+  setlist TEXT NOT NULL DEFAULT '[]',               -- JSON array of song titles
+  encore TEXT,
+  gallery TEXT NOT NULL DEFAULT '[]',               -- JSON array of /image-search paths
+  report TEXT, note TEXT,
+  status TEXT NOT NULL DEFAULT 'published',
+  sort INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_shows_date ON shows(date DESC, status);
+
+/* ---------- fan wall: notes from members, published only after review ---------- */
+CREATE TABLE IF NOT EXISTS fan_wall (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,                                 -- null for seeded editorial notes
+  name TEXT NOT NULL, city TEXT, mood TEXT,
+  message TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',          -- pending | approved | rejected
+  applause INTEGER NOT NULL DEFAULT 0,
+  featured INTEGER NOT NULL DEFAULT 0,
+  reply TEXT,                                      -- a note back from the fan club desk
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  reviewed_at TEXT, reviewed_by TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_wall_pub ON fan_wall(status, created_at DESC, id DESC);
+CREATE TABLE IF NOT EXISTS fan_wall_claps (
+  wall_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (wall_id, user_id)
+);
+
+/* ---------- meet & greet lotteries: entries, then a reproducible draw ---------- */
+CREATE TABLE IF NOT EXISTS raffles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL, prize TEXT,
+  tour_date_id INTEGER, show_id INTEGER,
+  tier_min TEXT NOT NULL DEFAULT 'silver',
+  winners INTEGER NOT NULL DEFAULT 5, alternates INTEGER NOT NULL DEFAULT 3,
+  opens_at TEXT, closes_at TEXT,
+  status TEXT NOT NULL DEFAULT 'open',              -- open | closed | drawn | cancelled
+  seed TEXT, drawn_at TEXT, note TEXT,
+  sort INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS raffle_entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  raffle_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
+  code TEXT NOT NULL, ticket_ref TEXT,
+  status TEXT NOT NULL DEFAULT 'entered',           -- entered | winner | alternate | missed
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (raffle_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_entries_raffle ON raffle_entries(raffle_id, status);
+
+/* ---------- tour passport: a stamp is a record, not a decoration ---------- */
+CREATE TABLE IF NOT EXISTS passport_stamps (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  tour_date_id INTEGER, show_id INTEGER,
+  city TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'venue',             -- venue | desk | import
+  stamped_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (user_id, tour_date_id)
+);
+CREATE INDEX IF NOT EXISTS idx_stamps_user ON passport_stamps(user_id, stamped_at DESC);
 `;
 
 let db;
@@ -255,6 +377,15 @@ function migrate(handle) {
   addIf('tickets', 'session_token', 'TEXT');
   addIf('news', 'sort', 'INTEGER NOT NULL DEFAULT 0');
   addIf('journal_posts', 'sort', 'INTEGER NOT NULL DEFAULT 0');
+  // the live-show features: a door code to check in against and a doors-open time
+  addIf('tour_dates', 'checkin_code', 'TEXT');
+  addIf('tour_dates', 'doors_at', 'TEXT');
+  addIf('tour_dates', 'setlist_teaser', 'TEXT');
+  // where the room is (a locator map needs numbers) and when each window opens
+  addIf('tour_dates', 'lat', 'REAL');
+  addIf('tour_dates', 'lng', 'REAL');
+  addIf('tour_dates', 'presale_at', 'TEXT');
+  addIf('tour_dates', 'on_sale_at', 'TEXT');
   handle.exec(`CREATE INDEX IF NOT EXISTS idx_tickets_session ON tickets(session_token)`);
 }
 
@@ -304,7 +435,6 @@ export function audit(actor, action, entity, detail) {
   insert('audit_logs', { actor: actor || 'system', action, entity: entity || null, detail: detail ? String(detail).slice(0, 500) : null });
 }
 
-export const DB_FILE_EXPORT = DB_FILE;
 export { DB_FILE };
 
 /* CLI: node server/db.js --reset */

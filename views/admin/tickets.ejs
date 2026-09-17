@@ -10,14 +10,14 @@
       <tbody>
         <% rows.forEach(function(t){ %>
         <tr data-status="<%= t.status %>" class="<%= selected === t.id ? 'is-updated' : '' %>">
-          <td class="mono"><a class="gold" href="/tickets/<%= t.id %>"><%= t.code %></a></td>
+          <td class="mono"><a class="gold" href="<%= base %>/tickets/<%= t.id %>"><%= t.code %></a></td>
           <td><b><%= t.subject %></b><br><span class="clip dim small" title="<%= t.last_body || '' %>"><%= (t.last_body || '').replace(/\n/g, ' ').slice(0, 90) %></span></td>
           <td class="small"><%= t.name || '—' %><br><span class="dim mono small"><%= t.email || '' %></span></td>
           <td><span class="pill mono"><%= t.category %></span></td>
           <td class="mono"><%= t.msg_count %></td>
           <td class="mono dim small"><%= (t.updated_at || '').slice(5, 16) %></td>
           <td class="ta-r">
-            <form method="post" action="/tickets/<%= t.id %>/status" class="rowform">
+            <form method="post" action="<%= base %>/tickets/<%= t.id %>/status" class="rowform">
               <select name="status" aria-label="Status"><% ['open','in_progress','waiting','resolved','closed'].forEach(function(s){ %><option value="<%= s %>" <%= t.status === s ? 'selected' : '' %>><%= s %></option><% }) %></select>
               <button class="btn small" type="submit">Set</button>
             </form>

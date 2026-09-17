@@ -279,9 +279,19 @@ test('checkout is members-only, debits stock and returns a verifiable code', asy
   const bogus = await req('buyer', '/api/orders/verify', { method: 'POST', form: { qr: 'zzzzzz', _csrf: csrf } });
   assert.equal(bogus.status, 404);
 
-  const stamp = await req('buyer', '/api/passport/stamp', { method: 'POST', form: { code: 'VAULT 01', _csrf: csrf } });
+  // the kiosk stamps against the code on the board by the door — the feed carries it per date
+  const dates = await req('buyer', '/api/tour');
+  const open = (dates.data || []).find((d) => d.can_check_in);
+  assert.ok(open && open.code, 'an in-window date should come back with its door code');
+  const stamp = await req('buyer', '/api/passport/stamp', { method: 'POST', form: { code: open.code, _csrf: csrf } });
   assert.equal(stamp.status, 200, stamp.text.slice(0, 160));
-  assert.match(stamp.data.message, /Stamped .*Fukuoka/);
+  assert.match(stamp.data.message, new RegExp(`Stamped .* ${open.city}`));
+  const twice = await req('buyer', '/api/passport/stamp', { method: 'POST', form: { code: open.code, _csrf: csrf } });
+  assert.equal(twice.data.already, true, 'a date is stamped once per member');
+  const nope = await req('buyer', '/api/passport/stamp', { method: 'POST', form: { code: 'NOPE-9999', _csrf: csrf } });
+  assert.equal(nope.status, 404, 'a code that is not on this tour is refused');
+  const row = (await req('buyer', '/api/me')).data.stamps.find((x) => x.id === open.id);
+  assert.ok(row && row.stamped, 'the passport should show the stamp it just took');
   const verifyPage = await req('buyer', `/shop/verify/${co.data.qr}`);
   assert.equal(verifyPage.status, 200);
   assert.match(verifyPage.text, new RegExp(co.data.order_no));
@@ -480,6 +490,210 @@ test('search covers every table and escapes user input', async () => {
   assert.ok(Array.isArray(api.data.results));
   const page = await req('search', '/search/?q=vinyl');
   assert.match(page.text, /search-hit|Nothing matched/);
+});
+
+/* ============ phase 6: the waitlist, the locator, and what an account is for ============ */
+const comingSoon = async (who) => (await req(who, '/api/tour')).data.find((d) => d.sale_state === 'coming_soon');
+
+test('a coming-soon row carries the waitlist form and a map that is drawn, not fetched', async () => {
+  const page = await req('p6page', '/tour/');
+  assert.equal(page.status, 200);
+  assert.match(page.text, /data-notify-form/, 'the waitlist form must be in the markup, not added by JS');
+  assert.match(page.text, /<svg class="vm-svg"/, 'the venue locator must render server-side');
+  assert.ok(!/tile|openstreetmap\.org\/[^"]*\.(png|jpg)/.test(page.text), 'no tile server may be referenced');
+  const i = page.text.indexOf('is-coming_soon');
+  assert.ok(i > 0, 'the pre_sale row has to be on the list at all');
+  const row = page.text.slice(i, i + 12000);
+  assert.match(row, /name="email"/);
+  assert.match(row, /name="company"/, 'the honeypot field ships with the form');
+  assert.match(row, /data-notify-msg/, 'and there is somewhere to put the answer');
+  assert.match(row, /osm\.org\/map|google\.com\/maps/, 'directions links point at the real maps');
+});
+
+test('the priority window is removed from the anonymous feed rather than hidden', async () => {
+  const soon = await comingSoon('p6anon');
+  assert.ok(soon, 'the seeded tour has a pre_sale date');
+  assert.equal(soon.presale_at, undefined);
+  assert.equal(soon.presale_ms, undefined);
+  assert.equal(soon.presale_visible, false);
+  assert.equal(soon.gate_open, false);
+  assert.ok(soon.map && soon.map.lat && soon.map.lng, 'where the room is stays public');
+  const page = await req('p6anon', '/tour/');
+  assert.ok(!page.text.includes(soon.presale_at), 'nothing can leak a window it never received');
+});
+
+test('a member below the required tier stays locked out; the tier that qualifies sees the date', async () => {
+  const seedLow = await req('p6gold', '/join/');
+  const inLow = await req('p6gold', '/api/auth/login', { method: 'POST', form: { email: 'marc@example.com', password: 'Starto2026!', _csrf: csrfOf(seedLow.text) } });
+  assert.equal(inLow.status, 200, inLow.text.slice(0, 140));
+  const low = (await req('p6gold', '/api/tour')).data.find((d) => d.sale_state === 'coming_soon');
+  assert.equal(low.gate_open, false, 'gold must not open a platinum window');
+  assert.equal(low.presale_at, undefined);
+  const seedHigh = await req('p6plat', '/join/');
+  await req('p6plat', '/api/auth/login', { method: 'POST', form: { email: 'aiko@example.com', password: 'Starto2026!', _csrf: csrfOf(seedHigh.text) } });
+  const high = (await req('p6plat', '/api/tour')).data.find((d) => d.sale_state === 'coming_soon');
+  assert.equal(high.gate_open, true);
+  assert.equal(high.presale_visible, true);
+  assert.match(String(high.presale_at), /^\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}$/, 'the window is a date and an hour, not a boolean');
+  const page = await req('p6plat', '/tour/');
+  assert.ok(page.text.includes(String(high.presale_at).slice(0, 10)), 'and the page shows it');
+});
+
+test('an address is captured once, answered with the key to leave, and the marker puts the row back', async () => {
+  const soon = await comingSoon('p6join');
+  const email = `wait-${Date.now()}@example.com`;
+  const join = await req('p6join', '/api/notify', { method: 'POST', json: { email, tour_date_id: soon.id } });
+  assert.equal(join.status, 201, join.text.slice(0, 160));
+  assert.equal(join.data.ok, true);
+  assert.ok(join.data.token, 'the reply has to hand back the capability to unsubscribe');
+  const dupe = await req('p6join', '/api/notify', { method: 'POST', json: { email, tour_date_id: soon.id } });
+  assert.equal(dupe.status, 200);
+  assert.equal(dupe.data.already, true);
+  assert.equal(dupe.data.ok, true, 'a second ask is not an error, it is the same answer');
+  const listed = (await req('p6join', '/api/tour')).data.find((d) => d.id === soon.id);
+  assert.equal(listed.on_list, true, 'the browser marker must be honoured by the row');
+  assert.equal(listed.waiting, (soon.waiting || 0) + 1);
+  const off = await req('p6join', '/api/notify/leave', { method: 'POST', json: { token: join.data.token, tour_date_id: soon.id } });
+  assert.equal(off.status, 200, off.text.slice(0, 140));
+  const after = (await req('p6join', '/api/tour')).data.find((d) => d.id === soon.id);
+  assert.equal(after.on_list, false, 'leaving has to be real, not cosmetic');
+  await req('p6leave', '/tour/');                                  // a jar needs its csrf cookie before it may write
+  const ghost = await req('p6leave', '/api/notify/leave', { method: 'POST', json: { token: 'nw_nobody_here' } });
+  assert.equal(ghost.status, 404);
+});
+
+test('bad input, a bot and a date already on sale are refused; five asks in a day is the end of it', async () => {
+  const soon = await comingSoon('p6refuse');
+  const bad = await req('p6refuse', '/api/notify', { method: 'POST', json: { email: 'not-an-address', tour_date_id: soon.id } });
+  assert.equal(bad.status, 422);
+  assert.equal(bad.data.field, 'email');
+  const bot = await req('p6refuse', '/api/notify', { method: 'POST', json: { email: `bot-${Date.now()}@example.com`, tour_date_id: soon.id, company: 'CLICK-TICKETS-FAST' } });
+  assert.equal(bot.status, 201, 'a bot must be thanked, not told it was caught');
+  const onSale = (await req('p6refuse', '/api/tour')).data.find((d) => d.sale_state === 'on_sale' && !d.is_past);
+  assert.ok(onSale, 'the tour has a date on sale to refuse');
+  const early = await req('p6refuse', '/api/notify', { method: 'POST', json: { email: `early-${Date.now()}@example.com`, tour_date_id: onSale.id } });
+  assert.equal(early.status, 409);
+  assert.equal(early.data.error, 'on_sale');
+  assert.ok(early.data.href, 'and it says where to go instead');
+
+  const spam = `many-${Date.now()}@example.com`;
+  const eligible = (await req('p6refuse', '/api/tour')).data
+    .filter((d) => ['coming_soon', 'waitlist', 'sold_out'].includes(d.sale_state) && !d.is_past)
+    .slice(0, 5);
+  assert.ok(eligible.length >= 4, 'the seeded tour needs enough waiting dates to prove the cap');
+  await req('p6many', '/tour/');                                    // fresh jar, so it needs its own csrf cookie
+  for (const d of eligible) {
+    const r = await req('p6many', '/api/notify', { method: 'POST', json: { email: spam, tour_date_id: d.id } });
+    assert.equal(r.status, 201, `${d.city}: ${r.text.slice(0, 120)}`);
+  }
+  const last = await req('p6many', '/api/notify', { method: 'POST', json: { email: spam, tour_date_id: soon.id } });
+  assert.equal(last.status, 429, `the ${eligible.length + 1}th ask in a day should be refused, got ${last.status}`);
+  assert.equal(last.data.error, 'rate_limited');
+});
+
+test('the no-JS door takes the same rules and lands back on the row', async () => {
+  const seed = await req('p6njs', '/tour/');
+  const soon = (await req('p6njs', '/api/tour')).data.find((d) => d.sale_state === 'coming_soon');
+  const door = await req('p6njs', '/tour/notify', { method: 'POST', form: { email: `njs-${Date.now()}@example.com`, tour_date_id: soon.id, back: '/tour/', _csrf: csrfOf(seed.text) } });
+  assert.equal(door.status, 302);
+  assert.match(door.location, /\/tour\/\?flash=notify_in#date-\d+$/, door.location);
+  const again = await req('p6njs', '/tour/');
+  assert.match(again.text, /ON THE LIST|待機リスト登録済み/, 'the row has to admit it is on the list');
+  assert.match(again.text, /data-leave-form/, 'and hand back the way off without a reload');
+});
+
+test('the desk queue is readable, exportable, and read-only', async () => {
+  const aseed = await req('p6admin', '/login', { base: ABASE });
+  const li = await req('p6admin', '/login', { method: 'POST', base: ABASE, form: { email: 'admin@starto.jp', password: 'Starto2026!', _csrf: csrfOf(aseed.text) } });
+  assert.equal(li.status, 302, 'admin login must work for the queue to be judged');
+  const screen = await req('p6admin', '/content/notify', { base: ABASE });
+  assert.equal(screen.status, 200);
+  assert.match(screen.text, /read-only/);
+  assert.ok(!screen.text.includes('id="rowForm"'), 'no editor may be offered on a queue the desk does not write');
+  const csv = await req('p6admin', '/content/notify/export.csv', { base: ABASE });
+  assert.equal(csv.status, 200);
+  assert.match(csv.res.headers.get('content-type'), /text\/csv/);
+  assert.match(csv.text, /^date,city,email,status,source,tier_hint,added_at/);
+  const write = await req('p6admin', '/content/notify', { method: 'POST', base: ABASE, form: { email: 'forged@example.com', _csrf: csrfOf(screen.text) } });
+  assert.equal(write.status, 405, 'a read-only resource must refuse a write');
+});
+
+test('a single-origin host serves the site and the console side by side', async () => {
+  const cport = PORT + 30;
+  const cbase = `http://127.0.0.1:${cport}`;
+  const cdb = path.join(ROOT, 'data', `test-combined-${process.pid}.db`);
+  for (const suffix of ['', '-wal', '-shm']) if (fs.existsSync(cdb + suffix)) fs.rmSync(cdb + suffix);
+  const extra = spawn(process.execPath, [path.join(ROOT, 'server', 'index.js')], {
+    cwd: ROOT,
+    env: { ...process.env, COMBINED: '1', PORT: String(cport), ADMIN_PORT: String(cport + 1), DB_FILE: cdb, HOST: '127.0.0.1', NODE_ENV: 'test', TEST_BOOT_MARK: `${BOOT_MARK}-c` },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let clog = '';
+  extra.stdout.on('data', (b) => { clog += b.toString(); });
+  extra.stderr.on('data', (b) => { clog += b.toString(); });
+  try {
+    const deadline = Date.now() + 25000;
+    let up = false;
+    while (Date.now() < deadline && !up) {
+      if (extra.exitCode !== null) throw new Error('combined server exited:\n' + clog);
+      try { up = (await fetch(`${cbase}/healthz`)).ok; } catch { await new Promise((r) => setTimeout(r, 150)); }
+    }
+    assert.ok(up, 'the combined server never came up:\n' + clog.slice(0, 400));
+
+    const home = await req('comb', '/', { base: cbase });
+    assert.equal(home.status, 200, 'the public site must answer on the same origin');
+    assert.match(home.text, /tour-card|is-coming_soon|tour-grid/);
+
+    const gate = await req('comb', '/admin/', { base: cbase });
+    assert.equal(gate.status, 302, 'the console is behind a login even when mounted');
+    assert.match(gate.location, /^\/admin\/login/, `the redirect has to stay under the mount, got ${gate.location}`);
+    const anon = await req('comb', '/admin/content/tour', { base: cbase });
+    assert.equal(anon.status, 302, 'no session, no content');
+
+    const seedPage = await req('comb', '/admin/login', { base: cbase });
+    assert.equal(seedPage.status, 200);
+    assert.match(seedPage.text, /href="\/admin\/static\/css\/admin\.css"/, 'assets have to be asked for under the mount');
+    const css = await req('comb', '/admin/static/css/admin.css', { base: cbase });
+    assert.equal(css.status, 200, 'the console stylesheet must resolve on the shared origin');
+    const js = await req('comb', '/admin/static/js/admin.js', { base: cbase });
+    assert.equal(js.status, 200, 'the console script must resolve on the shared origin');
+
+    const signed = await req('comb', '/admin/login', { method: 'POST', base: cbase, form: { email: 'admin@starto.jp', password: 'Starto2026!', _csrf: csrfOf(seedPage.text) } });
+    assert.equal(signed.status, 302, 'login has to land back inside the mount');
+    assert.match(signed.location, /^\/admin\/?$/, signed.location);
+
+    const dash = await req('comb', '/admin/', { base: cbase });
+    assert.equal(dash.status, 200);
+    const hrefs = [...new Set([...dash.text.matchAll(/href="(\/admin\/[^"#]*)"/g)].map((m) => m[1]))];
+    assert.ok(hrefs.length >= 6, `the mounted console has to emit its links under the mount — got ${hrefs.length}`);
+    for (const href of hrefs) {
+      const r = await req('comb', href, { base: cbase });
+      assert.ok(r.status < 400, `${href} answered ${r.status} on the mounted console`);
+    }
+    const editor = await req('comb', '/admin/content/notify', { base: cbase });
+    assert.equal(editor.status, 200);
+    assert.match(editor.text, /read-only/);
+
+    // a write has to survive the shared request too: the body stream is read once, by whoever gets it first
+    const mk = await req('comb', '/admin/content/tour', { method: 'POST', base: cbase, form: { tour: 'Live Tour 2026 Checkpoint', date: '2027.09.09', time: '18:00', city: 'Test City', venue: 'Test Hall', status: 'pre_sale', capacity: 10, remaining: 10, sort: 99, _csrf: csrfOf(dash.text) } });
+    assert.equal(mk.status, 302, `a console write over the mount must succeed, got ${mk.status}`);
+    const back = await req('comb', '/admin/content/tour', { base: cbase });
+    const rowId = [...back.text.matchAll(/data-row="(\d+)"[^>]*data-text="2027\.09\.09 test city/g)].map((m) => m[1])[0];
+    assert.ok(rowId, 'the row the console just wrote has to be in the list');
+    const rm = await req('comb', `/admin/content/tour/${rowId}/delete`, { method: 'POST', base: cbase, form: { _csrf: csrfOf(back.text) } });
+    assert.equal(rm.status, 302);
+    const gone = await req('comb', '/admin/content/tour', { base: cbase });
+    assert.ok(!gone.text.includes('Test City'), 'and deleting it removes it again');
+
+    const missing = await req('comb', '/admin/no-such-screen', { base: cbase });
+    assert.equal(missing.status, 404, 'a bad console path is a 404, not a crash');
+    const deadSite = await req('comb', '/no-such-page/', { base: cbase });
+    assert.equal(deadSite.status, 404);
+    assert.ok(!/ReferenceError|TypeError:|Cannot read/.test(clog), 'combined server logged:\n' + clog.split('\n').filter((l) => /Error/.test(l)).slice(0, 4).join('\n'));
+  } finally {
+    if (extra.exitCode === null) extra.kill('SIGKILL');
+    for (const suffix of ['', '-wal', '-shm']) if (fs.existsSync(cdb + suffix)) fs.rmSync(cdb + suffix);
+  }
 });
 
 test('no server-side errors were logged during the run', async () => {

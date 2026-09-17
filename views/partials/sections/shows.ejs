@@ -1,0 +1,35 @@
+<% /* Show archive — the nights that already happened, with the setlist the room got */ %>
+<% const list = (typeof shows !== 'undefined' && shows) || []; %>
+<% if (list.length) { %>
+<div class="show-grid">
+  <% list.forEach(function (sh, i) { %>
+  <article class="show-card" data-reveal data-reveal-delay="<%= i * 55 %>">
+    <a class="sa-link" href="/tour/show/<%= sh.slug %>">
+      <% if (sh.gallery && sh.gallery.length) { %>
+      <figure class="sa-shot">
+        <img <%- imgAttrs(sh.gallery[0], { alt: `${sh.tour} — ${sh.city}, ${sh.date}`, sizes: '(max-width:720px) 92vw, 300px' }) %>>
+        <figcaption class="mono"><%= sh.date %></figcaption>
+      </figure>
+      <% } %>
+      <div class="sa-body">
+        <span class="mono dim"><%= sh.city %> • <%= sh.venue || '—' %></span>
+        <b><%= sh.tour %></b>
+        <% if (sh.note) { %><p class="dim small"><%= sh.note %></p><% } %>
+        <div class="sa-meta">
+          <span class="tagchip gold"><%= sh.songs %> <%= lang === 'ja' ? '曲' : 'songs' %></span>
+          <% if (sh.encore && sh.encore.length) { %><span class="tagchip">+<%= sh.encore.length %> encore</span><% } %>
+          <% if (sh.photos) { %><span class="tagchip"><%= sh.photos %> <%= lang === 'ja' ? '写真' : 'frames' %></span><% } %>
+          <% if (sh.attended) { %><span class="tagchip"><%= Number(sh.attended).toLocaleString('en-US') %> <%= lang === 'ja' ? '人' : 'in the room' %></span><% } %>
+        </div>
+        <span class="link-arrow mono"><%= lang === 'ja' ? 'セットリスト' : 'Setlist & report' %> →</span>
+      </div>
+    </a>
+  </article>
+  <% }) %>
+</div>
+<% if (typeof tours !== 'undefined' && tours && tours.length > 1) { %>
+<p class="show-tours mono dim small"><%= tours.map(function (x) { return `${x.tour} (${x.shows})`; }).join('  •  ') %></p>
+<% } %>
+<% } else { %>
+<div class="empty"><%= lang === 'ja' ? 'アーカイブは準備中です' : 'The archive opens after the first night.' %></div>
+<% } %>

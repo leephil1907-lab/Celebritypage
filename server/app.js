@@ -18,6 +18,7 @@ import { RESOURCES, safeJson } from './resources.js';
 import * as S from './seo.js';
 import { imgAttrs, preloadAttrs } from './media.js';
 import { imageDims } from './lib/images.js';
+import { buildVCalendar, checkinWindow, parseJst, countdownParts, entryCode, validateWallNote, WALL_MAX, venueCode, normalizeNotifyEmail } from './lib/tourkit.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(__dirname, '..');
@@ -31,18 +32,19 @@ function buildId() {
   } catch { return 'dev'; }
 }
 const VIEWS = path.join(ROOT, 'views');
-const UPLOADS = path.join(ROOT, 'uploads');
+const UPLOADS = db.UPLOAD_DIR;
 
 export const NAV = [
   { href: '/', key: 'nav.home', num: '01' },
   { href: '/work/', key: 'nav.work', num: '02', drop: [{ label: 'Film • TV', href: '/work/#film' }, { label: 'CM & Brands', href: '/work/#cm' }, { label: 'Selected works', href: '/work/#selected' }] },
   { href: '/music/', key: 'nav.music', num: '03', drop: [{ label: 'CHECKPOINT', href: '/music/#campaign' }, { label: 'Discography', href: '/music/#discography' }] },
-  { href: '/tour/', key: 'nav.tour', num: '04', drop: [{ label: 'Tour center', href: '/tour/' }, { label: 'Dates & lottery', href: '/tour/#dates' }, { label: 'Passport', href: '/tour/#pass' }] },
+  { href: '/tour/', key: 'nav.tour', num: '04', drop: [{ label: 'Tour center', href: '/tour/' }, { label: 'Dates & calendar', href: '/tour/#dates' }, { label: 'Show archive', href: '/tour/#shows' }, { label: 'Lotteries', href: '/tour/#lottery' }, { label: 'Passport', href: '/tour/#pass' }] },
   { href: '/journal/', key: 'nav.journal', num: '05' },
-  { href: '/archive/', key: 'nav.archive', num: '06' },
-  { href: '/members/', key: 'nav.members', num: '07', drop: [{ label: 'Fan card', href: '/members/#card' }, { label: 'Tickets', href: '/members/#tickets' }, { label: 'Vault', href: '/#vault' }] },
-  { href: '/shop/', key: 'nav.shop', num: '08', tag: 'NEW', drop: [{ label: 'All goods', href: '/shop/' }, { label: 'Verify order', href: '/shop/verify' }] },
-  { href: '/search/', key: 'nav.search', num: '09' },
+  { href: '/wall/', key: 'nav.wall', num: '06' },
+  { href: '/archive/', key: 'nav.archive', num: '07' },
+  { href: '/members/', key: 'nav.members', num: '08', drop: [{ label: 'Fan card', href: '/members/#card' }, { label: 'Tickets', href: '/members/#tickets' }, { label: 'Lotteries', href: '/members/#lottery' }, { label: 'Vault', href: '/#vault' }] },
+  { href: '/shop/', key: 'nav.shop', num: '09', tag: 'NEW', drop: [{ label: 'All goods', href: '/shop/' }, { label: 'Verify order', href: '/shop/verify' }] },
+  { href: '/search/', key: 'nav.search', num: '10' },
   { href: '/join/', key: 'nav.join', num: '11' },
 ];
 
@@ -124,6 +126,8 @@ export function coreMiddleware(app, { admin = false } = {}) {
   app.use(bodyParser);
   app.use(A.sessionMiddleware);
   app.use((req, res, next) => {
+    // the waitlist marker belongs to the browser, so it is read whether or not there is a user
+    req.notifyTokens = A.notifyTokens(req);
     if (req.user) {
       req.membership = C.membershipFor(req.user.id);
       req.activeMembership = C.activeMembershipFor(req.user.id);
@@ -350,13 +354,47 @@ export function apiRouter() {
     });
   }));
 
-  r.post('/passport/stamp', A.requireMember, asyncH(async (req, res) => {
-    const code = String(req.body?.code || '');
-    const city = { 'VAULT 01': 'Fukuoka', 'VAULT 02': 'Seoul', 'VAULT 03': 'Taipei' }[code.toUpperCase()];
-    if (!city) { res.status(422).json({ error: 'invalid', message: 'Unknown stamp.' }); return; }
-    db.audit(req.user.email, 'PASSPORT.STAMP', 'tour_dates', city);
-    publish('passport:stamp', { user: req.user.email, city });
-    res.json({ ok: true, message: `Stamped → ${city} passport` });
+  /* --- tour passport: a stamp is written at the door, against the code on the board --- */
+  const checkIn = asyncH(async (req, res) => {
+    const out = performCheckIn(req.user, req.body?.code);
+    res.status(out.status).json(out.body);
+  });
+  r.post('/passport/checkin', A.requireMember, checkIn);
+  r.post('/passport/stamp', A.requireMember, checkIn);        // the old name still works
+
+  /* --- fan wall: anyone signed in can leave a note, the desk publishes it --- */
+  r.get('/wall', (_req, res) => res.json({ notes: C.wallNotes({ limit: 24 }), total: C.wallCount() }));
+  r.post('/wall', A.requireMember, asyncH(async (req, res) => {
+    const out = performWallNote(req.user, req.body);
+    res.status(out.status).json(out.body);
+  }));
+  // JSON door: the enhanced page. The form door lives in pageRoutes and redirects instead.
+  r.post('/wall/:id/clap', A.requireMember, asyncH(async (req, res) => {
+    const out = performClap(req.user, req.params.id);
+    res.status(out.status).json(out.body);
+  }));
+
+  /* --- the waitlist: an address before tickets open --- */
+  r.get('/notify', (req, res) => {
+    const id = Number(req.query.date_id || 0);
+    const row = id ? C.tourAll(240).find((d) => Number(d.id) === id) : null;
+    res.json({ counts: C.notifyCounts(), ...(row ? { date: row.date, city: row.city, waiting: row.waiting, state: row.sale_state } : {}) });
+  });
+  r.post('/notify', asyncH(async (req, res) => {
+    const out = performNotify(req, res);
+    res.status(out.status).json(out.body);
+  }));
+
+  /* the token is the capability: an address must be able to leave the list without an account */
+  r.post('/notify/leave', asyncH(async (req, res) => {
+    const out = performNotifyLeave(req);
+    res.status(out.status).json(out.body);
+  }));
+
+  r.get('/raffles', (req, res) => res.json({ raffles: C.raffleList({ userId: req.user?.id, tier: req.tierRank || 0 }) }));
+  r.post('/raffle/enter', A.requireMember, asyncH(async (req, res) => {
+    const out = performRaffleEnter(req.user, req.tierRank || 0, req.body);
+    res.status(out.status).json(out.body);
   }));
 
   /* --- shop --- */
@@ -443,7 +481,16 @@ export function apiRouter() {
   r.get('/search', (req, res) => res.json({ query: req.query.q || '', results: C.search(req.query.q, 24) }));
   r.get('/news', (_req, res) => res.json(C.news(24)));
   r.get('/schedule', (_req, res) => res.json(C.schedule(24)));
-  r.get('/tour', (_req, res) => res.json(C.tourDates()));
+  r.get('/tour', (req, res) => {
+    // a priority window is account-only information — it is removed, not hidden
+    const rows = C.tourDates(20, C.viewerOf(req)).map((d) => {
+      const o = { ...d };
+      if (!o.presale_visible) { delete o.presale_at; delete o.presale_ms; }
+      if (!o.map) delete o.map;
+      return o;
+    });
+    res.json(rows);
+  });
   r.get('/tiers', (_req, res) => res.json(C.tiers()));
   r.get('/releases', (_req, res) => res.json(C.releases()));
   r.get('/products', (req, res) => res.json(C.products({ category: req.query.category })));
@@ -526,16 +573,173 @@ function cartView(cart, req) {
   };
 }
 
+/* =========================================================================
+   Three actions have two doors each: a JSON endpoint for the enhanced page and
+   a plain form post for everything else. Both doors call the function below,
+   so a rate limit or a tier gate can never be avoided by switching doors.
+   Each returns { status, body } and the caller decides how to say it.
+   ========================================================================= */
+
+/** stamp a passport from the code on the board by the door */
+function performCheckIn(user, rawCode) {
+  const raw = String(rawCode || '').toUpperCase().replace(/\s+/g, '');
+  if (!/^[A-Z0-9-]{3,16}$/.test(raw)) return { status: 422, body: { error: 'invalid', message: 'Enter the code from the board by the door.' }, flash: 'bad' };
+  const date = C.tourAll(240).find((d) => d.code && d.code.replace(/\s+/g, '') === raw);
+  if (!date) return { status: 404, body: { error: 'not_found', message: 'That code is not on this tour.' }, flash: 'unknown' };
+  const win = checkinWindow(date.date);
+  if (!win.open) {
+    return { status: 409, flash: win.reason === 'too_early' ? 'early' : 'late',
+      body: { error: 'closed', message: win.reason === 'too_early' ? `Check-in for ${date.city} opens three days before the show.` : `Check-in for ${date.city} has closed — see the fan club desk.` } };
+  }
+  if (db.get(`SELECT 1 AS x FROM passport_stamps WHERE user_id=@u AND tour_date_id=@d`, { u: user.id, d: date.id })) {
+    return { status: 200, flash: 'dupe', body: { ok: true, already: true, city: date.city, message: `${date.city} is already in your passport.` } };
+  }
+  db.insert('passport_stamps', { user_id: user.id, tour_date_id: date.id, city: date.city, source: 'venue' });
+  const show = db.get(`SELECT slug FROM shows WHERE date=@d AND city=@c`, { d: date.date, c: date.city });
+  db.audit(user.email, 'PASSPORT.CHECKIN', 'tour_dates', `${date.city} ${date.date}`);
+  publish('passport:stamp', { user: user.email, city: date.city, date: date.date });
+  return { status: 200, flash: 'stamped', city: date.city,
+    body: { ok: true, city: date.city, date: date.date, show: show ? `/tour/show/${show.slug}` : null, message: `Stamped — ${date.city}. The passport is in sync.` } };
+}
+
+const WALL_MOODS = ['LIVE', 'MERCH', 'LOTTERY', 'RADIO', 'BIRTHDAY', 'HELLO'];
+
+/** take a note for the wall: validated, capped at two a day, and held for the desk */
+function performWallNote(user, body = {}) {
+  const v = validateWallNote(body.message, { name: body.name || user.name, city: body.city });
+  if (!v.ok) return { status: 422, flash: 'bad', body: { error: 'invalid', field: 'message', message: v.errors[0], limit: WALL_MAX } };
+  const recent = db.get(`SELECT COUNT(*) AS n FROM fan_wall WHERE user_id=@u AND created_at > datetime('now','-1 day')`, { u: user.id });
+  if (Number(recent?.n || 0) >= 2) return { status: 429, flash: 'dupe', body: { error: 'rate_limited', message: 'Two notes a day is the limit — the desk reads every one.' } };
+  const mood = WALL_MOODS.includes(String(body.mood || '').toUpperCase()) ? String(body.mood).toUpperCase() : null;
+  const info = db.insert('fan_wall', { user_id: user.id, name: v.name, city: v.city || null, mood, message: v.message, status: 'pending' });
+  db.audit(user.email, 'WALL.SUBMIT', 'fan_wall', info.lastInsertRowid);
+  publish('wall:submit', { user: user.email, id: info.lastInsertRowid });
+  return { status: 201, flash: 'sent', body: { ok: true, id: info.lastInsertRowid, pending: true, message: 'Sent — the desk reviews notes before they go up on the wall.' } };
+}
+
+/** enter a meet & greet draw — one entry per member, tier gated, on the clock */
+function performRaffleEnter(user, tierRankOf, body = {}) {
+  const id = Number(body?.raffle_id ?? body?.id);
+  const r = db.get(`SELECT * FROM raffles WHERE id=@id`, { id });
+  if (!r) return { status: 404, flash: 'unknown', body: { error: 'not_found', message: 'No such lottery.' } };
+  if (r.status !== 'open') return { status: 409, flash: 'closed', body: { error: 'closed', message: r.status === 'drawn' ? 'This draw has already run — results are published.' : 'This draw is not taking entries.' } };
+  if (C.tierRank(r.tier_min) > Number(tierRankOf || 0)) {
+    return { status: 403, flash: 'tier', body: { error: 'tier', message: `${String(r.tier_min).toUpperCase()} members and above can enter this draw.`, needed: r.tier_min } };
+  }
+  const opensAt = r.opens_at ? parseJst(r.opens_at.slice(0, 10), (r.opens_at.split(' ')[1] || '').slice(0, 5)) : null;
+  const closesAt = r.closes_at ? parseJst(r.closes_at.slice(0, 10), (r.closes_at.split(' ')[1] || '').slice(0, 5)) : null;
+  if (opensAt !== null && opensAt > Date.now()) return { status: 425, flash: 'early', body: { error: 'too_early', message: `Entries open ${r.opens_at}.` } };
+  if (closesAt !== null && closesAt < Date.now()) return { status: 409, flash: 'closed', body: { error: 'closed', message: `Entries closed ${r.closes_at}.` } };
+  const mine = db.get(`SELECT * FROM raffle_entries WHERE raffle_id=@r AND user_id=@u`, { r: id, u: user.id });
+  if (mine) return { status: 200, flash: 'dupe', body: { ok: true, already: true, code: mine.code, status: mine.status, message: `You are in this draw — code ${mine.code}. One entry per member.` } };
+  const code = entryCode(r.seed || r.title, id, user.id);
+  db.insert('raffle_entries', { raffle_id: id, user_id: user.id, code, ticket_ref: body?.ticket_ref ? String(body.ticket_ref).slice(0, 40) : null, status: 'entered' });
+  db.audit(user.email, 'RAFFLE.ENTER', 'raffles', `${id} ${code}`);
+  publish('raffle:entry', { raffle: id, code });
+  return { status: 201, flash: 'in', code, body: { ok: true, code, message: `Entered — your ticket code is ${code}. The draw runs when entries close, on a published seed.` } };
+}
+
+/** one clap per member per note, and it can be taken back */
+/**
+ * The waitlist, once, for both doors: the JSON one the bundle uses and the form one that works
+ * without it. An address is all that is asked for — no mail is sent from here, the desk reads the queue.
+ */
+function performNotify(req, res) {
+  const v = normalizeNotifyEmail(req.body?.email);
+  if (!v.ok) return { status: 422, flash: 'notify_bad', body: { error: 'invalid', field: 'email', message: v.error } };
+  if (String(req.body?.company || '') !== '') return { status: 201, flash: 'notify_in', body: { ok: true, message: 'Added.' } };   // honeypot: a filled hidden field is a bot
+  if (!A.throttle(`nl:${req.ip}`, { capacity: 12, refillPerSec: 1 / 90 })) {
+    return { status: 429, flash: 'notify_dupe', body: { error: 'throttled', message: 'Too many addresses from here — give it a minute.' } };
+  }
+  const many = db.get(`SELECT COUNT(*) AS n FROM notify_list WHERE lower(email)=@e AND created_at > datetime('now','-1 day')`, { e: v.email });
+  if (Number(many?.n || 0) > 4) {
+    return { status: 429, flash: 'notify_dupe', body: { error: 'rate_limited', message: 'That address has asked for several dates today — try again tomorrow.' } };
+  }
+  const out = C.notifyAdd({ email: v.email, tourDateId: req.body?.tour_date_id, userId: req.user?.id || null, source: 'site', tierHint: req.body?.tier_hint });
+  if (!out.ok) return { status: out.status, flash: out.error === 'on_sale' ? 'notify_onsale' : 'notify_bad', body: { error: out.error, message: out.message, href: out.href || null } };
+  if (out.token) A.rememberNotify(req, res, out.token);
+  db.audit(req.user ? req.user.email : v.email, 'NOTIFY.JOIN', 'notify_list', `${out.city || ''} ${out.date || ''}`.trim());
+  publish('notify:join', { date_id: Number(req.body?.tour_date_id), city: out.city });
+  return {
+    status: out.already ? 200 : 201,
+    flash: out.already ? 'notify_dupe' : 'notify_in',
+    body: { ok: true, already: !!out.already, message: out.message, waiting: out.waiting, token: out.token || null, href: out.href || null },
+  };
+}
+
+function performNotifyLeave(req) {
+  const out = C.notifyUnsubscribe(req.body?.token);
+  return { status: out.status || 200, flash: out.ok ? 'notify_left' : 'notify_bad', body: out };
+}
+
+function performClap(user, id) {
+  const wallId = Number(id);
+  const note = db.get(`SELECT id, status FROM fan_wall WHERE id=@id`, { id: wallId });
+  if (!note || note.status !== 'approved') return { status: 404, flash: 'unknown', body: { error: 'not_found', message: 'Nothing to applaud there yet.' } };
+  const mine = db.get(`SELECT 1 AS x FROM fan_wall_claps WHERE wall_id=@w AND user_id=@u`, { w: wallId, u: user.id });
+  if (mine) {
+    db.run(`DELETE FROM fan_wall_claps WHERE wall_id=@w AND user_id=@u`, { w: wallId, u: user.id });
+    db.run(`UPDATE fan_wall SET applause = MAX(0, applause - 1) WHERE id=@id`, { id: wallId });
+  } else {
+    db.run(`INSERT INTO fan_wall_claps (wall_id, user_id) VALUES (@w, @u)`, { w: wallId, u: user.id });
+    db.run(`UPDATE fan_wall SET applause = applause + 1 WHERE id=@id`, { id: wallId });
+  }
+  const n = db.get(`SELECT applause FROM fan_wall WHERE id=@id`, { id: wallId });
+  const clapped = !mine;
+  return { status: 200, flash: 'none', body: { ok: true, id: wallId, applause: Number(n?.applause || 0), clapped } };
+}
+
+/* every outcome a form can land on, in both languages — never free text from the client */
+const FORM_FLASH = {
+  stamped: ['gold', 'スタンプを押しました — パスポートは同期済みです', 'Stamped — your passport is in sync'],
+  dupe: ['warn', 'その夜はすでにパスポートに入っています', 'That night is already in your passport'],
+  early: ['warn', '会場チェックインは公演の3日前から開きます', 'Check-in opens three days before the show'],
+  late: ['warn', 'この夜の受付は終わりました — デスクまで', 'Check-in for that night has closed — see the desk'],
+  bad: ['err', 'コードを読み取れません — 看板の表記どおりに入力してください', 'That code could not be read — type it as the board shows it'],
+  unknown: ['err', 'そのコードはこのツアーにありません', 'That code is not on this tour'],
+  sent: ['gold', 'ノートを送りました — デスクが読んでから壁に出します', 'Note sent — the desk reads it before it goes up'],
+  in: ['gold', '抽選に参加しました — 参加番号は会員ページに出ます', 'You are in the draw — your code is on your account'],
+  notify_in: ['gold', '待機リストに入りました — 発売当日の朝にメールします', 'On the list — we write the morning tickets open'],
+  notify_dupe: ['warn', 'その日程ではすでに登録済みです', 'That address is already waiting for this date'],
+  notify_onsale: ['gold', 'この回は発売中です — 待つより先に席を確保してください', 'That night is on sale now — take a seat instead of waiting'],
+  notify_left: ['warn', '待機リストから外しました', 'Taken off the waitlist — nothing further will be sent'],
+  closed: ['warn', 'この抽選は現在受け付けていません', 'This draw is not taking entries'],
+  tier: ['warn', 'この抽選は上位ティア限定です', 'That draw is for higher tiers'],
+};
+
+/** a query flag becomes a banner; anything unexpected becomes nothing */
+function formFlash(req, key, target) {
+  const f = FORM_FLASH[String(key || '')];
+  if (!f) return null;
+  return { kind: f[0], text: req.lang === 'en' ? f[2] : f[1], to: target || null };
+}
+
+/** only same-site pages a form may bounce back to */
+function safeBack(v, fallback) {
+  const s = String(v || '');
+  return /^\/tour\/(?:show\/[a-z0-9-]{2,64})?\/?$/.test(s) || s === '/wall/' ? s : fallback;
+}
+
 function sectionData(name, req) {
   const base = { req, lang: req.lang, t: translator(req.lang || 'ja'), site: C.settingsMap(), user: req.user, membership: req.membership, tierRank: req.tierRank || 0, activeMembership: req.activeMembership || null, yen: C.yen, imgAttrs, preloadAttrs, nav: NAV, csrf: req.csrf };
   switch (name) {
-    case 'hero': return { ...base, hero: C.heroSlides(), tour: C.tourDates(4), site: C.settingsMap() };
+    case 'hero': return { ...base, hero: C.heroSlides(), tour: C.tourDates(4, C.viewerOf(req)), site: C.settingsMap() };
     case 'news': return { ...base, news: C.news(6) };
     case 'schedule': return { ...base, schedule: C.schedule(6) };
     case 'releases': return { ...base, releases: C.releases(8) };
     case 'tiers': return { ...base, tiers: C.tiers() };
     case 'vault': return { ...base, vault: C.vaultItems() };
-    case 'tour-dates': return { ...base, tour: C.tourDates(10) };
+    case 'tour-dates': return { ...base, tour: C.tourDates(24, C.viewerOf(req)) };
+    case 'shows': return { ...base, shows: C.showsArchive({ limit: 9 }), tours: C.showTours() };
+    case 'wall': return { ...base, ...C.wallPage({ per: 12, userId: req.user?.id }) };
+    case 'tour': return { ...base, tour: C.tourDates(24, C.viewerOf(req)), next: C.nextShow(C.viewerOf(req)), countdown: countdownParts((C.nextShow(C.viewerOf(req))?.at_ms || 0) - Date.now()) };
+    case 'raffles': return { ...base, raffles: C.raffleList({ userId: req.user?.id, tier: req.tierRank || 0 }) };
+    case 'home-pulse': return { ...base, next: C.nextShow(C.viewerOf(req)), countdown: countdownParts((C.nextShow(C.viewerOf(req))?.at_ms || 0) - Date.now()), wall_notes: C.wallNotes({ limit: 3 }), wall_total: C.wallCount(), draw: C.nextDraw({ userId: req.user?.id }) };
+    case 'countdown': {
+      const next = C.nextShow(C.viewerOf(req));
+      const mine = req.user ? C.passportSummary(req.user.id) : null;
+      return { ...base, next, countdown: countdownParts((next?.at_ms || 0) - Date.now()), passport: mine };
+    }
     case 'shop-grid': return { ...base, products: C.products({}) };
     case 'products': return { ...base, products: C.products({}), categories: C.productCategories() };
     case 'journal': return { ...base, posts: C.journalPosts({ limit: 6, viewerTier: req.membership?.tier }) };
@@ -547,7 +751,12 @@ function sectionData(name, req) {
 }
 
 /* ---------- public page app ---------- */
-export function createPublicApp() {
+/**
+ * `extra(app)` runs after every route the site owns but before the 404 handler — that is the only
+ * safe place to mount another app (see server/host.js: a mounted console has to be reached before
+ * the site decides the path does not exist).
+ */
+export function createPublicApp({ extra } = {}) {
   const app = express();
   makeRender(app);
   coreMiddleware(app);
@@ -555,7 +764,7 @@ export function createPublicApp() {
   const pages = pageRoutes();
   app.use('/', pages);
   app.use('/api', apiRouter());
-  app.use('/uploads', express.static(UPLOADS));
+  if (extra) extra(app);
   app.use(notFound);
   app.use(errorHandler);
   heartbeat();
@@ -581,7 +790,11 @@ function pageRoutes() {
     schedule: C.schedule(6),
     releases: C.releases(6),
     works: { film: C.worksByKind('movie', 6), drama: C.worksByKind('drama', 6), regular: C.worksByKind('radio', 3).concat(C.worksByKind('tv', 2), C.worksByKind('magazine', 2)), cm: C.worksByKind('cm', 12) },
-    tour: C.tourDates(8),
+    tour: C.tourDates(8, C.viewerOf(req)),
+    next: C.nextShow(C.viewerOf(req)), countdown: countdownParts((C.nextShow(C.viewerOf(req))?.at_ms || 0) - Date.now()),
+    wall_notes: C.wallNotes({ limit: 6 }), wall_total: C.wallCount(),
+    draw: C.nextDraw({ userId: req.user?.id }),
+    shows: C.showsArchive({ limit: 4 }),
     vault: C.vaultItems(),
     journal: C.journalPosts({ limit: 4, viewerTier: req.membership?.tier }),
     archive: C.archiveItems(),
@@ -598,13 +811,30 @@ function pageRoutes() {
 
   r.get('/music/', view('music', (req) => ({
     view: 'pages/music', page: 'music', title: 'MUSIC — Checkpoint & Discography', description: 'Albums, singles, the CHECKPOINT campaign and the members-only player.',
-    releases: C.releases(12), news: C.news(6).filter((n) => n.category === 'RELEASE'), products: C.products({ category: 'Albums' }), tour: C.tourDates(6),
+    releases: C.releases(12), news: C.news(6).filter((n) => n.category === 'RELEASE'), products: C.products({ category: 'Albums' }), tour: C.tourDates(6, C.viewerOf(req)),
   })));
 
-  r.get('/tour/', view('tour', (req) => ({
-    view: 'pages/tour', page: 'tour', title: 'TOUR — Live 2026 Checkpoint', description: 'Tour center — dates, lottery, goods and the QR Tour Passport.',
-    tour: C.tourDates(12), products: C.products({ category: 'Tour Merch' }), stamps: C.passportStamps(req.user?.id), news: C.news(4), releases: C.releases(3),
-  })));
+  r.get('/tour/', view('tour', (req) => {
+    const next = C.nextShow(C.viewerOf(req));
+    return {
+      view: 'pages/tour', page: 'tour', title: 'TOUR — Live 2026 Checkpoint', description: 'Tour center — dates, calendar, the show archive, meet & greet lotteries and the QR Tour Passport.',
+      tour: C.tourDates(24, C.viewerOf(req)),
+      next, countdown: countdownParts((next?.at_ms || 0) - Date.now()),
+      shows: C.showsArchive({ limit: 6 }), tours: C.showTours(),
+      raffles: C.raffleList({ userId: req.user?.id, tier: req.tierRank || 0 }),
+      wall_notes: C.wallNotes({ limit: 4 }),
+      products: C.products({ category: 'Tour Merch' }), stamps: C.passportStamps(req.user?.id), news: C.news(4), releases: C.releases(3),
+      flash: formFlash(req, req.query.flash, req.query.to),
+    };
+  }));
+
+  /* the no-JS doors for the same three actions — same functions, same rules, a redirect out */
+  r.post('/tour/checkin', asyncH(async (req, res) => {
+    if (!req.user) { res.redirect('/join/'); return; }
+    const out = performCheckIn(req.user, req.body?.code);
+    const back = safeBack(req.body?.back, '/tour/');
+    res.redirect(`${back}${back.includes('?') ? '&' : '?'}flash=${out.flash}${out.body?.show ? `&to=${encodeURIComponent(out.body.show)}` : ''}`);
+  }));
 
   r.get('/journal/', view('journal', async (req) => ({
     view: 'pages/journal', page: 'journal', title: 'JOURNAL — Editorial', description: 'Tour, film, music and style writing from the official desk.',
@@ -623,6 +853,107 @@ function pageRoutes() {
     items: C.archiveItems(), works: C.worksAll().filter((w) => ['movie', 'drama'].includes(w.kind)), releases: C.releases(8),
   })));
 
+  /* ---------- live shows: the archive, the wall, the draws, the calendar ---------- */
+  r.get('/tour/show/:slug', view('tour-show', async (req) => {
+    const show = C.showBySlug(req.params.slug);
+    if (!show) throw httpError(404, 'That show is not in the archive.');
+    return {
+      view: 'pages/tour-show', page: 'tour', show,
+      title: `${show.tour} — ${show.city}, ${show.date}`,
+      description: `Setlist of ${show.songs} songs, ${show.photos} frames from the vault and the desk report from ${show.venue || show.city}.`,
+      siblings: C.showsArchive({ tour: show.tour, limit: 8 }).filter((x) => x.slug !== show.slug),
+      flash: formFlash(req, req.query.flash, '#passport-night'),
+      passport: C.passportSummary(req.user?.id),
+      raffles: C.raffleList({ userId: req.user?.id, tier: req.tierRank || 0 }).filter((x) => x.show_id === show.id),
+    };
+  }));
+
+  r.get('/wall/', view('wall', async (req) => {
+    const per = 24;
+    const total = C.wallCount();
+    const pages = Math.max(1, Math.ceil(total / per));
+    const current = Math.min(pages, Math.max(1, Number(req.query.p) || 1));
+    return {
+      view: 'pages/wall', page: 'wall', title: 'FAN WALL — notes from the crowd',
+      description: 'Notes members leave after a show. The desk reads every one and publishes what is not a link, a slur or a spoiler.',
+      notes: C.wallNotes({ limit: per, offset: (current - 1) * per, userId: req.user?.id }),
+      featured: C.wallNotes({ limit: 3, featured: true, userId: req.user?.id }),
+      total, pages, current, mine: C.wallMine(req.user?.id),
+      highlights: C.showsArchive({ limit: 4 }),
+      flash: formFlash(req, req.query.flash, '#compose'),
+    };
+  }));
+
+  r.post('/wall/', asyncH(async (req, res) => {
+    if (!req.user) { res.redirect('/join/'); return; }
+    const out = performWallNote(req.user, req.body);
+    res.redirect(`/wall/?flash=${out.flash}${out.status === 201 ? '#compose' : '#compose'}`);
+  }));
+
+  r.post('/wall/:id/clap', asyncH(async (req, res) => {
+    if (!req.user) { res.redirect('/join/'); return; }
+    const out = performClap(req.user, req.params.id);
+    const back = safeBack(req.body?.back, '/wall/');
+    res.redirect(`${back}${back.includes('?') ? '&' : '?'}flash=${out.flash}#notes`);
+  }));
+
+  r.post('/tour/notify', asyncH(async (req, res) => {
+    const out = performNotify(req, res);
+    const back = safeBack(req.body?.back, '/tour/');
+    res.redirect(`${back}${back.includes('?') ? '&' : '?'}flash=${out.flash}#date-${Number(req.body?.tour_date_id) || 0}`);
+  }));
+
+  r.post('/tour/notify/leave', asyncH(async (req, res) => {
+    const out = performNotifyLeave(req);
+    const back = safeBack(req.body?.back, '/tour/');
+    res.redirect(`${back}${back.includes('?') ? '&' : '?'}flash=${out.flash}#date-${Number(req.body?.tour_date_id) || 0}`);
+  }));
+
+  r.post('/tour/raffle/:id/enter', asyncH(async (req, res) => {
+    if (!req.user) { res.redirect('/join/'); return; }
+    const out = performRaffleEnter(req.user, req.tierRank || 0, { ...req.body, raffle_id: req.body?.raffle_id ?? req.params.id });
+    const back = safeBack(req.body?.back, '') || `/tour/raffle/${Number(req.params.id) || 0}`;
+    res.redirect(`${back}${back.includes('?') ? '&' : '?'}flash=${out.flash}${out.code ? `&code=${encodeURIComponent(out.code)}` : ''}`);
+  }));
+
+  r.get('/tour/raffle/:id', view('tour-raffle', async (req) => {
+    const raffle = C.raffleById(Number(req.params.id), { userId: req.user?.id, tier: req.tierRank || 0 });
+    if (!raffle) throw httpError(404, 'No such lottery.');
+    return {
+      view: 'pages/tour-raffle', page: 'tour', raffle,
+      title: `${raffle.title} — draw`,
+      description: raffle.status === 'drawn'
+        ? `The draw for ${raffle.title} ran on a published seed. ${raffle.winners.length} winner codes and ${raffle.alternates.length} alternates.`
+        : `Entries for ${raffle.title} ${raffle.status === 'open' ? 'are open' : 'have closed'}. One entry per member, drawn from the ticket codes.`,
+      others: C.raffleList({ userId: req.user?.id, tier: req.tierRank || 0 }).filter((x) => x.id !== raffle.id).slice(0, 4),
+    };
+  }));
+
+  /** an .ics a fan can subscribe to: the whole tour, or one date on its own */
+  const calendarSend = (req, res, rows, filename, name) => {
+    const o = S.origin(req);
+    const text = buildVCalendar(rows.map((d) => ({
+      id: d.id,
+      title: `${d.tour || 'Live Tour'} — ${d.city}`,
+      date: d.date, time: d.time, durationMin: 165,
+      city: d.city, venue: d.venue,
+      note: [d.note, d.doors ? `Doors ${d.doors}` : null, d.setlist_teaser ? `Opening: ${d.setlist_teaser}` : null,
+        d.sold_out ? 'Sold out — the waitlist runs through Support' : null].filter(Boolean).join(' / '),
+      url: `${o}/tour/#date-${d.id}`,
+      status: d.status === 'cancelled' ? 'cancelled' : 'published',
+    })), { name });
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.send(text);
+  };
+  r.get('/tour/calendar.ics', (req, res) => calendarSend(req, res, C.tourCalendarRows(30), 'takuya-kimura-tour.ics', 'Live Tour 2026 Checkpoint'));
+  r.get('/tour/calendar/:id.ics', (req, res, next) => {
+    const d = C.tourById(req.params.id);
+    if (!d) return next();
+    return calendarSend(req, res, [d], `takuya-kimura-${String(d.date).replace(/\./g, '-')}.ics`, `${d.tour} — ${d.city}`);
+  });
+
   r.get('/members/', view('members', async (req) => {
     const me = req.user;
     return {
@@ -632,6 +963,9 @@ function pageRoutes() {
       membership: req.membership, tiers: C.tiers(), vault: C.vaultItems(),
       tickets: me ? C.ticketsFor(me.id) : [], bookings: me ? C.bookingsFor(me.id) : [], orders: me ? C.ordersFor(me.id) : [],
       stamps: C.passportStamps(me?.id), notifications: me ? C.notificationsFor(me.id) : [],
+      raffles: C.raffleList({ userId: me?.id, tier: req.tierRank || 0 }), wall_mine: C.wallMine(me?.id),
+      passport: C.passportSummary(me?.id),
+      flash: formFlash(req, req.query.flash, '#passport'),
     };
   }));
 
@@ -687,13 +1021,13 @@ function pageRoutes() {
 
   r.get('/join/', view('join', (req) => ({
     view: 'pages/join', page: 'join', title: 'JOIN — Fan Club', description: 'Membership entry — choose your Fan Card tier.',
-    tiers: C.tiers(), tour: C.tourDates(4), vault: C.vaultItems(), stats: C.stats(),
+    tiers: C.tiers(), tour: C.tourDates(4, C.viewerOf(req)), vault: C.vaultItems(), stats: C.stats(),
   })));
 
   r.post('/join/', asyncH(async (req, res) => {
     const { name, email, password, tier } = req.body || {};
     const errors = A.validateSignup({ name, email, password });
-    if (errors.length) return res.status(422).render('pages/join', { page: 'join', title: 'JOIN — Fan Club', tiers: C.tiers(), tour: C.tourDates(4), vault: C.vaultItems(), stats: C.stats(), formError: errors[0], form: req.body });
+    if (errors.length) return res.status(422).render('pages/join', { page: 'join', title: 'JOIN — Fan Club', tiers: C.tiers(), tour: C.tourDates(4, C.viewerOf(req)), vault: C.vaultItems(), stats: C.stats(), formError: errors[0], form: req.body });
     const user = A.signup({ name, email, password });
     A.attachUser(req, res, { id: user.id, name: user.name, email: user.email, role: user.role });
     if (tier && tier !== 'none') {

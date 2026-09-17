@@ -15,8 +15,9 @@ export function securityHeaders(req, res, next) {
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
     "img-src 'self' data: https:",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com data:",
+    /* no CDN: the brand faces are vended into public/fonts and inlined, so nothing may reach out */
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' data:",
     "script-src 'self'",
     "connect-src 'self'",
     "frame-ancestors 'self'",
@@ -30,6 +31,7 @@ export function securityHeaders(req, res, next) {
 export function gzip(req, res, next) {
   // an SSE stream must be written straight through — buffering it here would stall live updates
   if (/\/events$/.test(req.path) || /text\/event-stream/.test(req.headers.accept || '')) return next();
+  if (res.getHeader('Content-Encoding')) return next();          // the host already encoded this response
   const accept = req.headers['accept-encoding'] || '';
   if (!/\bgzip\b/.test(accept) || req.headers['x-pjax'] === 'stream') return next();
   const chunks = [];
@@ -71,15 +73,19 @@ export function wantsFragment(req) {
  * NOTE: this is middleware — call it as `app.use(bodyParser)`, never `bodyParser()`.
  */
 export function bodyParser(req, res, next) {
-  const MEDIA_ROUTE = /^\/api\/(media|upload)$/;
+  // one request can pass through two apps (the site plus the console mounted under /admin):
+  // the stream is single-use, so the body is read once and reused
+  if (req.__bodyRead) { next(); return; }
+  const MEDIA_ROUTE = /(?:^|\/)api\/(media|upload)$/;
   const limit = MEDIA_ROUTE.test(req.path) ? 28 * 1024 * 1024 : 1e6;
-  if (['GET', 'HEAD'].includes(req.method)) { req.body = {}; return next(); }
+  if (['GET', 'HEAD'].includes(req.method)) { req.body = {}; req.__bodyRead = true; return next(); }
   const type = req.headers['content-type'] || '';
   let raw = '';
   let tooBig = false;
   req.on('data', (c) => { raw += c; if (raw.length > limit) { tooBig = true; req.pause(); } });
   req.on('end', () => {
     if (tooBig) {
+      req.__bodyRead = true;
       res.status(413).json({ error: 'too_big', message: `That file is over the ${(limit / 1024 / 1024).toFixed(0)} MB limit.` });
       return;
     }
@@ -89,9 +95,10 @@ export function bodyParser(req, res, next) {
       else if (type.includes('multipart/form-data')) req.body = {}; // admin uses urlencoded forms
       else { try { req.body = raw ? JSON.parse(raw) : {}; } catch { req.body = { raw }; } }
     } catch { req.body = {}; }
+    req.__bodyRead = true;
     next();
   });
-  req.on('error', () => next(new Error('body read failed')));
+  req.on('error', () => { req.__bodyRead = true; next(new Error('body read failed')); });
 }
 
 const safeJson = (s) => { try { return JSON.parse(s); } catch { return { _raw: s }; } };

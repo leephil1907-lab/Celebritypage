@@ -6,6 +6,11 @@
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const CSRF = () => $('meta[name="csrf-token"]')?.content || '';
+/* the console rides the site's own origin under /admin on a single-host deploy (api/index.js),
+   and sits at the root when it runs on its own port — every URL here goes through at(). */
+const BASE = /^\/admin(?:\/|$)/.test(location.pathname) ? '/admin' : '';
+const at = (p) => BASE + p;
+
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function toast(msg, tone = '') {
@@ -25,7 +30,7 @@ async function api(path, { method = 'GET', body } = {}) {
     opt.headers['x-csrf-token'] = CSRF();
     opt.body = JSON.stringify(body);
   }
-  const res = await fetch('/api/' + path.replace(/^\//, ''), opt);
+  const res = await fetch(at('/api/' + path.replace(/^\//, '')), opt);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.message || data.error || `HTTP ${res.status}`);
   return data;
@@ -35,7 +40,7 @@ const key = document.body.dataset.resourceKey || (location.pathname.match(/\/con
 
 /** same contract, but for the console routes that live outside /api */
 async function raw(path, { method = 'POST', body } = {}) {
-  const res = await fetch(path, {
+  const res = await fetch(at(path), {
     method,
     headers: body === undefined ? {} : { 'content-type': 'application/json', 'x-csrf-token': CSRF() },
     credentials: 'same-origin',
@@ -63,7 +68,7 @@ async function paintBadges() {
 function listen() {
   if (!window.EventSource) return;
   let src;
-  try { src = new EventSource('/events'); } catch { return; }
+  try { src = new EventSource(at('/events')); } catch { return; }
   const dot = $('[data-live-dot]');
   src.addEventListener('open', () => dot?.classList.remove('off'));
   src.onerror = () => dot?.classList.add('off');
@@ -76,16 +81,16 @@ function listen() {
   src.addEventListener('content:changed', (e) => {
     let d = {}; try { d = JSON.parse(e.data || '{}'); } catch {}
     toast('Site cache refreshed — ' + (d.reason || 'content changed'), 'ok');
-    if (location.pathname.startsWith('/content/') && key && d.resource && d.resource !== key) location.reload();
+    if (location.pathname.includes('/content/') && key && d.resource && d.resource !== key) location.reload();
   });
   src.addEventListener('ticket:message', (e) => {
     let d = {}; try { d = JSON.parse(e.data || '{}'); } catch {}
-    if (/^\/tickets\/?\d*$/.test(location.pathname) || location.search.includes('id=')) {
+    if (/(^|\/)tickets(\/\d*)?$/.test(location.pathname) || location.search.includes('id=')) {
       toast('New member message — reloading thread');
       setTimeout(() => location.reload(), 900);
     } else toast('New ticket message #' + (d.ticket_id || ''), 'ok');
   });
-  src.addEventListener('member:joined', () => { toast('New member signed up', 'ok'); paintBadges(); if (location.pathname.startsWith('/members')) setTimeout(() => location.reload(), 1200); });
+  src.addEventListener('member:joined', () => { toast('New member signed up', 'ok'); paintBadges(); if (location.pathname.includes('/members')) setTimeout(() => location.reload(), 1200); });
   src.addEventListener('order:created', (e) => { let d = {}; try { d = JSON.parse(e.data || '{}'); } catch {} toast('Order ' + (d.order_no || '') + ' paid', 'ok'); paintBadges(); });
   src.addEventListener('order:collected', () => toast('Order collected at the venue'));
   src.addEventListener('stock:changed', (e) => {
@@ -100,13 +105,13 @@ function listen() {
 function bootEditor() {
   $('#newRowBtn')?.addEventListener('click', () => {
     const ed = $('#editor');
-    if (!ed) { location.href = '/content/' + key + '#editor'; return; }
-    if (location.search.includes('edit=')) { location.href = '/content/' + key + '#editor'; return; }
+    if (!ed) { location.href = at('/content/' + key + '#editor'); return; }
+    if (location.search.includes('edit=')) { location.href = at('/content/' + key + '#editor'); return; }
     ed.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setTimeout(() => ed.querySelector('input:not([type=hidden]), textarea, select')?.focus(), 320);
   });
   $('#closeEditor')?.addEventListener('click', () => {
-    if (location.search.includes('edit=')) location.href = '/content/' + key;
+    if (location.search.includes('edit=')) location.href = at('/content/' + key);
     else $('#rowForm')?.reset();
   });
   // any form without a token gets one from the page meta — the console must never 403 on a good session
@@ -286,6 +291,39 @@ function bootThread() {
   }
 }
 
+/* ---------- moderation + draw verbs ---------- */
+/* The buttons come from the resource descriptor (RESOURCES[x].actions) and post to the same
+   /content/:key/:id/:verb endpoint the console documents, so nothing here is a second implementation. */
+function bootActions() {
+  const btns = $$('[data-action][data-row-id]');
+  if (!btns.length) return;
+  btns.forEach((b) => {
+    if (b.__verb) return;
+    b.__verb = true;
+    b.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      const say = b.getAttribute('data-confirm');
+      if (say && !window.confirm(say)) return;
+      const token = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+      b.classList.add('is-busy');
+      try {
+        const r = await fetch(at(`/content/${b.dataset.key}/${b.dataset.rowId}/${b.dataset.action}`, {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'content-type': 'application/json', 'x-csrf-token': token },
+          body: '{}',
+        }));
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.message || `Refused (${r.status})`);
+        toast(d.message || 'done', 'ok');
+        setTimeout(() => location.reload(), 500);
+      } catch (err) {
+        toast(err.message || 'that action failed', 'bad');
+        b.classList.remove('is-busy');
+      }
+    });
+  });
+}
+
 /* ---------- boot ---------- */
 function start() {
   paintBadges();
@@ -293,6 +331,7 @@ function start() {
   bootEditor();
   bootMedia();
   bootRows();
+  bootActions();
   bootThread();
   setInterval(paintBadges, 45000);
   const flash = $('.flash');

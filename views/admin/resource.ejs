@@ -2,13 +2,19 @@
 <% const FIELDS = resource.fields; const LIST = resource.list || FIELDS.slice(0,5).map(function(f){ return f.key; }); %>
 <p class="dim small" data-anim="fade"><%= resource.blurb || 'Edit rows below — saving publishes the affected section to every open browser tab.' %></p>
 
+<% if (resource.readonly) { %>
+<section class="card" data-anim="rise">
+  <div class="card-head"><h3><%= resource.label %> is read-only</h3></div>
+  <p class="dim small">The site writes these rows. You can remove one — and <%= key === 'notify' ? '<a class="link-arrow mono small" href="' + base + '/content/notify/export.csv">export the whole list as CSV</a>' : 'nothing else here changes the data' %>.</p>
+</section>
+<% } else { %>
 <section class="card" id="editor" data-anim="rise">
   <div class="card-head">
     <h3><%= editing ? 'Edit #' + editing.id : 'New ' + resource.label.replace(/s$/, '').toLowerCase() %></h3>
     <% if (editing) { %><span class="pill mono gold">editing row <%= editing.id %></span><% } %>
     <div class="tools"><button type="button" class="btn small" id="closeEditor"><%= editing ? 'Close' : 'Cancel' %></button></div>
   </div>
-  <form method="post" action="/content/<%= key %>" class="adm-form" id="rowForm">
+  <form method="post" action="<%= base %>/content/<%= key %>" class="adm-form" id="rowForm">
     <% if (editing) { %><input type="hidden" name="id" value="<%= editing.id %>"><% } %>
     <% FIELDS.forEach(function(f){ %>
       <% const val = editing ? editing[f.key] : (f.default !== undefined ? f.default : ''); %>
@@ -33,7 +39,7 @@
             <% if (isVideo) { %>
             <video src="<%= val %>" data-preview-for="f_<%= f.key %>" muted loop playsinline preload="metadata"></video>
             <% } else { %>
-            <img src="<%= val || '/static' + placeholder %>" alt="" data-preview-for="f_<%= f.key %>" data-img-guard="<%= val ? '' : 'empty' %>">
+            <img src="<%= val ? val : base + '/static' + placeholder %>" alt="" data-preview-for="f_<%= f.key %>" data-img-guard="<%= val ? '' : 'empty' %>">
             <% } %>
             <div>
               <input id="f_<%= f.key %>" name="<%= f.key %>" type="text" value="<%= val || '' %>" <%= f.required ? 'required' : '' %> placeholder="<%= isMedia ? '/uploads/clip.mp4 — leave empty for none' : '/image-search/… or /uploads/…' %>">
@@ -64,11 +70,13 @@
     </div>
   </form>
 </section>
+<% } %>
 
 <section class="card" data-anim="rise">
   <div class="card-head">
     <h3><%= resource.label %></h3>
     <span class="pill mono"><span data-row-count><%= rows.length %></span> rows</span>
+    <% if (resource.queue) { %><span class="pill mono <%= queued ? 'warn' : 'ok' %>" data-queue-count><%= queued %> <%= resource.queue.label %></span><% } %>
     <div class="tools"><input type="search" id="rowFilter" placeholder="filter rows…" aria-label="Filter rows"></div>
   </div>
   <div class="table-wrap">
@@ -95,16 +103,27 @@
             <% } %>
           <% }) %>
           <td class="ta-r">
+            <% /* descriptor-driven verbs (approve / reject / pin / draw) — client/admin.js posts them to /content/:key/:id/:verb */ %>
             <div class="row-actions">
-              <% if (row.id !== undefined && resource.table !== 'tiers') { %><button type="button" class="btn small" data-toggle-row="<%= row.id %>" data-key="<%= key %>" title="Toggle status / active">⇄</button><% } %>
-              <a class="btn small" href="/content/<%= key %>?edit=<%= row.id %>#editor">Edit</a>
-              <form method="post" action="/content/<%= key %>/<%= row.id %>/delete" data-confirm="Delete <%= resource.label %> #<%= row.id %>? this cannot be undone."><button class="btn small danger" type="submit">Delete</button></form>
+              <% (resource.actions || []).forEach(function (act) { %>
+                <% if (!act.needs || String(row.status) === act.needs) { %>
+                <button type="button" class="btn small <%= act.tone === 'danger' ? 'danger' : (act.tone === 'ok' ? 'ok' : '') %>"
+                  data-action="<%= act.verb %>" data-row-id="<%= row.id %>" data-key="<%= key %>"
+                  <% if (act.confirm) { %>data-confirm="<%= act.confirm %>"<% } %>><%= act.label %></button>
+                <% } %>
+              <% }) %>
+              <% if (!resource.readonly && row.id !== undefined && resource.table !== 'tiers') { %><button type="button" class="btn small" data-toggle-row="<%= row.id %>" data-key="<%= key %>" title="Toggle status / active">⇄</button><% } %>
+              <% if (!resource.readonly) { %><a class="btn small" href="<%= base %>/content/<%= key %>?edit=<%= row.id %>#editor">Edit</a><% } %>
+              <form method="post" action="<%= base %>/content/<%= key %>/<%= row.id %>/delete" data-confirm="Delete <%= resource.label %> #<%= row.id %>? this cannot be undone."><button class="btn small danger" type="submit">Delete</button></form>
             </div>
           </td>
         </tr>
         <% }) %>
-        <% if (!rows.length) { %><tr><td colspan="<%= LIST.length + 2 %>" class="dim">Empty — create the first row above.</td></tr><% } %>
+        <% if (!rows.length) { %><tr><td colspan="<%= LIST.length + 2 %>" class="dim"><%= resource.readonly ? 'Empty — nothing is waiting yet.' : 'Empty — create the first row above.' %></td></tr><% } %>
       </tbody>
     </table>
   </div>
+  <% if (resource.queue) { %>
+  <p class="dim small mono" data-queue-note>queue filter: <code><%= resource.queue.where %></code> — <%= resource.queue.label %></p>
+  <% } %>
 </section>

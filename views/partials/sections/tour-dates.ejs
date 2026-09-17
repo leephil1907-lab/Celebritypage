@@ -1,20 +1,93 @@
-<% /* Tour dates — live capacity from the database */ %>
+<% /* Tour dates — live capacity, the room on a map, and the one thing a fan can still do here */ %>
+<% const STATE = { coming_soon: [lang === 'ja' ? '近日発表' : 'COMING SOON', 'gold'], waitlist: [lang === 'ja' ? '待機列' : 'WAITLIST', ''], sold_out: [lang === 'ja' ? 'ソールドアウト' : 'SOLD OUT', 'solid'], lottery: [lang === 'ja' ? '抽選' : 'LOTTERY', 'gold'], done: [lang === 'ja' ? '終了' : 'PLAYED', ''], cancelled: [lang === 'ja' ? '中止' : 'CANCELLED', 'solid'], on_sale: [lang === 'ja' ? '発売中' : 'ON SALE', ''] }; %>
 <div class="tour-grid">
   <% tour.forEach(function(d, i){ %>
-  <article class="tour-card <%= d.sold_out ? 'is-done' : '' %>" data-reveal data-reveal-delay="<%= i * 60 %>" id="d-<%= d.id %>">
+  <% const st = STATE[d.sale_state] || STATE.on_sale; %>
+  <article class="tour-card is-<%= d.sale_state %> <%= d.is_past ? 'is-done' : '' %>" data-reveal data-reveal-delay="<%= i * 60 %>" id="date-<%= d.id %>">
     <header>
       <span class="mono dim"><%= d.date %> • <%= d.time || '—' %></span>
-      <span class="tagchip <%= d.status === 'lottery' ? 'gold' : (d.sold_out ? 'solid' : '') %>"><%= d.status === 'lottery' ? (lang === 'ja' ? '抽選' : 'LOTTERY') : (d.sold_out ? (lang === 'ja' ? '終了' : 'SOLD OUT') : (lang === 'ja' ? '発売中' : 'ON SALE')) %></span>
+      <span class="tagchip <%= st[1] %>"><%= st[0] %></span>
     </header>
     <b><%= d.city %></b>
     <div class="dim small"><%= d.venue %></div>
-    <p class="tc-note"><%= d.note %></p>
+    <% if (d.note) { %><p class="tc-note"><%= d.note %></p><% } %>
     <div class="tc-meter" role="img" aria-label="<%= d.remaining %> of <%= d.capacity %> remaining"><i style="width:<%= d.fill_pct %>%"></i></div>
     <div class="tc-foot">
       <span class="mono"><%= d.remaining %>/<%= d.capacity %> <%= lang === 'ja' ? '席' : 'left' %></span>
       <% if (d.tier_required) { %><span class="tagchip"><%= d.tier_required.toUpperCase() %>+</span><% } %>
-      <button type="button" class="btn gold small" data-book-slot="<%= 'Meet & Greet|' + d.date + '|' + Math.min(2, d.remaining || 1) %>" <%= d.sold_out ? 'disabled' : '' %>><%= d.sold_out ? (lang === 'ja' ? '終了' : 'Closed') : t('cta.book') %></button>
+      <% if (d.sale_state === 'on_sale') { %>
+      <button type="button" class="btn gold small" data-book-slot="<%= 'Meet & Greet|' + d.date + '|' + Math.min(2, d.remaining || 1) %>"><%= t('cta.book') %></button>
+      <% } else if (d.sale_state === 'lottery') { %>
+      <a class="btn gold small" href="/tour/#lottery"><%= t('cta.enterDraw') %></a>
+      <% } else if (d.is_past) { %>
+      <a class="btn ghost small" href="/tour/#shows"><%= lang === 'ja' ? '夜の記録' : 'The night' %> →</a>
+      <% } else if (d.sale_state !== 'coming_soon') { %>
+      <span class="tc-quiet mono dim small"><%= lang === 'ja' ? 'デスクへ' : 'Ask the desk' %></span>
+      <% } %>
+      <a class="tc-cal mono small" href="<%= d.ics %>" download><%= t('cta.calendar') %></a>
     </div>
+
+    <% /* where the room is — projected from the row's own coordinates */ %>
+    <%- include('../venue-map', { d }) %>
+
+    <% /* the two windows: general sale is public, the priority one is account-only */ %>
+    <% if (!d.is_past && (d.presale_at || d.on_sale_at)) { %>
+    <div class="tc-windows mono">
+      <% if (d.presale_at) { %>
+        <% if (d.presale_visible) { %>
+        <span><%= lang === 'ja' ? 'ファンクラブ先行' : 'FAN CLUB PRIORITY' %> <b><%= String(d.presale_at).slice(0, 10).replace(/\./g, '.') %></b><%= d.presale_at.includes(' ') ? ' ' + d.presale_at.split(' ')[1] : '' %></span>
+        <% } else if (user) { %>
+        <span class="dim"><%= lang === 'ja' ? `先行は ${d.tier_required.toUpperCase()} 会員以上` : `priority is for ${String(d.tier_required).toUpperCase()} and above — you are ${(membership && membership.tier || 'none').toUpperCase()}` %></span>
+        <% } else { %>
+        <button type="button" class="tc-lockbtn mono" data-open-member="login"><%= lang === 'ja' ? '会員で先行日を確認' : 'Sign in to see your priority window' %> →</button>
+        <% } %>
+      <% } %>
+      <% if (d.on_sale_at) { %><span><%= lang === 'ja' ? '一般発売' : 'GENERAL SALE' %> <b><%= String(d.on_sale_at).slice(0, 10) %></b></span><% } %>
+    </div>
+    <% } %>
+
+    <% /* before tickets open: an address is all that is needed */ %>
+    <% if (d.wants_notify && !d.is_past) { %>
+    <div class="tc-wait">
+      <% if (d.on_list) { %>
+      <span class="tc-waited mono"><%= lang === 'ja' ? '待機リスト登録済み' : 'ON THE LIST' %> • <%= d.city %></span>
+      <form method="post" action="/tour/notify/leave" data-leave-form>
+        <input type="hidden" name="back" value="/tour/">
+        <input type="hidden" name="tour_date_id" value="<%= d.id %>">
+        <% if (d.notify_token) { %><input type="hidden" name="token" value="<%= d.notify_token %>"><% } %>
+        <button type="submit" class="link-arrow mono small"><%= lang === 'ja' ? '外す' : 'take me off' %> ×</button>
+      </form>
+      <% } else { %>
+      <form method="post" action="/tour/notify" data-notify-form>
+        <input type="hidden" name="tour_date_id" value="<%= d.id %>">
+        <input type="hidden" name="back" value="/tour/">
+        <label class="vn-field"><span class="mono dim small"><%= lang === 'ja' ? '発売の朝に知らせる' : 'WRITE ME WHEN IT OPENS' %></span>
+          <input type="email" name="email" inputmode="email" autocomplete="email" maxlength="180" required
+            value="<%= user ? user.email : '' %>" placeholder="you@example.com" aria-label="<%= lang === 'ja' ? 'メールアドレス' : 'Email address' %>"></label>
+        <label class="vn-hp" aria-hidden="true"><input type="text" name="company" tabindex="-1" autocomplete="off"></label>
+        <button type="submit" class="btn gold small"><%= t('cta.notify') %></button>
+      </form>
+      <span class="tc-waitcount mono dim small"><%= d.waiting ? `${d.waiting} ${lang === 'ja' ? '人が待っています' : 'fans are waiting'}` : (lang === 'ja' ? 'リストは空です • 解除はワンクリック' : 'the list starts empty • one click to leave') %></span>
+      <% } %>
+      <p class="vn-msg mono" data-notify-msg role="status" aria-live="polite"></p>
+    </div>
+    <% } %>
+
+    <% /* the door: the code on the board in the lobby stamps the passport */ %>
+    <% if (d.is_past || d.checkin_open || d.stamped || d.can_check_in) { %>
+    <div class="tc-door mono">
+      <span class="dim"><%= lang === 'ja' ? '会場コード' : 'DOOR CODE' %></span> <b><%= d.code %></b>
+      <% if (d.doors) { %><span class="dim">• <%= lang === 'ja' ? '開場' : 'doors' %> <%= d.doors %></span><% } %>
+      <% if (d.stamped) { %><span class="tagchip gold"><%= lang === 'ja' ? '押印済み' : 'STAMPED' %> <%= String(d.stamped_at || '').slice(5, 10) %></span><% } else if (d.can_check_in) { %>
+      <form method="post" action="/tour/checkin" data-checkin-form>
+        <input type="hidden" name="code" value="<%= d.code %>">
+        <input type="hidden" name="back" value="/tour/#date-<%= d.id %>">
+        <button type="submit" class="btn ghost small"><%= t('cta.checkin') %></button>
+      </form>
+      <% } else if (d.is_past) { %><span class="tagchip dim"><%= lang === 'ja' ? '押印終了' : 'WINDOW CLOSED' %></span><% } else { %><span class="tagchip dim"><%= lang === 'ja' ? '当日押印' : 'AT THE DOOR' %></span><% } %>
+      <span class="tc-msg" data-checkin-msg role="status" aria-live="polite"></span>
+    </div>
+    <% } %>
   </article>
   <% }) %>
   <% if (!tour.length) { %><div class="empty"><%= t('msg.empty') %></div><% } %>

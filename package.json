@@ -2,7 +2,7 @@
   "name": "celebritypage-app",
   "version": "2.0.0",
   "private": true,
-  "description": "Takuya Kimura \u2014 STARTO Premium Official Site (Full-stack Edition): Express + SQLite + EJS, real sessions, live sync, motion system",
+  "description": "Takuya Kimura — STARTO Premium Official Site (Full-stack Edition): Express + SQLite + EJS, real sessions, live sync, motion system",
   "type": "module",
   "engines": {
     "node": ">=20"
@@ -30,6 +30,6 @@
     "express": "^4.19.2"
   },
   "devDependencies": {
-    "esbuild": "^0.24.0"
+    "esbuild": "^0.28.2"
   }
 }

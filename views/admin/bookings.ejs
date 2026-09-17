@@ -3,7 +3,7 @@
   <div class="card-head"><h3>Booking requests</h3><span class="pill mono"><%= rows.length %></span>
     <div class="tools">
       <div class="filters"><button type="button" class="chip is-active" data-bf="all">all</button><button type="button" class="chip" data-bf="pending review">pending</button><button type="button" class="chip" data-bf="approved">approved</button><button type="button" class="chip" data-bf="completed">completed</button></div>
-      <a class="btn small" href="/bookings.csv">CSV ↓</a>
+      <a class="btn small" href="<%= base %>/bookings.csv">CSV ↓</a>
     </div>
   </div>
   <div class="table-wrap">
@@ -20,11 +20,11 @@
           <td><span class="clip dim small" title="<%= b.message || '' %>"><%= b.message || '—' %></span></td>
           <td class="ta-r">
             <div class="row-actions">
-              <form method="post" action="/bookings/<%= b.id %>/status" class="rowform">
+              <form method="post" action="<%= base %>/bookings/<%= b.id %>/status" class="rowform">
                 <select name="status" aria-label="Status for booking <%= b.id %>"><% statuses.forEach(function(s){ %><option value="<%= s %>" <%= b.status === s ? 'selected' : '' %>><%= s %></option><% }) %></select>
                 <button class="btn small" type="submit">Set</button>
               </form>
-              <form method="post" action="/bookings/<%= b.id %>/delete" data-confirm="Delete this booking request?"><button class="btn small danger" type="submit">✕</button></form>
+              <form method="post" action="<%= base %>/bookings/<%= b.id %>/delete" data-confirm="Delete this booking request?"><button class="btn small danger" type="submit">✕</button></form>
             </div>
           </td>
         </tr>

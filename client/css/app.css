@@ -488,3 +488,20 @@ html.motion-reduced [data-parallax]{transform:none!important}
   .cursor-glow{display:none}
 }
 @media print{.header,.footer,.chat-launcher,.cart-drawer,.modal{display:none!important}}
+
+/* ---------- the header row does its own arithmetic ----------
+   brand (206px) + eleven nav items (1085px) + the actions (173px) + the gaps need about 1510px on a
+   row, so the article cap (--max: 1320px) cannot apply here. The header takes the full width, and
+   whenever the row would not fit, the nav drops to a second line instead of pushing the cart and the
+   sign-in past the edge of the viewport — body clips horizontally, so an overflow there is a control
+   nobody can reach, not a scrollbar. */
+.header-inner { max-width: none; padding-inline: clamp(16px, 2.2vw, 44px); }
+.nav { white-space: nowrap; }
+@media (min-width: 1101px) and (max-width: 1700px) {
+  .header-inner, .header.is-scrolled .header-inner { height: auto; flex-wrap: wrap; align-items: center; padding-top: 12px; gap: 4px 22px; }
+  .header.is-scrolled .header-inner { padding-top: 8px; }
+  .nav { order: 3; flex: 1 1 100%; justify-content: space-between; gap: 0; margin-top: 6px; padding-bottom: 10px; border-top: 1px solid var(--line); }
+  .nav > li > a { padding-inline: 10px; }
+  .nav > li > a::after { left: 10px; right: 10px; }
+  .header-actions { margin-left: auto; }
+}

@@ -1,0 +1,44 @@
+<% /* Countdown to the next show — the numbers ship in the HTML, only the ticking is an enhancement */ %>
+<% const nx = (typeof next !== 'undefined' && next) || null; const cd = (typeof countdown !== 'undefined' && countdown) || null; %>
+<% if (nx) { %>
+<div class="countdown" data-count-grid data-count-to="<%= nx.at_ms %>">
+  <div class="cd-copy">
+    <span class="mono dim"><%= t('sec.countdown') %></span>
+    <b><%= nx.tour %> — <%= nx.city %></b>
+    <p class="dim small">
+      <%= nx.pretty %><% if (nx.doors) { %> • <%= lang === 'ja' ? '開場 ' + nx.doors : 'doors ' + nx.doors %><% } %> • <%= nx.venue || '' %>
+    </p>
+    <p class="cd-seat mono dim small"><%= nx.sold_out ? (lang === 'ja' ? 'ソールドアウト — 待機列はサポートから' : 'Sold out — the waitlist runs through Support') : (lang === 'ja' ? `残り ${nx.remaining} 席` : `${nx.remaining} seats left`) %></p>
+  </div>
+  <div class="cd-units">
+    <% [['days', lang === 'ja' ? '日' : 'DAYS'], ['hours', lang === 'ja' ? '時間' : 'HRS'], ['minutes', lang === 'ja' ? '分' : 'MIN'], ['seconds', lang === 'ja' ? '秒' : 'SEC']].forEach(function (f) { %>
+    <span class="cd-u"><i data-count-part="<%= f[0] %>"><%= cd && cd[f[0]] != null ? cd[f[0]] : '—' %></i><small class="mono"><%= f[1] %></small></span>
+    <% }) %>
+  </div>
+  <div class="cd-act">
+    <a class="btn gold small" href="/tour/calendar.ics" download><%= t('cta.calendar') %> ↓</a>
+    <a class="btn ghost small" href="#date-<%= nx.id %>"><%= lang === 'ja' ? 'この公演へ' : 'This date' %> →</a>
+  </div>
+  <% /* before the sale opens, the ask is an address — the row itself carries the full form */ %>
+  <% if (nx.wants_notify && !nx.on_list) { %>
+  <form class="cd-wait" method="post" action="/tour/notify" data-notify-form>
+    <input type="hidden" name="tour_date_id" value="<%= nx.id %>">
+    <input type="hidden" name="back" value="/tour/">
+    <label class="vn-field"><span class="mono dim small"><%= lang === 'ja' ? '発売の朝に' : 'THE MORNING IT OPENS' %></span>
+      <input type="email" name="email" inputmode="email" autocomplete="email" maxlength="180" required placeholder="you@example.com"
+        value="<%= user ? user.email : '' %>" aria-label="<%= lang === 'ja' ? 'メールアドレス' : 'Email address' %>"></label>
+    <label class="vn-hp" aria-hidden="true"><input type="text" name="company" tabindex="-1" autocomplete="off"></label>
+    <button type="submit" class="btn gold small"><%= t('cta.notify') %></button>
+    <p class="vn-msg mono" data-notify-msg role="status" aria-live="polite"><%= nx.waiting ? `${nx.waiting} ${lang === 'ja' ? '人が待機中' : 'others are already waiting'}` : '' %></p>
+  </form>
+  <% } else if (nx.on_list) { %>
+  <p class="cd-wait is-on mono"><%= lang === 'ja' ? 'この日程の待機リストに入っています' : 'You are on the waitlist for this night' %> • <a href="#date-<%= nx.id %>"><%= lang === 'ja' ? '外す' : 'leave' %></a></p>
+  <% } %>
+</div>
+<% } else { %>
+<div class="countdown is-empty">
+  <div class="cd-copy"><span class="mono dim"><%= t('sec.countdown') %></span><b><%= lang === 'ja' ? '日程の準備中' : 'Between runs' %></b>
+    <p class="dim small"><%= lang === 'ja' ? '次の発表はニュースとスケジュールに出ます' : 'The next announcement lands in News and Schedule.' %></p></div>
+  <div class="cd-act"><a class="btn ghost small" href="/journal/"><%= t('cta.details') %> →</a></div>
+</div>
+<% } %>

@@ -1,4 +1,9 @@
 /* =====================================================================
+
+/* brand faces, self-hosted: the console is served from the same /static root as the site's assets */
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 300 700; font-display: swap; src: url('/static/fonts/inter-300-700-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Cormorant Garamond'; font-style: normal; font-weight: 300 700; font-display: swap; src: url('/static/fonts/cormorant-garamond-300-700-latin.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400 600; font-display: swap; src: url('/static/fonts/jetbrains-mono-400-600-latin.woff2') format('woff2'); }
    client/css/admin.css — the management console.
    Same palette as the public site (ink / pearl / gold), denser grid.
    ===================================================================== */

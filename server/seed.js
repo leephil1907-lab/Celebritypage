@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import bcrypt from 'bcryptjs';
 import { getDb, insert, tableEmpty, audit } from './db.js';
+import { seedExtras } from './seed-extra.js';
 
 const IMG = {
   tour1: '/image-search/takuya-kimura-live-tour-checkpoint-2026--1.gif',
@@ -243,6 +244,7 @@ function seedUsers() {
 export function seed() {
   const counts = seedIfEmpty();
   seedUsers();
+  counts.extras = seedExtras();      // live-show content: tour dates, shows, wall, lotteries (additive, needs users)
   const written = Object.entries(counts).filter(([, n]) => n > 0).map(([t, n]) => `${t}:${n}`);
   if (written.length) console.log('[seed] ' + written.join('  '));
   return counts;

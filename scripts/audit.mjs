@@ -21,7 +21,24 @@ import { displayWidth } from '../server/seo.js';
 const BASE = process.env.AUDIT_BASE || 'http://127.0.0.1:8000';
 const VERBOSE = !!process.env.AUDIT_VERBOSE;
 const PAGES = ['/', '/work/', '/music/', '/tour/', '/journal/', '/journal/1', '/archive/', '/shop/', '/members/', '/support/', '/join/', '/search/?q=tour', '/cart'];
-const WIDTHS = [1440, 1024, 768, 390];
+const WIDTHS = [1920, 1440, 1180, 1024, 768, 390];
+
+/* the tour kit's own pages are linked from /tour/, so audit the URLs the site actually hands out */
+const DOWNLOADS = [];
+{
+  const tour = await fetch(BASE + '/tour/').then((r) => r.text()).catch(() => '');
+  const pick = (re) => { const m = re.exec(tour); return m ? m[1] : null; };
+  PAGES.push(...[
+    '/wall/',
+    pick(/(\/tour\/show\/[a-z0-9-]+)/i),
+    pick(/(\/tour\/raffle\/\d+)/),
+  ].filter(Boolean));
+  // a file the browser downloads cannot be rendered — it is checked by fetch, below
+  DOWNLOADS.push(...[
+    '/tour/calendar.ics',
+    pick(/href="(\/tour\/calendar\/[0-9]+\.ics)"/),
+  ].filter(Boolean));
+}
 
 const results = [];
 const ok = (n, d = '') => { results.push([true, n, d]); if (VERBOSE) console.log(`  ✓ ${n}${d ? ' — ' + d : ''}`); };
@@ -39,6 +56,13 @@ for (const r of [...PAGES, '/sitemap.xml', '/robots.txt', '/rss.xml', '/feed.jso
   const res = await head(BASE + r);
   if (r === '/cart') { check(res.status === 302 && /\/shop\//.test(res.headers.get('location') || ''), 'legacy /cart redirects into the shop drawer', `${res.status} → ${res.headers.get('location')}`); continue; }
   check(res.status < 400, `GET ${r}`, String(res.status));
+}
+for (const f of DOWNLOADS) {
+  const res = await head(BASE + f);
+  const text = await fetch(BASE + f).then((r) => r.text()).catch(() => '');
+  const type = (res.headers.get?.('content-type') || '') + (res.headers.get?.('content-disposition') || '');
+  check(res.status < 400 && /text\/calendar|application\/octet-stream|text\/plain|attachment/.test(type), `GET ${f} arrives as a file`, `${res.status} ${type.slice(0, 46)}`);
+  check(/^BEGIN:VCALENDAR/m.test(text) && /BEGIN:VEVENT/.test(text), `${f} is a real calendar`, `${text.length} bytes`);
 }
 {
   const res = await head(BASE + '/nope');
@@ -281,7 +305,9 @@ if (driver) {
     revealed: document.querySelectorAll('[data-reveal].is-revealed').length,
     shell: getComputedStyle(document.getElementById('app-shell')).animationName,
     dur: getComputedStyle(document.getElementById('app-shell')).animationDuration,
-    inViewBlind: [...document.querySelectorAll('[data-reveal]')].filter((e) => { const r = e.getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0 && +getComputedStyle(e).opacity < 0.05; }).length,
+    /* the reveal fires at (innerHeight - 8%) — see the rootMargin in client/motion.js — so that is
+       the line the audit measures against; a 12px sliver of the next band is not "invisible text" */
+    inViewBlind: [...document.querySelectorAll('[data-reveal]')].filter((e) => { const r = e.getBoundingClientRect(); return r.top < innerHeight * 0.92 && r.bottom > 24 && +getComputedStyle(e).opacity < 0.05; }).length,
     passedBlind: [...document.querySelectorAll('[data-reveal]')].filter((e) => e.getBoundingClientRect().bottom < 0 && +getComputedStyle(e).opacity < 0.05).length,
   }));
   const hard = await look();
@@ -329,7 +355,7 @@ if (driver) {
   step('3b responsive');
   for (const w of WIDTHS) {
     await page.setViewportSize({ width: w, height: 900 });
-    for (const p of ['/', '/shop/', '/join/']) {
+    for (const p of ['/', '/shop/', '/join/', '/tour/']) {
       await page.goto(BASE + p, { waitUntil: 'load' });
       await page.waitForTimeout(320);
       const m = await page.evaluate(() => {
@@ -338,9 +364,28 @@ if (driver) {
           const r = el.getBoundingClientRect();
           if (r.right > window.innerWidth + 2 && r.width > 8 && (!worst || r.right > worst.right)) worst = { right: Math.round(r.right), sel: `${el.tagName.toLowerCase()}${el.className ? '.' + String(el.className).split(' ')[0] : ''}` };
         });
-        return { sw: document.documentElement.scrollWidth, iw: window.innerWidth, worst };
+        /* the layout can only be trusted once the controls are reachable: the page clips
+           horizontally, so an element pushed past the edge has no scrollbar to rescue it */
+        // body clips horizontally on this site, so the page-level clip is what makes an element
+        // unreachable; only an inner track (a marquee, a carousel) counts as parked by design
+        const parked = (el) => {
+          for (let n = el; n && n !== document.body; n = n.parentElement) {
+            const cs = getComputedStyle(n);
+            if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) < 0.05 || cs.pointerEvents === 'none') return true;
+            if (n !== el && ['hidden', 'clip', 'auto', 'scroll'].includes(cs.overflowX)) return true;   // a track that scrolls by design (body's own clip does not excuse it)
+          }
+          return false;
+        };
+        const unreachable = [];
+        document.querySelectorAll('a[href], button, input:not([type=hidden]), select, textarea, [role=\"button\"][tabindex]').forEach((el) => {
+          const r = el.getBoundingClientRect();
+          if (r.width < 2 || r.height < 2 || parked(el)) return;
+          if (r.right > window.innerWidth + 1 || r.left < -1) unreachable.push(`${el.tagName.toLowerCase()}.${String(el.className || '').split(' ')[0]} right=${Math.round(r.right)}`);
+        });
+        return { sw: document.documentElement.scrollWidth, iw: window.innerWidth, worst, unreachable, total: unreachable.length };
       });
       check(m.sw <= m.iw + 1, `${p} fits ${w}px`, m.sw > m.iw + 1 ? `scrollWidth ${m.sw}, worst ${m.worst?.sel} right=${m.worst?.right}` : 'clean');
+      check(m.total === 0, `${p}: every control reachable at ${w}px`, m.unreachable.slice(0, 3).join(' | '));
     }
   }
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -401,7 +446,8 @@ if (driver) {
     const dead = [];
     for (const h of internalOnly) { const r = await head(new URL(h.split('#')[0], BASE).href); if (r.status >= 400) dead.push(`${h} ${r.status}`); }
     check(dead.length === 0, `${p}: all ${internalOnly.length} internal links resolve`, dead.slice(0, 4).join(' | '));
-    const hashTargets = [...new Set(links.filter((l) => l.hash).map((l) => l.href))];
+    // only fragments we own: an absolute link's #hash belongs to the site it points at (e.g. OSM's #map=15/..)
+    const hashTargets = [...new Set(links.filter((l) => l.hash && l.href.startsWith('/') && !l.href.startsWith('//')).map((l) => l.href))];
     const missingHash = [];
     for (const h of hashTargets) {
       const [path, id] = [h.split('#')[0] || p, h.split('#')[1]];

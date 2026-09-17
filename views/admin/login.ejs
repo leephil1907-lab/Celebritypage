@@ -6,9 +6,8 @@
   <title>Console sign-in</title>
   <meta name="robots" content="noindex,nofollow">
   <meta name="csrf-token" content="<%= csrf %>">
-  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/admin.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="<%= base %>/static/favicon-32.png">
+  <link rel="stylesheet" href="<%= base %>/static/css/admin.css">
 </head>
 <body>
   <div class="login-wrap">
@@ -17,7 +16,7 @@
       <h1>Management Console</h1>
       <p class="dim small">Content, fan cards, bookings, tickets, orders and the live publish channel — one login.</p>
       <% if (error) { %><div class="err" role="alert"><%= error %></div><% } %>
-      <form method="post" action="/login">
+      <form method="post" action="<%= base %>/login">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <div><label class="fl" for="ae">Email</label><input id="ae" name="email" type="email" value="admin@starto.jp" autocomplete="username" required></div>
         <div><label class="fl" for="ap">Password</label><input id="ap" name="password" type="password" value="Starto2026!" autocomplete="current-password" required></div>

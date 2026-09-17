@@ -8,7 +8,11 @@
     <div class="tier-tag"><%= tier.tagline %></div>
     <div class="price"><b><%= tier.price_label %></b><span>/ <%= lang === 'ja' ? '年' : 'year' %></span></div>
     <ul><% (Array.isArray(tier.perks) ? tier.perks : []).forEach(function(p){ %><li><i aria-hidden="true">✓</i><span><%= p %></span></li><% }) %></ul>
+    <% if (user) { %>
     <button type="button" class="btn <%= featured ? 'gold' : 'primary' %> full" data-purchase-tier="<%= tier.id %>"><%= lang === 'ja' ? tier.name + ' を購入' : 'Purchase ' + tier.name %> →</button>
+    <% } else { %>
+    <a class="btn <%= featured ? 'gold' : 'primary' %> full" href="/join/#signup" data-open-member="signup"><%= lang === 'ja' ? '登録してから ' + tier.name + ' を購入' : 'Join, then purchase ' + tier.name %> →</a>
+    <% } %>
     <p class="tier-note"><%= lang === 'ja' ? 'チケット発行 → 運営がチャットで返信' : 'Opens a ticket + Management chat' %></p>
   </article>
   <% }) %>
@@ -33,7 +37,11 @@
     <label for="cardHolderInput" class="ctl-label"><%= lang === 'ja' ? '名前' : 'Holder name' %></label>
     <input id="cardHolderInput" placeholder="Your Name" value="<%= user ? user.name : 'YOUR NAME' %>">
     <div class="ctl-cta">
+      <% if (user) { %>
       <button type="button" class="btn gold small" data-purchase-tier style="flex:1"><%= t('cta.purchase') %> →</button>
+      <% } else { %>
+      <a class="btn gold small" style="flex:1" href="/join/#signup" data-open-member="signup"><%= lang === 'ja' ? '無料登録 → 購入' : 'Sign up, then purchase' %></a>
+      <% } %>
       <a class="btn ghost small on-dark" href="/members/" style="flex:1"><%= t('cta.dashboard') %></a>
     </div>
   </div>

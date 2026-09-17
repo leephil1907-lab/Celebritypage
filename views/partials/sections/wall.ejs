@@ -1,0 +1,62 @@
+<% /* Fan wall — notes members leave after a show. Published only once the desk has read them. */ %>
+<% const list = (typeof notes !== 'undefined' && notes) || []; const myNotes = (typeof mine !== 'undefined' && mine) || []; %>
+<% if (list.length) { %>
+<div class="wall-grid">
+  <% list.forEach(function (n, i) { %>
+  <article class="wall-note <%= n.featured ? 'is-featured' : '' %>" data-wall-id="<%= n.id %>" data-reveal data-reveal-delay="<%= (i %  8) * 45 %>">
+    <% if (n.mood) { %><span class="wn-mood mono"><%= n.mood %></span><% } %>
+    <p class="wn-text"><%= n.message %></p>
+    <footer>
+      <span class="wn-sign"><b><%= n.name %></b><% if (n.city) { %><small class="mono dim"><%= n.city %></small><% } %></span>
+      <span class="wn-when mono dim"><%= n.when %></span>
+    </footer>
+    <% if (n.reply) { %><p class="wn-reply"><span class="mono dim"><%= lang === 'ja' ? 'ファンクラブデスクより' : 'FROM THE DESK' %></span><%= n.reply %></p><% } %>
+    <div class="wn-act">
+      <form method="post" action="/wall/<%= n.id %>/clap" data-clap-form>
+        <input type="hidden" name="back" value="/wall/">
+        <button type="submit" class="wn-clap <%= n.clapped ? 'is-on' : '' %>" data-wall-clap="<%= n.id %>"
+          aria-pressed="<%= n.clapped ? 'true' : 'false' %>" aria-label="<%= lang === 'ja' ? '拍手を送る' : 'Applaud this note' %>">
+          <span aria-hidden="true">♪</span><b data-clap-count><%= n.applause %></b>
+        </button>
+      </form>
+    </div>
+  </article>
+  <% }) %>
+</div>
+<% } else { %>
+<div class="empty"><%= lang === 'ja' ? 'まだノートがありません — 最初の一文を書いてください' : 'The wall is empty. Be the first note up there.' %></div>
+<% } %>
+
+<% /* the composer: a real form when JS is off, enhanced into an inline panel when it is on */ %>
+<div class="wall-compose" id="compose">
+  <div class="wc-copy">
+    <b class="mono"><%= lang === 'ja' ? 'デスクは全文を読みます' : 'THE DESK READS EVERY NOTE' %></b>
+    <p class="dim small"><%= lang === 'ja' ? '280文字まで、1日2件。掲載前に目を通します。リンクや Spoiler は載せません。' : '280 characters, two a day. Nothing goes up before it is read, and links or spoilers do not go up at all.' %></p>
+    <% if (user) { %><p class="wc-note mono dim small"><%= user.name %> • <%= user.email %></p><% } %>
+  </div>
+  <% if (user) { %>
+  <form class="wc-form" data-wall-form method="post" action="/wall/">
+    <label class="wc-field"><span class="mono dim small"><%= lang === 'ja' ? 'あなたのノート' : 'YOUR NOTE' %></span>
+      <textarea name="message" rows="3" maxlength="280" required placeholder="<%= lang === 'ja' ? '会場でのこと、セットリストのこと、グッズのこと。' : 'What happened in that room.' %>" data-wall-message></textarea>
+      <small class="wc-count mono" data-wall-count>280</small>
+    </label>
+    <div class="wc-row">
+      <label class="mono dim small"><span><%= lang === 'ja' ? '表示名' : 'Signed as' %></span><input name="name" value="<%= user.name %>" maxlength="40"></label>
+      <label class="mono dim small"><span><%= lang === 'ja' ? '都市' : 'City' %></span><input name="city" maxlength="40" placeholder="Osaka"></label>
+      <label class="mono dim small"><span><%= lang === 'ja' ? '気分' : 'Mood' %></span>
+        <select name="mood"><% ['LIVE','MERCH','LOTTERY','RADIO','BIRTHDAY','HELLO'].forEach(function(m){ %><option value="<%= m %>"><%= m %></option><% }) %></select></label>
+    </div>
+    <button type="submit" class="btn gold"><%= t('cta.postNote') %></button>
+    <p class="wc-msg" data-wall-msg role="status" aria-live="polite"></p>
+  </form>
+  <% if (myNotes.length) { %>
+  <div class="wc-mine">
+    <b class="mono dim small"><%= lang === 'ja' ? 'あなたのノート' : 'YOUR NOTES' %></b>
+    <ul><% myNotes.forEach(function (m) { %><li><%= m.message.slice(0, 64) %><% if (m.message.length > 64) { %>…<% } %>
+      <span class="tagchip <%= m.status === 'approved' ? 'gold' : (m.status === 'rejected' ? 'solid' : '') %>"><%= m.status %></span></li><% }) %></ul>
+  </div>
+  <% } %>
+  <% } else { %>
+  <a class="btn primary" href="/join/"><%= t('cta.join') %></a>
+  <% } %>
+</div>

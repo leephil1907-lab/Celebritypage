@@ -107,7 +107,7 @@
       <p class="dim-light"><%= lang === 'ja' ? 'Checkpoint ツアーに添えた少人数セッション。各都市20名。Fan Card が必要。' : 'Intimate sessions around the Checkpoint tour. Limited to 20 per city. Requires a Fan Card.' %></p>
       <div class="lottery">
         <div class="lottery-head"><b><%= lang === 'ja' ? 'LOTTERY ダッシュボード • ライブ' : 'LOTTERY DASHBOARD • Live' %></b>
-          <span class="tagchip gold"><%= lang === 'ja' ? 'あなたの順位' : 'Your rank' %> <b id="lotteryRank">#342</b></span></div>
+          <span class="tagchip gold"><% if (user && draw && draw.my_code) { %><%= lang === 'ja' ? 'あなたの参加番号' : 'Your code' %> <b id="lotteryRank" class="mono"><%= draw.my_code %></b><% } else if (draw) { %><%= lang === 'ja' ? '応募' : 'Entries' %> <b id="lotteryRank"><%= draw.entries %></b><% } else { %><%= lang === 'ja' ? '抽選なし' : 'NO OPEN DRAW' %><% } %></span></div>
         <div class="lottery-cities">
           <% (tour || []).slice(0, 3).forEach(function(d, i){ %>
           <div class="lc <%= d.remaining ? '' : 'is-locked' %>">
@@ -118,7 +118,14 @@
           </div>
           <% }) %>
         </div>
-        <div class="lottery-foot"><span><%= lang === 'ja' ? '次の抽選:' : 'Next draw:' %> <b class="mono" data-countdown="<%= Date.now() + 2 * 3600 * 1000 + 14 * 60 * 1000 %>">02:14:33</b></span><span class="dim"><%= lang === 'ja' ? 'ティアで順位をブースト →' : 'Boost rank with a tier →' %></span></div>
+        <div class="lottery-foot">
+          <% if (draw) { %>
+          <span><%= lang === 'ja' ? '締切まで:' : 'Entries close in:' %> <b class="mono" data-countdown="<%= draw.closes_ms %>"><%= (function () { const s = Math.max(0, Math.floor((draw.closes_ms - Date.now()) / 1000)); const d = Math.floor(s / 86400); const pad = (n) => String(n).padStart(2, '0'); return (d ? d + 'd ' : '') + pad(Math.floor((s % 86400) / 3600)) + ':' + pad(Math.floor((s % 3600) / 60)) + ':' + pad(s % 60); })() %></b></span>
+          <a class="dim link-arrow mono small" href="/tour/raffle/<%= draw.id %>"><%= draw.title %> →</a>
+          <% } else { %>
+          <span class="dim"><%= lang === 'ja' ? '現在受付中の抽選はありません — 告知はニュースへ' : 'No open draw right now — announced in News' %></span>
+          <% } %>
+        </div>
       </div>
       <div class="slot-list">
         <% (tour || []).forEach(function(d){ %>
@@ -180,6 +187,25 @@
     </div>
   </div>
   <div data-section="tour-dates"><%- include('../partials/sections/tour-dates') %></div>
+</section>
+
+<% /* the two things a fan actually comes back for: how long is left, and what the room said */ %>
+<section class="section section-tight" id="next-up">
+  <div class="home-pulse">
+    <div data-section="countdown"><%- include('../partials/sections/countdown') %></div>
+    <% if (wall_notes && wall_notes.length) { %>
+    <div class="home-wall">
+      <div class="hw-head"><span class="eyebrow"><%= t('sec.wall') %></span><a class="link-arrow mono small" href="/wall/"><%= lang === 'ja' ? 'ウォールへ' : 'All notes' %> →</a></div>
+      <% wall_notes.slice(0, 3).forEach(function (n, i) { %>
+      <blockquote class="hw-item" data-reveal data-reveal-delay="<%= i * 70 %>">
+        <p><%= n.message.length > 130 ? n.message.slice(0, 130) + '…' : n.message %></p>
+        <footer class="mono dim small">— <%= n.name %> <% if (n.city) { %>• <%= n.city %><% } %> <% if (n.mood) { %>• <%= n.mood %><% } %></footer>
+      </blockquote>
+      <% }) %>
+      <p class="hw-foot mono dim small"><%= wall_total %> <%= lang === 'ja' ? '枚が壁に • デスクが全文を確認' : 'published • every note read by the desk' %></p>
+    </div>
+    <% } %>
+  </div>
 </section>
 
 <!-- NEWS -->

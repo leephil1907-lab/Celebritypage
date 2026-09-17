@@ -1,12 +1,24 @@
-<% /* TOUR — center, dates, passport, goods */ %>
+<% /* TOUR — center: countdown, dates with door codes, the show archive, lotteries, passport, goods */ %>
+<% const left = lang === 'ja' ? '残り' : 'left —'; %>
 <%- include('../partials/sections/pagehero', { ph: {
   kicker: lang === 'ja' ? 'ライブ ツアー 2026 • チェックポイント' : 'LIVE TOUR 2026 • CHECKPOINT',
   title: 'Live Tour 2026', title2: 'Checkpoint — Fukuoka → Taipei',
   sub: lang === 'ja' ? '9月5日〜11月23日 — アリーナ6都市。ミーグリ抽選とQRツアーパスポート。' : 'Sep 5 – Nov 23, six arenas. Meet & Greet lottery plus the QR Tour Passport for members.',
   images: ['/image-search/takuya-kimura-live-tour-checkpoint-2026--1.gif','/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg','/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg','/image-search/takuya-kimura-live-tour-checkpoint-2026--4.webp','/image-search/takuya-kimura-live-tour-checkpoint-2026--5.webp'],
-  cta: [[lang === 'ja' ? '日程を見る' : 'See dates', '#dates'], [lang === 'ja' ? 'パスポート' : 'Passport', '#pass']],
-  side: { kicker: lang === 'ja' ? '次公演' : 'NEXT UP', title: 'Fukuoka — TOTTEI PARK', body: (lang === 'ja' ? '9月10日 12:00開場\n残り6席 • ファンクラブ先行' : 'Sep 10, doors 12:00\n6 slots left • Fan Club pre-sale'), cta: [[t('cta.book'), '#booking'], [lang === 'ja' ? 'グッズ' : 'Goods', '#goods']] }
+  cta: [[lang === 'ja' ? '日程を見る' : 'See dates', '#dates'], [t('cta.allShows'), '#shows']],
+  side: { kicker: next ? (lang === 'ja' ? '次公演' : 'NEXT UP') : (lang === 'ja' ? '公演なし' : 'NO SHOWS SCHEDULED'),
+    title: next ? (next.city + ' — ' + (next.venue || '—')) : (lang === 'ja' ? '日程調整中' : 'Dates being set'),
+    body: next ? [`${next.date}${next.time ? ' • ' + next.time : ''}${next.doors ? ' • ' + (lang === 'ja' ? '開場 ' : 'doors ') + next.doors : ''}`,
+      next.sold_out ? (lang === 'ja' ? 'ソールドアウト • 待機列はサポートへ' : 'Sold out — waitlist via Support') : `${left} ${next.remaining}/${next.capacity}`,
+      countdown && !countdown.past ? `T− ${countdown.days}${lang === 'ja' ? '日 ' : 'd '}${countdown.pad.hours}:${countdown.pad.minutes}` : ''].filter(Boolean).join('\n') : (lang === 'ja' ? '次の発表はニュースに出ます' : 'The next run is announced in News'),
+    cta: [[t('cta.book'), '#booking'], [lang === 'ja' ? 'カレンダー' : 'Calendar', '/tour/calendar.ics']] }
 } }) %>
+
+<%- include('../partials/form-flash', { flash }) %>
+
+<section class="section section-tight" id="next">
+  <div data-section="countdown"><%- include('../partials/sections/countdown') %></div>
+</section>
 
 <section class="section" id="dates">
   <div class="section-head" data-reveal>
@@ -16,8 +28,39 @@
   <div data-section="tour-dates"><%- include('../partials/sections/tour-dates') %></div>
 </section>
 
+<section class="section" id="shows">
+  <div class="section-head" data-reveal>
+    <div><h2><%= t('sec.shows') %></h2><p><%= lang === 'ja' ? '終えた夜のセットリスト • 写真 • デスクの記録' : 'Setlists, frames and the desk report from every night we have played' %></p></div>
+    <span class="tagchip"><%= shows.length %> / <%= tours.length ? tours[0].shows : shows.length %></span>
+  </div>
+  <div data-section="shows"><%- include('../partials/sections/shows') %></div>
+</section>
+
+<section class="section" id="lottery">
+  <div class="section-head" data-reveal>
+    <div><h2><%= t('sec.lottery') %></h2><p><%= lang === 'ja' ? '1会員1口 • published seed で抽選し、番号だけ公開します' : 'One entry per member • drawn on a published seed, codes only are made public' %></p></div>
+    <a class="link-arrow" href="/wall/"><%= t('sec.wall') %> →</a>
+  </div>
+  <div data-section="raffles"><%- include('../partials/sections/raffles') %></div>
+</section>
+
+<% if (wall_notes && wall_notes.length) { %>
+<section class="section section-tight" id="from-the-room">
+  <div class="section-head" data-reveal>
+    <div><h2><%= lang === 'ja' ? '会場からのノート' : 'Notes from the room' %></h2><p><%= lang === 'ja' ? 'ウォールはデスクが読んでから出します' : 'Read by the desk before anything goes up' %></p></div>
+    <a class="link-arrow" href="/wall/"><%= lang === 'ja' ? 'ウォールを見る' : 'Open the wall' %> →</a>
+  </div>
+  <div class="wall-strip">
+    <% wall_notes.forEach(function (n, i) { %>
+    <blockquote class="ws-item" data-reveal data-reveal-delay="<%= i * 60 %>"><p><%= n.message.length > 150 ? n.message.slice(0, 150) + '…' : n.message %></p>
+      <footer class="mono dim small">— <%= n.name %> • <%= n.city || n.when %> • <%= n.applause %> ♪</footer></blockquote>
+    <% }) %>
+  </div>
+</section>
+<% } %>
+
 <section class="section" id="pass">
-  <div class="section-head" data-reveal><div><h2><%= t('sec.passport') %></h2><p><%= lang === 'ja' ? '会場でQR提示 → 自動でスタンプ' : 'Scan your order QR at the kiosk — the stamp lands automatically' %></p></div>
+  <div class="section-head" data-reveal><div><h2><%= t('sec.passport') %></h2><p><%= lang === 'ja' ? 'ロビーの黒板にある会場コードを入力 → 台帳に押されます' : 'Type the door code from the board in the lobby — the ledger takes the stamp' %></p></div>
     <span class="tagchip <%= stamps.filter(function(s){return s.stamped}).length ? 'gold' : '' %>"><%= stamps.filter(function(s){return s.stamped}).length %> / <%= stamps.length %></span>
   </div>
   <div class="passport" data-reveal>

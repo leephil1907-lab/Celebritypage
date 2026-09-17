@@ -1,0 +1,13 @@
+# deployment-time noise: process state and files the running site never reads
+data/
+uploads/
+qa/
+legacy/
+.git/
+.github/
+.env
+.env.local
+Dockerfile
+docker-compose.yml
+README.md
+LICENSE

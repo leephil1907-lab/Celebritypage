@@ -13,7 +13,7 @@
       <% }) %>
       <% if (!msgs.length) { %><p class="dim">No messages yet.</p><% } %>
     </div>
-    <form method="post" action="/tickets/<%= ticket.id %>/reply" class="reply" style="margin-top:14px" id="replyForm">
+    <form method="post" action="<%= base %>/tickets/<%= ticket.id %>/reply" class="reply" style="margin-top:14px" id="replyForm">
       <textarea name="body" placeholder="Answer as Official Site / Management…" aria-label="Reply" required></textarea>
       <div class="form-actions">
         <button class="btn gold" type="submit" name="keep" value="1">Send reply</button>
@@ -28,7 +28,7 @@
       <div class="card-head"><h3>Actions</h3></div>
       <div style="display:grid;gap:8px">
         <% ['open','in_progress','waiting','resolved','closed'].forEach(function(s){ %>
-        <form method="post" action="/tickets/<%= ticket.id %>/status"><input type="hidden" name="keep" value="1"><input type="hidden" name="status" value="<%= s %>"><button class="btn <%= ticket.status === s ? 'gold' : '' %>" type="submit" style="justify-content:center" <%= ticket.status === s ? 'disabled' : '' %>><%= ticket.status === s ? 'current: ' : 'mark ' %><%= s %></button></form>
+        <form method="post" action="<%= base %>/tickets/<%= ticket.id %>/status"><input type="hidden" name="keep" value="1"><input type="hidden" name="status" value="<%= s %>"><button class="btn <%= ticket.status === s ? 'gold' : '' %>" type="submit" style="justify-content:center" <%= ticket.status === s ? 'disabled' : '' %>><%= ticket.status === s ? 'current: ' : 'mark ' %><%= s %></button></form>
         <% }) %>
       </div>
     </div>
@@ -41,7 +41,7 @@
         <li><%= msgs.length %> message(s) in this thread</li>
         <li>Category: <b><%= ticket.category %></b></li>
       </ul>
-      <a class="btn small" href="/members" style="margin-top:10px">Open member record →</a>
+      <a class="btn small" href="<%= base %>/members" style="margin-top:10px">Open member record →</a>
     </div>
   </aside>
 </div>

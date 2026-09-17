@@ -12,7 +12,7 @@
           <% if (unlocked) { %><p><%= v.description %></p><% } else { %><p class="dim"><%= (v.description || '').slice(0, 48).trim() %>… <span class="mono gold"><%= lang === 'ja' ? '要カード' : 'locked' %></span></p><% } %>
           <div class="vault-badges"><span class="tagchip solid"><%= v.min_tier.toUpperCase() %>+</span><span class="dim mono"><%= v.duration || '' %></span></div>
         </div>
-        <div class="vault-lock" <%= unlocked ? 'style="display:none"' : '' %>><div><b><%= lang === 'ja' ? '会員限定' : 'Members Only' %></b><p><%= lang === 'ja' ? 'ファンカードで解除されます' : 'Unlock with an active Fan Card' %></p><button type="button" class="btn gold small" data-purchase-tier="<%= v.min_tier %>"><%= lang === 'ja' ? '解除する →' : 'Unlock →' %></button></div></div>
+        <div class="vault-lock" <%= unlocked ? 'style="display:none"' : '' %>><div><b><%= lang === 'ja' ? '会員限定' : 'Members Only' %></b><p><%= lang === 'ja' ? 'ファンカードで解除されます' : 'Unlock with an active Fan Card' %></p><% if (user) { %><button type="button" class="btn gold small" data-purchase-tier="<%= v.min_tier %>"><%= lang === 'ja' ? '解除する →' : 'Unlock →' %></button><% } else { %><a class="btn gold small" href="/join/#signup" data-open-member="signup"><%= lang === 'ja' ? '登録して解除 →' : 'Join, then unlock →' %></a><% } %></div></div>
       </div>
       <% }) %>
     </div></div>

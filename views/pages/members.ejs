@@ -101,7 +101,32 @@
   <% } else { %><div class="empty"><%= lang === 'ja' ? '注文はまだありません' : 'No orders yet.' %></div><% } %>
 </section>
 
+<section class="section" id="lottery">
+  <div class="section-head" data-reveal>
+    <div><h2><%= t('sec.lottery') %></h2><p><%= lang === 'ja' ? '参加番号と結果はここに — 名前の照合は番号です' : 'Your code and the result live here — the door checks codes, not names' %></p></div>
+    <a class="link-arrow" href="/tour/#lottery"><%= lang === 'ja' ? '他の抽選' : 'All draws' %> →</a>
+  </div>
+  <div data-section="raffles"><%- include('../partials/sections/raffles', { raffles: raffles }) %></div>
+</section>
+
 <% if (user) { %>
+<% if (wall_mine && wall_mine.length) { %>
+<section class="section section-tight" id="my-notes">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? 'あなたのノート' : 'Your notes' %></h2><p><%= lang === 'ja' ? '審査中 — デスクが読んでから壁に出ます' : 'Nothing is published before the desk reads it' %></p></div>
+    <a class="link-arrow" href="/wall/#compose"><%= t('cta.postNote') %> →</a></div>
+  <div class="mine-list">
+    <% wall_mine.forEach(function (m, i) { %>
+    <article class="mine-row" data-reveal data-reveal-delay="<%= i * 50 %>">
+      <span class="tagchip <%= m.status === 'approved' ? 'gold' : (m.status === 'rejected' ? 'solid' : '') %>"><%= m.status %></span>
+      <p><%= m.message %></p>
+      <span class="mono dim small"><%= String(m.created_at || '').slice(0, 10) %> • <%= m.applause %> ♪</span>
+      <% if (m.reply) { %><span class="mine-reply"><%= lang === 'ja' ? 'デスクより' : 'Desk' %>: <%= m.reply %></span><% } %>
+    </article>
+    <% }) %>
+  </div>
+</section>
+<% } %>
+
 <section class="section" id="account">
   <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? 'アカウント設定' : 'Account' %></h2><p><%= user.email %> • <%= lang === 'ja' ? '登録日' : 'joined' %> <%= (user.created_at || '').slice(0,10) %></p></div></div>
   <div class="acct-grid">

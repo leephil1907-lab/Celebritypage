@@ -8,6 +8,8 @@ import { get, all, run, insert, getDb } from './db.js';
 
 export const SESSION_COOKIE = 'tk_sid';
 export const CSRF_COOKIE = 'tk_csrf';
+/* a fan who is not signed in still has to be able to leave the waitlist they just joined */
+export const NOTIFY_COOKIE = 'tk_wait';
 const SESSION_TTL_DAYS = 30;
 
 /* ---------- cookies ---------- */
@@ -29,6 +31,17 @@ function setCookie(res, name, value, { maxAge = SESSION_TTL_DAYS * 86400, httpOn
   const arr = prev ? (Array.isArray(prev) ? prev : [prev]) : [];
   res.setHeader('Set-Cookie', [...arr, bits.join('; ')]);
 }
+
+/** remember, for this browser only, which waitlist rows it can still take itself out of */
+export function notifyTokens(req) {
+  return String(parseCookies(req)[NOTIFY_COOKIE] || '').split(/[\s,]+/).filter((t) => /^[a-z0-9_-]{6,64}$/i.test(t)).slice(0, 8);
+}
+
+export function rememberNotify(req, res, token) {
+  const seen = notifyTokens(req).filter((t) => t !== String(token));
+  setCookie(res, NOTIFY_COOKIE, [String(token), ...seen].slice(0, 8).join(' '), { maxAge: 180 * 86400 });
+}
+
 
 /* ---------- throttle ---------- */
 const buckets = new Map();

@@ -4,8 +4,8 @@
     <h3>Members</h3><span class="pill mono"><%= rows.length %></span>
     <div class="tools">
       <form method="get" class="rowform"><input type="search" name="q" value="<%= q %>" placeholder="name or email…" aria-label="Search members"><button class="btn small" type="submit">Search</button></form>
-      <a class="btn small" href="/members.csv">CSV ↓</a>
-      <% if (q) { %><a class="btn small ghost" href="/members">clear</a><% } %>
+      <a class="btn small" href="<%= base %>/members.csv">CSV ↓</a>
+      <% if (q) { %><a class="btn small ghost" href="<%= base %>/members">clear</a><% } %>
     </div>
   </div>
   <div class="table-wrap">
@@ -21,7 +21,7 @@
           <td class="mono small dim"><%= m.tickets %> tickets • <%= m.bookings %> bookings</td>
           <td class="ta-r">
             <div class="row-actions">
-              <form method="post" action="/members/<%= m.id %>/tier" class="rowform">
+              <form method="post" action="<%= base %>/members/<%= m.id %>/tier" class="rowform">
                 <select name="tier" aria-label="Tier for <%= m.name %>">
                   <option value="none">— none —</option>
                   <% tiers.forEach(function(x){ %><option value="<%= x.id %>" <%= m.tier === x.id ? 'selected' : '' %>><%= x.name %> · <%= x.price_label %></option><% }) %>
@@ -29,7 +29,7 @@
                 <select name="status" aria-label="Status"><option value="active">active</option><option value="pending">pending</option></select>
                 <button class="btn small gold" type="submit">Apply</button>
               </form>
-              <form method="post" action="/members/<%= m.id %>/delete" data-confirm="Delete <%= m.name %> and every related row?"><button class="btn small danger" type="submit">Delete</button></form>
+              <form method="post" action="<%= base %>/members/<%= m.id %>/delete" data-confirm="Delete <%= m.name %> and every related row?"><button class="btn small danger" type="submit">Delete</button></form>
             </div>
           </td>
         </tr>

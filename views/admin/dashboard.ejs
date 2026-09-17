@@ -29,11 +29,11 @@
 
 <section class="two-col">
   <div class="card">
-    <div class="card-head"><h3>Ticket desk</h3><a class="btn small" href="/tickets">Open queue →</a></div>
+    <div class="card-head"><h3>Ticket desk</h3><a class="btn small" href="<%= base %>/tickets">Open queue →</a></div>
     <% if (tickets.length) { %>
     <div class="tkt-list">
       <% tickets.forEach(function(t){ %>
-      <a class="tkt-row" href="/tickets?id=<%= t.id %>"><span class="pill mono <%= t.status === 'open' ? 'warn' : (t.status === 'resolved' || t.status === 'closed' ? 'ok' : '') %>"><%= t.status %></span>
+      <a class="tkt-row" href="<%= base %>/tickets?id=<%= t.id %>"><span class="pill mono <%= t.status === 'open' ? 'warn' : (t.status === 'resolved' || t.status === 'closed' ? 'ok' : '') %>"><%= t.status %></span>
         <span><b><%= t.subject %></b><br><span class="dim small"><%= t.name || t.email || 'guest' %> • <%= t.msg_count %> msg</span></span>
         <span class="mono dim small"><%= (t.updated_at || '').slice(5, 16) %></span></a>
       <% }) %>
@@ -41,7 +41,7 @@
     <% } else { %><p class="dim small">Nothing waiting — the desk is clear.</p><% } %>
   </div>
   <div class="card">
-    <div class="card-head"><h3>Newest members</h3><a class="btn small" href="/members">All members →</a></div>
+    <div class="card-head"><h3>Newest members</h3><a class="btn small" href="<%= base %>/members">All members →</a></div>
     <table class="adm-table"><tbody>
       <% members.forEach(function(m){ %>
       <tr><td><b><%= m.name %></b><br><span class="dim small mono"><%= m.email %></span></td>
@@ -55,7 +55,7 @@
 
 <section class="two-col">
   <div class="card">
-    <div class="card-head"><h3>Recent orders</h3><a class="btn small" href="/orders.csv">CSV ↓</a></div>
+    <div class="card-head"><h3>Recent orders</h3><a class="btn small" href="<%= base %>/orders.csv">CSV ↓</a></div>
     <table class="adm-table"><tbody>
       <% recentOrders.forEach(function(o){ %>
       <tr><td class="mono"><%= o.order_no %></td><td class="dim small"><%= o.email %></td><td><span class="pill mono <%= o.status === 'paid' ? 'ok' : 'gold' %>"><%= o.status %></span></td><td class="ta-r mono"><%= o.total_label %></td></tr>
@@ -76,7 +76,7 @@
 </section>
 
 <section class="card">
-  <div class="card-head"><h3>Audit trail</h3><a class="btn small" href="/audit">Full log →</a></div>
+  <div class="card-head"><h3>Audit trail</h3><a class="btn small" href="<%= base %>/audit">Full log →</a></div>
   <table class="adm-table"><tbody>
     <% activity.forEach(function(a){ %>
     <tr><td class="mono dim small"><%= (a.created_at || '').slice(5, 16) %></td><td><b class="mono small"><%= a.action %></b></td><td class="dim small"><%= a.entity %> #<%= a.detail %></td><td class="ta-r dim small mono"><%= a.actor %></td></tr>

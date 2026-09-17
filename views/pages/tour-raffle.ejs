@@ -1,0 +1,60 @@
+<% /* One draw, end to end: who can enter, how many are in, and the order the seed produced */ %>
+<%- include('../partials/sections/pagehero', { ph: {
+  kicker: lang === 'ja' ? 'ミーグリ 抽選' : 'MEET & GREET • DRAW',
+  title: raffle.title, title2: raffle.status === 'drawn' ? (lang === 'ja' ? '結果' : 'results') : (lang === 'ja' ? '受付中' : 'open'),
+  sub: raffle.note || raffle.prize,
+  images: ['/image-search/takuya-kimura-starto-entertainment-offic-5.jpg', '/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg'],
+  cta: [[lang === 'ja' ? '他の抽選' : 'Other draws', '/tour/#lottery'], [lang === 'ja' ? '夜の詳細' : 'The night', raffle.show ? `/tour/show/${raffle.show.slug}` : '/tour/']],
+  side: { kicker: lang === 'ja' ? '抽選方式' : 'HOW IT WORKS', title: `${raffle.winners} ${lang === 'ja' ? '当選' : 'winners'}${raffle.alternates ? ' +' + raffle.alternates + ' ' + (lang === 'ja' ? '補欠' : 'alt') : ''}`,
+    body: lang === 'ja' ? `1会員1口 • ${String(raffle.tier_min).toUpperCase()}以上\n published seed で順を決めるので、後から検証できます` : `One entry per member • ${String(raffle.tier_min).toUpperCase()} and above\nOrder comes from a published seed, so anyone can replay it` }
+} }) %>
+
+<section class="section" id="draw-state">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? '抽選の状態' : 'Draw state' %></h2><p class="mono dim small"><%= raffle.status === 'open' && raffle.closes_at ? `${lang === 'ja' ? '締切' : 'closes'} ${raffle.closes_at}` : (raffle.drawn_at ? `${lang === 'ja' ? '抽選日' : 'drawn'} ${String(raffle.drawn_at).slice(0, 10)}` : raffle.status.toUpperCase()) %></p></div>
+    <span class="tagchip <%= raffle.status === 'open' ? 'gold' : 'solid' %>"><%= raffle.status.toUpperCase() %></span></div>
+  <dl class="draw-facts" data-reveal>
+    <div><dt class="mono dim small"><%= lang === 'ja' ? '応募数' : 'entries' %></dt><dd><%= raffle.entries %></dd></div>
+    <div><dt class="mono dim small"><%= lang === 'ja' ? '当選' : 'winners' %></dt><dd><%= raffle.winner_count %></dd></div>
+    <div><dt class="mono dim small"><%= lang === 'ja' ? '補欠' : 'alternates' %></dt><dd><%= raffle.alternate_count %></dd></div>
+    <div><dt class="mono dim small"><%= lang === 'ja' ? '対象ティア' : 'from tier' %></dt><dd><%= String(raffle.tier_min).toUpperCase() %>+</dd></div>
+    <% if (raffle.seed) { %><div><dt class="mono dim small"><%= lang === 'ja' ? 'シード' : 'published seed' %></dt><dd class="mono"><%= raffle.seed %></dd></div><% } %>
+  </dl>
+
+  <% if (user) { %>
+  <div class="draw-mine" data-reveal>
+    <% if (raffle.entered) { %>
+    <p class="dm-code mono"><%= lang === 'ja' ? 'あなたの参加番号' : 'YOUR CODE' %> <b><%= raffle.my_code %></b>
+      <span class="tagchip <%= raffle.my_status === 'winner' ? 'gold' : '' %>"><%= raffle.my_status === 'winner' ? (lang === 'ja' ? '当選' : 'WINNER') : (raffle.my_status === 'alternate' ? (lang === 'ja' ? '補欠' : 'ALTERNATE') : (raffle.my_status === 'missed' ? (lang === 'ja' ? '不通過' : 'NOT DRAWN') : (lang === 'ja' ? '待機中' : 'ENTERED'))) %></span></p>
+    <% if (raffle.my_status === 'winner') { %><p class="dim small"><%= lang === 'ja' ? '支払い手続きをチケットのチャットから行います。当日は身分証とファンカードをご持参ください。' : 'Payment is arranged in your ticket chat. Bring photo ID and your card on the night.' %></p><% } %>
+    <% } else if (raffle.status === 'open' && raffle.eligible) { %>
+    <form method="post" action="/tour/raffle/<%= raffle.id %>/enter" data-raffle-form>
+      <input type="hidden" name="raffle_id" value="<%= raffle.id %>">
+      <button type="submit" class="btn gold"><%= t('cta.enterDraw') %></button>
+      <p class="rf-msg mono dim small" data-raffle-msg role="status" aria-live="polite"></p>
+    </form>
+    <% } else if (raffle.status === 'open' && !raffle.eligible) { %>
+    <p class="dim small"><%= lang === 'ja' ? `${String(raffle.tier_min).toUpperCase()}会員以上がこの抽選に参加できます。` : `${String(raffle.tier_min).toUpperCase()} members and above can enter this draw.` %> <a class="link-arrow mono small" href="/join/"><%= t('cta.purchase') %> →</a></p>
+    <% } else { %><p class="dim small"><%= lang === 'ja' ? 'この抽選は終了しました。' : 'This draw is not taking entries.' %></p><% } %>
+  </div>
+  <% } else { %>
+  <p class="draw-login"><a class="btn primary" href="/join/"><%= t('cta.join') %></a> <span class="dim small mono"><%= lang === 'ja' ? '会員のみ参加できます' : 'entries are open to members only' %></span></p>
+  <% } %>
+</section>
+
+<% if (raffle.status === 'drawn') { %>
+<section class="section section-tight" id="results">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? '当選番号' : 'Winner codes' %></h2><p><%= lang === 'ja' ? '名前は公開しません — 番号で照合します' : 'Codes, not names — that is how the door checks you' %></p></div></div>
+  <div class="code-cols" data-reveal>
+    <div class="cc-col"><b class="mono dim small"><%= lang === 'ja' ? '当選' : 'WINNERS' %></b>
+      <ul><% raffle.winners.forEach(function (w) { %><li class="mono"><%= w.code %></li><% }) %></ul></div>
+    <div class="cc-col"><b class="mono dim small"><%= lang === 'ja' ? '補欠' : 'ALTERNATES' %></b>
+      <ul><% (raffle.alternates.length ? raffle.alternates : [{ code: '—' }]).forEach(function (w) { %><li class="mono"><%= w.code %></li><% }) %></ul></div>
+  </div>
+  <p class="mono dim small"><%= lang === 'ja' ? `シード ${raffle.seed} で並べた順 — 応募一覧から同じ結果を再現できます` : `Reorder every entry code with seed ${raffle.seed} and you get this list` %></p>
+</section>
+<% } %>
+
+<section class="section section-tight" id="other-draws">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? '他の抽選' : 'Other draws' %></h2></div></div>
+  <%- include('../partials/sections/raffles', { raffles: others }) %>
+</section>

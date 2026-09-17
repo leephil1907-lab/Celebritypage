@@ -458,8 +458,78 @@ vis.hidden === 0 ? ok('reduced-motion keeps everything visible', `${vis.total} b
 await rp.screenshot({ path: path.join(SHOTS, 'reduced-motion.png') });
 await rctx.close();
 
-/* ---------- 16. screenshots ---------- */
-console.log('\n[16] shots');
+/* ---------- 16. the waitlist and the venue locator (a clean context: no session, no history) ---------- */
+console.log('\n[16] waitlist');
+{
+  const wctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const wp = await wctx.newPage();
+  const wnoise = [];
+  wp.on('pageerror', (e) => wnoise.push(String(e.message).slice(0, 80)));
+  wp.on('console', (m) => { if (m.type() === 'error') wnoise.push(m.text().slice(0, 80)); });
+  wp.on('request', (rq) => { const u = rq.url(); if (!u.startsWith(BASE) && !/^(data|blob):/.test(u) && !/^https?:\/\/(www\.)?(openstreetmap|google)\.com\//.test(u)) wnoise.push('external ' + u.slice(0, 60)); });
+  await wp.goto(BASE + '/tour/', { waitUntil: 'load' });
+  await wp.waitForTimeout(500);
+
+  const maps = await wp.evaluate(() => [...document.querySelectorAll('.vmap svg')].map((el) => ({ kids: el.children.length, w: Math.round(el.getBoundingClientRect().width), label: el.getAttribute('aria-label') || '' })));
+  maps.length > 0 && maps.every((m) => m.kids >= 3 && m.w > 60 && /\d\.\d/.test(m.label))
+    ? ok('every date draws its own locator from real coordinates', `${maps.length} maps · ${maps[0].kids} shapes · ${maps[0].label.slice(0, 44)}`)
+    : bad('every date draws its own locator', JSON.stringify(maps).slice(0, 200));
+
+  const form = wp.locator('[data-notify-form]').first();
+  await form.scrollIntoViewIfNeeded();
+  let notifyPosts = 0;
+  wp.on('request', (rq) => { if (rq.method() === 'POST' && rq.url().includes('/api/tour/notify')) notifyPosts++; });
+  await form.locator('[name=email]').fill('not-an-address');
+  await form.locator('button[type=submit]').click({ force: true });   // the row repaints with the countdown, so no stability wait
+  await wp.waitForTimeout(400);
+  const wrong = await form.evaluate((f) => ({ valid: f.querySelector('[name=email]').checkValidity(), open: !f.hidden }));
+  !wrong.valid && wrong.open && notifyPosts === 0
+    ? ok('a bad address is answered before it leaves the page', 'email fails constraint validation, no request sent')
+    : bad('a bad address is answered before it leaves the page', JSON.stringify({ ...wrong, notifyPosts }));
+
+  await form.locator('[name=email]').fill(`qa-waitlist-${Date.now()}@example.com`);
+  await form.locator('button[type=submit]').click({ force: true });
+  await wp.waitForTimeout(900);
+  const joined = await wp.evaluate(() => {
+    const w = document.querySelector('.tc-wait, .cd-wait');
+    if (!w) return { err: 'no wait block' };
+    const msg = w.querySelector('[data-notify-msg]');
+    const leave = w.querySelector('[data-leave-form]');
+    const join = w.querySelector('[data-notify-form]');
+    return {
+      ok: !!msg && msg.classList.contains('is-ok'),
+      text: msg ? msg.textContent.trim().slice(0, 60) : '',
+      leaveShown: !!leave && !leave.hidden,
+      joinHidden: !!join && join.hidden,
+      token: leave && leave.querySelector('[name=token]') ? leave.querySelector('[name=token]').value : '',
+      count: (w.querySelector('[data-wait-count]') || {}).textContent || '',
+    };
+  });
+  joined.ok && joined.leaveShown && joined.joinHidden && joined.token.length > 8
+    ? ok('joining the list is live and hands back the way off', `${joined.text}${joined.count ? ' · ' + joined.count.trim().slice(0, 20) : ''} · token ${joined.token.slice(0, 9)}…`)
+    : bad('joining the list is live and hands back the way off', JSON.stringify(joined).slice(0, 220));
+
+  await wp.locator('.tc-wait [data-leave-form] button, .cd-wait [data-leave-form] button').first().click({ force: true });
+  await wp.waitForTimeout(800);
+  const left = await wp.evaluate(() => {
+    const w = document.querySelector('.tc-wait, .cd-wait');
+    const join = w && w.querySelector('[data-notify-form]');
+    const leave = w && w.querySelector('[data-leave-form]');
+    return { back: !!join && !join.hidden, gone: !leave || leave.hidden };
+  });
+  left.back && left.gone ? ok('one click takes the address back off, without a reload', JSON.stringify(left)) : bad('one click takes the address back off', JSON.stringify(left));
+
+  // the countdown inside the card re-paints every second, so let the page scroll itself rather than
+  // asking Playwright for a stable element it will never be given
+  await wp.evaluate(() => { const el = document.querySelector('.tour-card.is-coming_soon') || document.querySelector('.tour-card'); el?.scrollIntoView({ block: 'center' }); });
+  await wp.waitForTimeout(300);
+  await wp.screenshot({ path: path.join(SHOTS, 'tour-waitlist.png') });
+  wnoise.length ? bad('waitlist flow is quiet in the console', wnoise.slice(0, 3).join(' | ')) : ok('waitlist flow is quiet in the console', 'no errors, nothing external');
+  await wctx.close();
+}
+
+/* ---------- 17. screenshots ---------- */
+console.log('\n[17] shots');
 for (const [url, name] of [['/', 'home'], ['/shop/', 'shop'], ['/tour/', 'tour'], ['/music/', 'music'], ['/journal/', 'journal'], ['/members/', 'members'], ['/join/', 'join'], ['/archive/', 'archive']]) {
   await page.goto(BASE + url, { waitUntil: 'load' });
   await page.evaluate(() => window.scrollTo(0, 900));
