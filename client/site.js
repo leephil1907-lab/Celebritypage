@@ -147,6 +147,27 @@ function renderDash(me) {
     <div class="dash-block"><h4>Shop orders</h4>${me.orders.length ? me.orders.map((o) => `<div class="order-row"><b>${esc(o.order_no)}</b><span>${esc(o.total_label)}</span><span class="st st-${esc(o.status)}">${esc(o.status)}</span><a href="/shop/verify/${encodeURIComponent(o.qr)}">QR / verify →</a></div>`).join('') : '<div class="empty">No orders yet.</div>'}</div>`;
 }
 
+/* ---------- fan card: turn it over ---------- */
+export function initFanCards(root = document) {
+  $$('[data-fan-card]', root).forEach((card) => {
+    if (card.__fcBound) return;
+    card.__fcBound = true;
+    const set = (flipped) => {
+      card.classList.toggle('is-flipped', flipped);
+      card.setAttribute('aria-pressed', flipped ? 'true' : 'false');
+    };
+    const flip = () => set(!card.classList.contains('is-flipped'));
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('a,button,select,input,textarea,label')) return;   // controls keep their own job
+      flip();
+    });
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); flip(); }
+      else if (e.key === 'Escape' && card.classList.contains('is-flipped')) { e.preventDefault(); set(false); }
+    });
+  });
+}
+
 /* ---------- fan card preview ---------- */
 export function initCardPreview() {
   const card = $('#fanCard');
@@ -154,15 +175,25 @@ export function initCardPreview() {
   const sel = $('#cardTierSelect');
   const name = $('#cardHolderInput');
   const tiers = JSON.parse($('#tierData')?.textContent || '[]');
+  const esc = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+  const set = (field, value) => $$(`[data-card-field="${field}"]`, card).forEach((el) => { el.textContent = value; });
   const paint = () => {
     const t = tiers.find((x) => x.id === sel?.value) || tiers[0];
     if (!t) return;
-    card.className = `fan-card tier-${t.id}`;
+    // classList, never className: the flip state lives on this element too
+    ['silver', 'gold', 'platinum', 'diamond'].forEach((id) => card.classList.toggle(`tier-${id}`, id === t.id));
     card.style.setProperty('--accent', t.accent || '#c9a86a');
     const nm = (name?.value || 'YOUR NAME').toUpperCase();
-    $('#cardHolder').textContent = nm;
-    $('#cardTierLabel').textContent = `${t.name} • ${t.price_label}`;
-    $('#cardNumber').textContent = `TK — 48${String(Math.floor(100 + Math.random() * 899))} • ${t.name}`;
+    set('holder', nm);
+    set('tier', t.name);
+    set('tiername', t.name);
+    set('sublabel', `${t.name} • ${t.price_label}`);
+    const num = `TK — 48${21 + (Number(t.rank) || 0)}`;   // stable per tier: digits must not dance while typing
+    set('number', num);
+    set('member', num.replace(/[^0-9]/g, '').padStart(6, '0').split('').join(' '));
+    set('stamps', '—');
+    const list = $('.fc-perks ul', card);
+    if (list) list.innerHTML = (t.perks || []).slice(0, 4).map((x) => `<li><i aria-hidden="true">✓</i><span>${esc(x)}</span></li>`).join('');
     $$('.tier').forEach((el) => el.classList.toggle('is-selected', el.dataset.tier === t.id));
   };
   sel?.addEventListener('change', paint);
@@ -522,6 +553,7 @@ export function initLive() {
 
 /* ---------- boot ---------- */
 export function mount(root = document) {
+  initFanCards(root);
   initCardPreview();
   initBooking();
   initShop();

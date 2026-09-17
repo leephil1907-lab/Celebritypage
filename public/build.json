@@ -1,22 +1,22 @@
 {
-  "build": "mu5v66zj",
-  "at": "2026-09-17T18:29:28.218Z",
+  "build": "mu5wxnjd",
+  "at": "2026-09-17T19:18:48.986Z",
   "files": {
     "public/css/app.css": {
-      "bytes": 126247,
-      "hash": "07093a8785"
+      "bytes": 134231,
+      "hash": "8b3d8457a9"
     },
     "public/css/admin.css": {
       "bytes": 16032,
       "hash": "6e94358be3"
     },
     "public/js/app.js": {
-      "bytes": 62121,
-      "hash": "078548969e"
+      "bytes": 63071,
+      "hash": "0f9232b0ba"
     },
     "public/js/admin.js": {
       "bytes": 9385,
-      "hash": "f5d626ba53"
+      "hash": "37700b596f"
     }
   }
 }

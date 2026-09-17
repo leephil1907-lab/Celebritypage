@@ -26,21 +26,24 @@
     <% if (membership) { %><span class="tagchip gold"><%= membership.tier_name %> • <%= membership.status %></span><% } %></div>
   <div class="member-grid">
     <div class="mg-card" data-reveal>
-      <% if (user && membership) { %>
-      <div class="fan-card tier-<%= membership.tier %>" data-tilt="7">
-        <div class="fan-card-top"><b><%= site['site.brand'] %> • FAN CARD</b><span class="chip" aria-hidden="true"></span></div>
-        <h4><%= user.name.toUpperCase() %></h4>
-        <div class="num"><%= membership.card_no %> • <%= membership.tier_name %></div>
-        <div class="card-valid mono"><%= lang === 'ja' ? '発行' : 'ISSUED' %> <%= (membership.issued_at || '').slice(0,10) %> • <%= lang === 'ja' ? '有効' : 'VALID' %> <%= membership.valid_until %></div>
-        <div class="holder"><div><b><%= user.name %></b><br><span><%= yen(membership.price_yen) %> / <%= lang === 'ja' ? '年' : 'year' %></span></div><span>木村拓哉</span></div>
-      </div>
+      <% if (user && membership) {
+         const tierRow = (tiers || []).find(function (x) { return x.id === membership.tier; }) || {}; %>
+      <% /* the card is filled from the row the member bought: name, number, dates, tier perks */ %>
+      <%- include('../partials/fan-card', { card: {
+            name: user.name, kanji: site['about.kanji'] || '木村拓哉',
+            tier: membership.tier, tierName: membership.tier_name, cardNo: membership.card_no,
+            issued: membership.issued_at || membership.created_at, valid: membership.valid_until,
+            status: membership.status, priceLabel: (membership.price_label || yen(membership.price_yen)) + ' / ' + (lang === 'ja' ? '年' : 'yr'),
+            perks: tierRow.perks || [], accent: tierRow.accent, memberId: user.id,
+            stamps: (stamps || []).filter(function (x) { return x.stamped; }).length } }) %>
       <% } else if (user) { %>
-      <div class="fan-card is-empty" data-tilt="5">
-        <div class="fan-card-top"><b><%= site['site.brand'] %> • FAN CARD</b><span class="chip" style="opacity:.3" aria-hidden="true"></span></div>
-        <h4 style="opacity:.7"><%= lang === 'ja' ? 'カード未発行' : 'NO CARD YET' %></h4>
-        <div class="num dim">SIGNUP COMPLETE — <%= user.email %></div>
-        <div class="holder"><div><b><%= user.name %></b><br><span><%= lang === 'ja' ? 'ティアを選んで発行' : 'Pick a tier to issue' %></span></div><span>木村拓哉</span></div>
-      </div>
+      <%- include('../partials/fan-card', { card: {
+            name: user.name, kanji: site['about.kanji'] || '木村拓哉',
+            tier: 'silver', tierName: lang === 'ja' ? 'ティア未選択' : 'NO TIER YET', cardNo: 'TK — ----',
+            status: 'none', memberId: user.id, stamps: (stamps || []).filter(function (x) { return x.stamped; }).length,
+            caption: lang === 'ja' ? 'アカウントは作成済みです。ティアの購入を申請すると、運営の承認後にこのカードが有効になります。'
+                                   : 'Account created. Request a tier and Management activates this card — the number you see here is the one printed on it.',
+            portraitAlt: 'Takuya Kimura — card artwork' } }) %>
       <% } else { %>
       <div class="empty big"><%= lang === 'ja' ? 'カードを表示するにはログインしてください。' : 'Log in to see your card.' %></div>
       <% } %>

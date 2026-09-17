@@ -287,6 +287,61 @@ if (await buyBtn.count()) {
 }
 await page.screenshot({ path: path.join(SHOTS, 'member-dashboard.png'), fullPage: false });
 
+/* the card the member just asked for has to be THEIR card, and it has to turn over */
+await page.goto(BASE + '/members/', { waitUntil: 'load' });
+await page.waitForTimeout(600);
+const cardData = await page.evaluate(() => {
+  const c = document.querySelector('.fan-card');
+  if (!c) return null;
+  const f = c.querySelector('.fc-front'), k = c.querySelector('.fc-back');
+  const txt = (el) => (el?.textContent || '').replace(/\s+/g, ' ').trim();
+  return {
+    holder: txt(f.querySelector('h4')),
+    frontNo: txt(f.querySelector('[data-card-field="number"]')),
+    backNo: txt(k.querySelector('[data-card-field="number"]')),
+    memberNo: txt(k.querySelector('.fc-back-top .mono')),
+    perks: k.querySelectorAll('.fc-perks li').length,
+    bars: k.querySelectorAll('.fc-bar i.bw1, .fc-bar i.bw2, .fc-bar i.bw3').length,
+    faces: c.querySelectorAll('.fc-face').length,
+  };
+});
+if (!cardData) bad('fan card is filled for the holder', 'no .fan-card on /members/');
+else {
+  /QA Browser/i.test(cardData.holder)
+    ? ok('fan card is filled for the holder', cardData.holder)
+    : bad('fan card is filled for the holder', cardData.holder || '(empty name)');
+  /^TK-\d+$/.test(cardData.frontNo) && cardData.frontNo === cardData.backNo
+    ? ok('both card faces print the issued number', cardData.frontNo)
+    : bad('both card faces print the issued number', `${cardData.frontNo} vs ${cardData.backNo}`);
+  /(会員番号|MEMBER NO)\s*\d/.test(cardData.memberNo) && cardData.perks > 0 && cardData.bars > 8 && cardData.faces === 2
+    ? ok('the card back carries member no, perks and barcode', `${cardData.memberNo} · ${cardData.perks} perks · ${cardData.bars} bars`)
+    : bad('the card back carries member no, perks and barcode', JSON.stringify(cardData));
+  await page.click('.fan-card');
+  await page.waitForTimeout(1150);
+  const turned = await page.evaluate(() => {
+    const c = document.querySelector('.fan-card');
+    const m = /matrix3d\(([-\d.]+)/.exec(getComputedStyle(c.querySelector('.fc-flip')).transform);
+    return {
+      flipped: c.classList.contains('is-flipped'), pressed: c.getAttribute('aria-pressed'),
+      rot: m ? Math.abs(Number(m[1]) + 1) < 0.1 : false,
+      spill: [...c.querySelectorAll('.fc-face')].map((el) => el.scrollHeight - el.clientHeight),
+    };
+  });
+  turned.flipped && turned.rot && turned.pressed === 'true'
+    ? ok('the fan card turns over and says so', `rotateY 180°, aria-pressed=${turned.pressed}`)
+    : bad('the fan card turns over and says so', JSON.stringify(turned));
+  await page.locator('.fan-card').first().scrollIntoViewIfNeeded();
+  await page.waitForTimeout(250);
+  const clip = await page.evaluate(() => { const r = document.querySelector('.fan-card').getBoundingClientRect(); return { x: Math.max(0, r.x - 10), y: Math.max(0, r.y - 10), width: r.width + 20, height: r.height + 20 }; });
+  await page.screenshot({ path: path.join(SHOTS, 'fan-card-back.png'), clip });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(500);
+  const small = await page.evaluate(() => [...document.querySelectorAll('.fan-card .fc-face')].map((el) => el.scrollHeight - el.clientHeight));
+  small.every((v) => v <= 0) ? ok('both faces fit the card at 390px', `spill ${small.join('/')} on a phone`) : bad('both faces fit the card at 390px', `spill ${small.join('/')}`);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.waitForTimeout(300);
+}
+
 /* ---------- 11. search ---------- */
 console.log('\n[11] search');
 await page.goto(BASE + '/search/', { waitUntil: 'load' });

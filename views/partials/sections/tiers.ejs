@@ -15,14 +15,16 @@
 </div>
 
 <div class="card-preview">
-  <div class="fan-card tier-diamond" id="fanCard" data-tilt="8" style="--accent:<%= (tiers.find(function(x){return x.featured}) || tiers[0] || {}).accent || '#c9a86a' %>">
-    <div class="fan-card-top"><b><%= site['site.brand'] %> • FAN CARD</b><span class="chip" aria-hidden="true"></span></div>
-    <h4>TAKUYA KIMURA</h4>
-    <div class="num" id="cardNumber">TK — 4821 • DIAMOND</div>
-    <div class="card-valid"><%= lang === 'ja' ? 'メンバープレビュー • 有効1年' : 'MEMBER PREVIEW • VALID 1 YEAR' %></div>
-    <div class="holder"><div><b id="cardHolder">YOUR NAME</b><br><span id="cardTierLabel">DIAMOND • ¥1,000,000</span></div><span>木村拓哉</span></div>
-    <span class="card-holo" aria-hidden="true"></span>
-  </div>
+  <% const pick = tiers.find(function (x) { return x.featured; }) || tiers[0] || {}; %>
+  <%- include('../fan-card', { card: {
+        name: user ? user.name : 'YOUR NAME', kanji: site['about.kanji'] || '木村拓哉',
+        tier: pick.id || 'diamond', tierName: pick.name || 'DIAMOND', cardNo: 'TK — 4821',
+        issued: lang === 'ja' ? 'プレビュー' : 'PREVIEW', valid: lang === 'ja' ? '1年間' : '1 YEAR',
+        status: 'preview', priceLabel: (pick.price_label || '¥1,000,000') + ' / ' + (lang === 'ja' ? '年' : 'yr'),
+        perks: pick.perks || [], accent: pick.accent, stamps: 0, preview: true,
+        caption: lang === 'ja' ? 'プレビュー中のカードです。ティアを選ぶと特典が変わります。購入は無料の会員登録 → チケット発行から。'
+                               : 'A preview card — pick a tier and the entitlements change. Purchase runs through a free account, then a ticket.',
+        portraitAlt: 'Takuya Kimura — card artwork preview' } }) %>
   <div class="card-controls">
     <h4><%= lang === 'ja' ? 'カードをプレビュー' : 'Preview Your Card' %></h4>
     <p class="fineprint"><%= lang === 'ja' ? 'ティアを選ぶとカードが変化します。購入は無料登録 → チケット発行。' : 'Pick a tier — the card reacts. Purchase requires a free account, then a ticket.' %></p>

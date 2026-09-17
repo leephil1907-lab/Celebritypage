@@ -1,0 +1,101 @@
+<% /* Fan card — one component, two faces, used by the member dashboard and the tier preview.
+       locals: card = { name, kanji, tier, tierName, cardNo, issued, valid, status, priceLabel,
+                        perks[], accent, memberId, stamps, portrait, portraitAlt, preview, caption }
+       Both faces are real DOM: with JavaScript off the card simply stacks them (see the
+       (scripting: none) block in components.css), and the flip is a transform, never a hide. */ %>
+<% const c = card || {};
+   const accent = c.accent || '#c9a86a';
+   const perks = (c.perks || []).slice(0, 4);
+   const no = String(c.cardNo || 'TK — 0000');
+   const seed = no.replace(/[^0-9A-Za-z]/g, '');
+   const bars = Array.from({ length: Math.max(16, seed.length * 2) }, function (_, i) {
+     const ch = seed.charCodeAt(i % (seed.length || 1)) || 71;
+     const w = (ch + i * 11 + Math.floor(i / (seed.length || 1)) * 5) % 3;
+     return `<i class="bw${w + 1}"></i><i class="bg${i % 4 === 3 ? ' bg2' : ''}"></i>`;
+   }).join('');
+   /* the number the back prints, spaced the way a card prints it */
+   const memberShown = (function () {
+     const raw = no.replace(/^TK[-—]?/, '').replace(/[^0-9]/g, '');
+     if (raw) return raw.padStart(6, '0').split('').join(' ');
+     return c.memberId ? String(c.memberId).padStart(6, '0').split('').join(' ') : '— — — — — —';
+   })();
+   const issued = c.issued || c.created_at || '';
+   const status = String(c.status || 'active').toLowerCase();
+   %>
+<div class="fan-card tier-<%= c.tier || 'diamond' %><%= c.preview ? ' is-preview' : '' %>"<% if (c.preview) { %> id="fanCard"<% } %> data-fan-card data-tilt="<%= c.preview ? 8 : 7 %>"
+     style="--accent:<%= accent %>" tabindex="0" role="button" aria-pressed="false"
+     aria-label="<%= c.preview ? 'Fan card preview — activate to read the back of the card' : 'Fan card ' + no + ' — activate to read the back of the card' %>">
+  <span class="fc-sheen" aria-hidden="true"></span>
+
+  <div class="fc-flip">
+    <% /* ---------------- FRONT ---------------- */ %>
+    <div class="fc-face fc-front">
+      <div class="fan-card-top">
+        <b><%= site['site.brand'] %> • FAN CARD</b>
+        <span class="fc-tier-tag mono" data-card-field="tier"><%= c.tierName || '' %></span>
+        <span class="chip" aria-hidden="true"></span>
+      </div>
+
+      <div class="fc-body">
+        <figure class="fc-face-shot">
+          <img <%- imgAttrs(c.portrait || '/image-search/takuya-kimura-starto-entertainment-offic-3.webp', {
+                    alt: c.portraitAlt || 'Takuya Kimura — card holder portrait', sizes: '150px' }) %>>
+          <span class="fc-face-frame" aria-hidden="true"></span>
+        </figure>
+        <div class="fc-lines">
+          <h4 data-card-field="holder"><%= c.name || 'YOUR NAME' %></h4>
+          <div class="num"><span data-card-field="number"><%= no %></span></div>
+          <div class="card-valid mono">
+            <%= lang === 'ja' ? '発行' : 'ISSUED' %> <span data-card-field="issued"><%= issued ? String(issued).slice(0, 10) : '—' %></span>
+            • <%= lang === 'ja' ? '有効' : 'VALID' %> <span data-card-field="valid"><%= c.valid || '—' %></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="holder">
+        <div><b class="mono"><%= lang === 'ja' ? '会員番号' : 'MEMBER NO' %></b>
+          <span data-card-field="sublabel"><%= [c.priceLabel, c.tierName].filter(Boolean).join(' • ') || (lang === 'ja' ? 'ティアを選んで発行' : 'PICK A TIER TO ISSUE') %></span></div>
+        <span class="fc-kanji"><%= c.kanji || '木村拓哉' %></span>
+      </div>
+
+      <% if (c.preview) { %>
+      <span class="fc-hint mono" aria-hidden="true"><%= lang === 'ja' ? 'タップで裏面' : 'TAP TO TURN' %></span>
+      <% } else if (status !== 'active') { %>
+      <span class="fc-stamp mono"><%= status === 'pending' ? (lang === 'ja' ? '承認待ち' : 'PENDING') : (status === 'none' ? (lang === 'ja' ? '未発行' : 'NO CARD') : status.toUpperCase()) %></span>
+      <% } else { %>
+      <span class="fc-hint mono" aria-hidden="true"><%= lang === 'ja' ? 'タップで裏面' : 'TAP TO TURN' %></span>
+      <% } %>
+      <span class="card-holo" aria-hidden="true"></span>
+    </div>
+
+    <% /* ---------------- BACK ---------------- */ %>
+    <div class="fc-face fc-back" id="fanCardBack<%= c.preview ? '-preview' : '' %>">
+      <div class="fc-back-top">
+        <b><%= site['site.brand'] %></b>
+        <span class="mono"><%= lang === 'ja' ? '会員番号' : 'MEMBER NO' %> <b data-card-field="member"><%= memberShown %></b></span>
+      </div>
+      <span class="fc-mag" aria-hidden="true"></span>
+
+      <div class="fc-back-grid">
+        <div class="fc-perks">
+          <b class="mono"><%= lang === 'ja' ? '特典' : 'ENTITLEMENTS' %></b>
+          <ul>
+            <% if (perks.length) { %><% perks.forEach(function (p) { %><li><i aria-hidden="true">✓</i><span><%= p %></span></li><% }) %>
+            <% } else { %><li><i aria-hidden="true">✓</i><span><%= lang === 'ja' ? 'チケット発行後に運営が有効化します' : 'Activated by Management once the ticket is approved' %></span></li><% } %>
+          </ul>
+        </div>
+        <div class="fc-side">
+          <div class="fc-stat"><b data-card-field="stamps"><%= Number.isFinite(+c.stamps) ? c.stamps : (c.stamps || 0) %></b><small class="mono"><%= lang === 'ja' ? 'ツアー押印' : 'tour stamps' %></small></div>
+          <div class="fc-stat"><b class="gold" data-card-field="tiername"><%= c.tierName || '—' %></b><small class="mono"><%= lang === 'ja' ? 'ティア' : 'tier' %></small></div>
+          <p class="fc-sign"><%= c.kanji || '木村拓哉' %><small class="mono"><%= lang === 'ja' ? '発行人' : 'ISSUED BY' %> • <%= site['site.brand'] %></small></p>
+        </div>
+      </div>
+
+      <div class="fc-foot">
+        <span class="fc-bar" aria-hidden="true"><%- bars %></span>
+        <span class="mono fc-barcode" data-card-field="number"><%= no %></span>
+      </div>
+      <p class="fc-fine"><%= c.caption || (lang === 'ja' ? '本カードは会員本人のみ有効です。紛失時は運営までご連絡ください。' : 'Personal and non-transferable. Report a lost card to Management — the number is reissued.') %></p>
+    </div>
+  </div>
+</div>

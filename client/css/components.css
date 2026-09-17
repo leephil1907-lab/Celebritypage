@@ -820,3 +820,125 @@ html.motion-ready .hamburger{transition:border-color var(--dur-2),background var
 /* motion is never allowed to hide content: these only apply while JS is live */
 html.motion-reduced .hero-media{display:none}
 html.motion-reduced .mp-ui{opacity:1!important;transform:none!important}
+
+/* ============================================================
+ * FAN CARD — an object, so it behaves like one
+ * The card carries two real faces; clicking, tapping or pressing
+ * Enter/Space turns it over. Nothing is hidden behind JS: with
+ * scripting off the two faces simply stack and both are readable.
+ * ============================================================ */
+.fan-card{padding:0;overflow:visible;perspective:1200px;container-type:inline-size}
+.fan-card:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.fc-sheen{position:absolute;inset:-1px;border-radius:18px;pointer-events:none;opacity:0;
+  background:radial-gradient(130% 120% at 50% 0%,rgba(201,168,106,.34),transparent 62%);
+  transition:opacity var(--dur-3) var(--ease-out-quart)}
+@media (hover:hover){.fan-card:hover .fc-sheen{opacity:1}}
+.fc-flip{position:absolute;inset:0;transform-style:preserve-3d;transition:transform var(--dur-4) var(--ease-out-expo)}
+.fan-card.is-flipped .fc-flip{transform:rotateY(180deg)}
+.fc-face{position:absolute;inset:0;display:flex;flex-direction:column;padding:16px 18px;border-radius:16px;
+  overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;touch-action:manipulation;cursor:pointer}
+.fc-back{transform:rotateY(180deg);color:#fbf6ee;border:1px solid rgba(201,168,106,.26);
+  background:linear-gradient(150deg,#0c0b0a 0%,#171208 55%,#0a0a0a 100%)}
+.fan-card.tier-silver .fc-back,.fan-card.tier-platinum .fc-back{color:#0f0e0c;border-color:rgba(15,14,12,.16);
+  background:linear-gradient(150deg,#eef0f3,#d9dee3 58%,#c3cbd4)}
+.fc-body{display:flex;align-items:center;gap:clamp(10px,2.4%,16px);margin:0}
+.fc-face-shot{position:relative;flex:none;width:clamp(60px,20%,104px);aspect-ratio:3/4;margin:0;border-radius:9px;
+  overflow:hidden;background:#0a0a0a;border:1px solid rgba(255,255,255,.16);box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.fc-face-shot img{width:100%;height:100%;object-fit:cover;object-position:50% 24%;filter:saturate(.78) contrast(1.06)}
+.fc-face-frame{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(201,168,106,.2),transparent 42%,rgba(10,10,10,.5))}
+.fan-card.tier-silver .fc-face-shot img{filter:grayscale(1) contrast(1.1) brightness(1.06)}
+.fan-card.tier-gold .fc-face-shot img{filter:sepia(.38) saturate(1.16) contrast(1.05)}
+.fan-card.tier-platinum .fc-face-shot img{filter:grayscale(.4) contrast(1.14) brightness(1.07)}
+.fan-card.tier-diamond .fc-face-shot img{filter:saturate(1.1) contrast(1.1)}
+.fc-lines{min-width:0;flex:1}
+.fan-card h4{text-transform:uppercase;letter-spacing:.01em}
+.fc-face{justify-content:space-between}
+.fan-card-top{gap:8px}
+.fc-tier-tag{margin-left:auto;order:0;font-size:8.6px;letter-spacing:.2em;padding:4px 8px;border-radius:999px;
+  border:1px solid currentColor;opacity:.78;text-transform:uppercase;white-space:nowrap}
+.fan-card .fan-card-top .chip{order:1;margin-left:10px}
+.fan-card .holder b{font-size:8.4px;letter-spacing:.2em;opacity:.62}
+.fan-card .holder span{display:block;margin-top:3px;font-size:10.4px;letter-spacing:.1em;color:inherit;opacity:.92}
+.fc-face::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:repeating-linear-gradient(112deg,rgba(255,255,255,.05) 0 1px,transparent 1px 7px)}
+.fc-back .fc-face-frame,.fc-back::before{opacity:.28}
+.fan-card h4{margin:0 0 4px;font-size:clamp(14px,1.45vw,21px);line-height:1.14;overflow-wrap:anywhere}
+.fan-card .num{font-size:clamp(9.5px,.95vw,12px);letter-spacing:.14em}
+.fan-card .card-valid{font-size:8.6px;letter-spacing:.13em;margin-top:5px;opacity:.72}
+.fan-card .holder{margin-top:0;gap:10px;align-items:flex-end}
+.fan-card .holder b{font-size:10.5px}
+.fan-card .holder span{font-size:9.4px}
+.fc-kanji{font-family:var(--serif);letter-spacing:.14em;font-size:12px;color:var(--gold2)}
+.fan-card.tier-silver .fc-kanji,.fan-card.tier-platinum .fc-kanji{color:#4a4640}
+.fc-hint,.fc-stamp{position:absolute;right:14px;bottom:11px;font-size:8.4px;letter-spacing:.2em;opacity:.5}
+.fc-stamp{border:1px solid rgba(221,194,138,.72);color:var(--gold2);border-radius:6px;padding:4px 8px;
+  text-transform:uppercase;transform:rotate(-7deg);opacity:.95;letter-spacing:.16em;font-weight:600}
+.fc-back-top{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:9.2px;
+  letter-spacing:.16em;text-transform:uppercase}
+.fc-back-top .mono{opacity:.72;font-size:8.8px;letter-spacing:.12em}
+.fc-mag{display:block;height:24px;margin:9px -18px 11px;background:rgba(8,8,8,.92);box-shadow:inset 0 -1px 0 rgba(255,255,255,.05)}
+.fan-card.tier-silver .fc-mag,.fan-card.tier-platinum .fc-mag{background:rgba(20,20,22,.86)}
+.fc-back-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:clamp(10px,2.6%,18px);align-items:start;flex:1;
+  padding-right:2px;border-right:0}
+.fc-perks{padding-right:clamp(8px,2%,14px);border-right:1px solid currentColor}
+.fc-perks{border-right-color:rgba(201,168,106,.22)}
+.fan-card.tier-silver .fc-perks,.fan-card.tier-platinum .fc-perks{border-right-color:rgba(15,14,12,.16)}
+.fc-side{padding-left:clamp(4px,1.4%,10px)}
+.fc-perks>b{display:block;font-size:8.2px;letter-spacing:.22em;opacity:.6;margin-bottom:5px}
+.fc-perks ul{display:grid;gap:3px;font-size:10px;line-height:1.34}
+.fc-perks li{display:flex;gap:6px;align-items:flex-start;min-width:0}
+.fc-perks li i{font-style:normal;color:var(--accent);flex:none;font-size:9px;line-height:1.5}
+.fc-perks li span{overflow-wrap:anywhere}
+.fc-side{display:grid;gap:7px;justify-items:end;text-align:right}
+.fc-stat b{font-family:var(--serif);font-size:17px;line-height:1;font-weight:600}
+.fc-stat small{display:block;font-size:7.6px;letter-spacing:.16em;opacity:.6;margin-top:2px}
+.fc-sign{margin:2px 0 0;font-family:var(--serif);font-style:italic;font-size:15px;letter-spacing:.06em;line-height:1.1}
+.fc-sign small{display:block;font-style:normal;font-size:7.4px;letter-spacing:.16em;opacity:.55;margin-top:3px}
+.fc-foot{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.fc-bar{display:flex;align-items:flex-end;height:20px;opacity:.9}
+.fc-bar i{display:block;height:100%;background:currentColor}
+.fc-bar .bw1{width:1px}.fc-bar .bw2{width:2px}.fc-bar .bw3{width:3px}.fc-bar .bg{width:2px;background:none}
+.fc-bar .bg2{width:4px;background:none}
+.fc-bar{flex-wrap:nowrap;max-width:62%}
+.fc-barcode{font-size:9px;letter-spacing:.14em;opacity:.82}
+.fc-fine{margin:7px 0 0;font-size:8.2px;line-height:1.45;opacity:.52;letter-spacing:.02em}
+.fc-empty-note{position:absolute;inset:auto 14px 10px auto;font-size:8.4px;letter-spacing:.18em;color:var(--gold2);opacity:.8}
+/* The printed elements follow the card, not the viewport: 1cqw is 1% of the card width, so the
+   portrait, the stripe and the type keep their relationship at 320px and at 660px alike. */
+.fc-face{padding:clamp(11px,3.6cqw,19px) clamp(13px,4.2cqw,23px)}
+.fc-face-shot{width:clamp(54px,16.5cqw,110px)}
+.fan-card h4{font-size:clamp(12.5px,3.05cqw,22px)}
+.fan-card .num{font-size:clamp(9px,1.8cqw,13px)}
+.fan-card .card-valid{font-size:clamp(7.4px,1.28cqw,9.4px);margin-top:clamp(3px,.9cqw,6px)}
+.fc-perks ul{font-size:clamp(8.6px,1.5cqw,11px);gap:clamp(2px,.5cqw,4px)}
+.fc-perks>b,.fc-back-top,.fc-stat small{font-size:clamp(7.2px,1.15cqw,9.4px)}
+.fc-stat b{font-size:clamp(12px,2.55cqw,18px)}
+.fc-stat{gap:clamp(2px,.6cqw,6px)}
+.fc-sign{font-size:clamp(11.5px,2.35cqw,16px)}
+.fc-mag{height:clamp(13px,3.4cqw,25px);margin:clamp(6px,1.6cqw,11px) calc(-1 * clamp(13px,4.2cqw,23px)) clamp(7px,1.8cqw,12px)}
+.fc-bar{height:clamp(15px,3.4cqw,24px)}
+.fc-barcode,.fc-hint,.fc-stamp{font-size:clamp(7.4px,1.15cqw,9.4px)}
+.fc-fine{font-size:clamp(7px,1.05cqw,8.6px);margin-top:clamp(3px,.9cqw,7px)}
+.fan-card .holder b{font-size:clamp(7.4px,1.15cqw,9px)}
+.fan-card .holder span{font-size:clamp(8.6px,1.5cqw,11px)}
+.fc-kanji{font-size:clamp(10px,1.8cqw,13.5px)}
+@media (max-width:560px){
+  /* a 320px-wide strip cannot hold a printed back face at 1.62:1 — the card stands up instead */
+  .fan-card{aspect-ratio:1.34/1}
+  .fc-fine{display:none}
+}
+@media (max-width:430px){
+  .fc-perks li:nth-child(n+3){display:none}
+  .fc-back-grid{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+}
+html.motion-reduced .fc-flip,html.motion-reduced .fc-sheen{transition:none}
+@media (prefers-reduced-motion:reduce){.fc-flip{transition:none}}
+@media (scripting:none){
+  .fan-card{aspect-ratio:auto;perspective:none;padding:0}
+  .fc-flip{position:static;transform:none!important;transform-style:flat}
+  .fc-face{position:static;inset:auto;transform:none;backface-visibility:visible;-webkit-backface-visibility:visible;cursor:default}
+  .fc-front{border-radius:16px 16px 0 0}
+  .fc-back{border-radius:0 0 16px 16px;border-top:1px solid rgba(201,168,106,.28)}
+  .fc-hint{display:none}
+}

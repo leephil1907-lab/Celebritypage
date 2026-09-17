@@ -207,6 +207,72 @@ if (driver) {
     check(bad.length === 0, `${p}: all ${seen.size} head URLs resolve directly`, bad.slice(0, 4).join(' | '));
   }
 
+  /* ---- 3a3. the fan card: it is an object, so it has to turn over ---- */
+  step('3a3 fan card');
+  await page.goto(BASE + '/#membership', { waitUntil: 'load' });
+  await page.waitForSelector('#fanCard', { state: 'attached' });
+  await page.waitForTimeout(500);
+  const cardState = () => page.evaluate(() => {
+    const c = document.querySelector('#fanCard');
+    if (!c) return null;
+    const f = c.querySelector('.fc-front'), k = c.querySelector('.fc-back');
+    const face = (el) => ({ h: el.clientHeight, over: el.scrollHeight - el.clientHeight });
+    const t = getComputedStyle(c.querySelector('.fc-flip')).transform;
+    const rot = /matrix3d\(([-\d.]+)/.exec(t);
+    const img = c.querySelector('.fc-face-shot img');
+    return {
+      faces: !!f && !!k, flipped: c.classList.contains('is-flipped'), pressed: c.getAttribute('aria-pressed'),
+      rotated: !!rot && Math.abs(Number(rot[1]) + 1) < 0.08,
+      faceOverflow: [face(f).over, face(k).over],
+      name: (f.querySelector('h4')?.textContent || '').trim().length > 1,
+      portrait: img ? { nat: img.naturalWidth, w: Math.round(img.getBoundingClientRect().width) } : null,
+      numbers: [...c.querySelectorAll('[data-card-field="number"]')].map((e) => e.textContent.trim()),
+      member: (c.querySelector('[data-card-field="member"]')?.textContent || '').replace(/\s+/g, ''),
+      perks: [...c.querySelectorAll('.fc-perks li')].length,
+      bars: c.querySelectorAll('.fc-bar i.bw1, .fc-bar i.bw2, .fc-bar i.bw3').length,
+      role: c.getAttribute('role'), tab: c.getAttribute('tabindex'),
+    };
+  });
+  const cs = await cardState();
+  check(!!cs && cs.faces, 'the fan card renders two faces', cs ? 'ok' : 'no #fanCard');
+  check(cs && cs.role === 'button' && cs.tab === '0', 'the card is a real control (role + tabindex)', `${cs?.role}/${cs?.tab}`);
+  check(cs && cs.name, 'the card carries a holder name', String(cs?.name));
+  check(cs && cs.portrait && cs.portrait.nat > 0 && cs.portrait.w <= cs.portrait.nat * 1.35,
+    'the card portrait is printed, not stretched', cs ? `${cs.portrait?.nat}px @ ${cs.portrait?.w}px` : '');
+  check(cs && cs.numbers.length === 2 && cs.numbers[0] === cs.numbers[1], 'front and back print the same number', (cs?.numbers || []).join(' = '));
+  const dig = (v) => (String(v).match(/\d/g) || []).join('').replace(/^0+(?=\d)/, '') || '0';
+  check(/^\d{6}$/.test(cs?.member || '') && dig(cs?.numbers?.[0]) === dig(cs.member), 'the back member number is the card number', `${cs?.member} from ${cs?.numbers?.[0]}`);
+  check(cs && cs.perks > 0 && cs.bars > 8, 'the back carries entitlements and a barcode', `${cs?.perks} perks, ${cs?.bars} bars`);
+  check(cs && cs.faceOverflow.every((o) => o <= 0), 'neither face overflows its own card', (cs?.faceOverflow || []).join('/'));
+  await page.click('#fanCard');
+  await page.waitForTimeout(1200);
+  const flipped = await cardState();
+  check(flipped && flipped.flipped && flipped.rotated, 'a click turns the card over', `is-flipped=${flipped?.flipped} transform=${flipped?.rotated}`);
+  check(flipped && flipped.pressed === 'true', 'the flip state is announced to AT', String(flipped?.pressed));
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(1100);
+  check(await page.evaluate(() => !document.querySelector('#fanCard').classList.contains('is-flipped')), 'Escape turns it back to the front');
+  await page.focus('#fanCard');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(1100);
+  check(await page.evaluate(() => document.querySelector('#fanCard').classList.contains('is-flipped')), 'Enter turns the card (keyboard parity)');
+  // the tier picker has to redraw both sides
+  await page.selectOption('#cardTierSelect', 'silver');
+  await page.fill('#cardHolderInput', 'Ren Nakamura');
+  await page.waitForTimeout(400);
+  const repainted = await page.evaluate(() => {
+    const c = document.querySelector('#fanCard');
+    return { cls: c.className, holder: [...c.querySelectorAll('[data-card-field="holder"]')].map((e) => e.textContent.trim()),
+      perks: [...c.querySelectorAll('.fc-perks li span')].map((e) => e.textContent.trim()).length,
+      member: (c.querySelector('[data-card-field="member"]')?.textContent || '').replace(/\s+/g, ''),
+      number: (c.querySelector('.fc-front [data-card-field="number"]')?.textContent || '').trim() };
+  });
+  check(/tier-silver/.test(repainted.cls) && !/tier-platinum|tier-gold|tier-diamond/.test(repainted.cls), 'choosing a tier restyles the card', repainted.cls);
+  check(repainted.holder.every((h) => /REN NAKAMURA/.test(h)), 'typing a name fills every face of the card', repainted.holder.join(' | '));
+  check(repainted.perks > 0, 'the back list follows the chosen tier', `${repainted.perks} perks`);
+  check(/^\d{6}$/.test(repainted.member) && dig(repainted.number) === dig(repainted.member), 'the member number is redrawn with the tier', `${repainted.number} → ${repainted.member}`);
+  await page.setViewportSize({ width: 1280, height: 900 });
+
   /* ---- 3b. responsive ---- */
   step('3b responsive');
   for (const w of WIDTHS) {
@@ -308,7 +374,7 @@ if (driver) {
       return [...set];
     });
     const camel = (s) => s.replace(/^data-/, '').replace(/-([a-z])/g, (_m, c) => c.toUpperCase());
-    const unwired = attrs.filter((a) => !bundle.includes(`"${a}"`) && !bundle.includes(`'${a}'`) && !bundle.includes(`dataset.${camel(a)}`) && !bundle.includes(`getAttribute('${a}')`) && !bundle.includes(`[${a}]`));
+    const unwired = attrs.filter((a) => !bundle.includes(`"${a}"`) && !bundle.includes(`'${a}'`) && !bundle.includes(`dataset.${camel(a)}`) && !bundle.includes(`getAttribute('${a}')`) && !bundle.includes(`[${a}]`) && !bundle.includes(`[${a}=`));
     check(unwired.length === 0, `${p}: all ${attrs.length} data-driven controls are wired in the bundle`, unwired.slice(0, 6).join(', '));
   }
 
@@ -374,12 +440,21 @@ if (driver) {
   const noJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
   const nj = await noJs.newPage();
   await nj.goto(BASE + '/', { waitUntil: 'load' });
-  const njState = await nj.evaluate(() => ({
-    heroTitle: (document.querySelector('.hero h1')?.textContent || '').trim().slice(0, 24),
-    hidden: [...document.querySelectorAll('[data-reveal]')].filter((el) => getComputedStyle(el).opacity === '0').length,
-    firstSlideVisible: !!document.querySelector('.hero-slide.is-active'),
-  }));
+  const njState = await nj.evaluate(() => {
+    const card = document.querySelector('.fan-card');
+    const front = card && card.querySelector('.fc-front').getBoundingClientRect();
+    const back = card && card.querySelector('.fc-back').getBoundingClientRect();
+    return {
+      heroTitle: (document.querySelector('.hero h1')?.textContent || '').trim().slice(0, 24),
+      hidden: [...document.querySelectorAll('[data-reveal]')].filter((el) => getComputedStyle(el).opacity === '0').length,
+      firstSlideVisible: !!document.querySelector('.hero-slide.is-active'),
+      // the flip is an enhancement: with no script the two faces must simply stack, never hide
+      cardStacked: !!card && back.top >= front.bottom - 2,
+      cardBackReadable: !!card && (card.querySelector('.fc-back').innerText || '').trim().length > 30,
+    };
+  });
   check(njState.heroTitle.length > 2 && njState.hidden === 0 && njState.firstSlideVisible, 'with JavaScript disabled the hero and all copy still render', JSON.stringify(njState));
+  check(njState.cardStacked && njState.cardBackReadable, 'with JavaScript disabled both card faces stay readable', `stacked=${njState.cardStacked} back=${njState.cardBackReadable}`);
   await noJs.close();
 
   /* ---------- 3f. console ---------- */

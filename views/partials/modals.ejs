@@ -91,4 +91,4 @@
 </div>
 
 <% /* fan-card tier payload for the live preview (data, not code) */ %>
-<script type="application/json" id="tierData"><%- JSON.stringify((typeof tiers !== 'undefined' && tiers ? tiers : []).map(function(x){ return { id:x.id, name:x.name, price_label:x.price_label, accent:x.accent, rank:x.rank }; })) %></script>
+<script type="application/json" id="tierData"><%- JSON.stringify((typeof tiers !== 'undefined' && tiers ? tiers : []).map(function(x){ return { id:x.id, name:x.name, price_label:x.price_label, accent:x.accent, rank:x.rank, perks:x.perks || [] }; })) %></script>
