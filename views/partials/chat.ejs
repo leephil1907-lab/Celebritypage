@@ -1,0 +1,24 @@
+<div id="chatLauncher" class="chat-launcher" role="button" tabindex="0" aria-label="Support chat">
+  <span aria-hidden="true">💬</span>
+  <div id="chatBadge" class="chat-badge" aria-hidden="true">0</div>
+</div>
+<div id="chatWindow" class="chat-window" role="dialog" aria-label="Support chat">
+  <div class="chat-head">
+    <div><b><%= lang === 'ja' ? 'サポート — 運営' : 'SUPPORT — Official Site / Management' %></b>
+      <br><span><%= lang === 'ja' ? 'チケット制 • ここで返信' : 'Ticket-based • replies here' %></span></div>
+    <button type="button" class="chat-x" id="chatClose" aria-label="Close chat">✕</button>
+  </div>
+  <div id="chatBody" class="chat-body">
+    <div class="chat-note"><%= site['chat.greeting'] || 'Hello — Official Site / Management here.' %></div>
+  </div>
+  <div class="chat-quick">
+    <button type="button" data-quick-reply="<%= lang === 'ja' ? 'ファンカードの買い方を教えてください' : 'How do I buy a Fan Card?' %>"><%= lang === 'ja' ? 'ファンカード' : 'Fan Club' %></button>
+    <button type="button" data-quick-reply="<%= lang === 'ja' ? 'ミーグリ予約の空き状況は？' : 'Is there Meet & Greet availability?' %>"><%= lang === 'ja' ? 'ミーグリ' : 'Booking' %></button>
+    <button type="button" data-quick-reply="<%= lang === 'ja' ? 'ツアーのチケットlotteryについて' : 'Tell me about the tour lottery' %>"><%= lang === 'ja' ? 'ツアー' : 'Tour' %></button>
+    <button type="button" data-quick-reply="<%= lang === 'ja' ? 'ボルトの解除方法を知りたいです' : 'How do I unlock the vault?' %>"><%= lang === 'ja' ? 'ボルト' : 'Vault' %></button>
+  </div>
+  <div class="chat-foot">
+    <input id="chatInput" placeholder="<%= lang === 'ja' ? '運営へメッセージ…' : 'Message Management…' %>" autocomplete="off">
+    <button type="button" class="btn primary small" id="chatSend"><%= lang === 'ja' ? '送信' : 'Send' %></button>
+  </div>
+</div>

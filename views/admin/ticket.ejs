@@ -1,0 +1,47 @@
+<% /* Single ticket — reply inline, the member's chat updates over SSE without reload */ %>
+<div class="tkt-grid">
+  <section class="card" data-anim="rise">
+    <div class="card-head">
+      <h3><%= ticket.subject %></h3>
+      <span class="pill mono gold"><%= ticket.code %></span><span class="pill mono" data-tkt-status><%= ticket.status %></span>
+      <div class="tools"><span class="dim small mono"><%= ticket.category %> • <%= (ticket.created_at || '').slice(5, 16) %></span></div>
+    </div>
+    <div class="note" style="margin-bottom:12px"><b><%= ticket.name || 'Guest' %></b> <span class="dim mono small"><%= ticket.email || 'no email' %></span><% if (ticket.user_id) { %> <span class="pill mono ok small">member #<%= ticket.user_id %></span><% } else { %><span class="pill mono warn small">guest session</span><% } %></div>
+    <div class="thread" id="thread">
+      <% msgs.forEach(function(m){ %>
+      <div class="msg <%= m.sender %>"><header><%= m.sender === 'staff' ? 'Management' : (ticket.name || 'Guest') %><span class="dim"><%= (m.created_at || '').slice(5, 16) %></span></header><p><%= m.body %></p></div>
+      <% }) %>
+      <% if (!msgs.length) { %><p class="dim">No messages yet.</p><% } %>
+    </div>
+    <form method="post" action="/tickets/<%= ticket.id %>/reply" class="reply" style="margin-top:14px" id="replyForm">
+      <textarea name="body" placeholder="Answer as Official Site / Management…" aria-label="Reply" required></textarea>
+      <div class="form-actions">
+        <button class="btn gold" type="submit" name="keep" value="1">Send reply</button>
+        <select name="status" aria-label="Set status after reply"><option value="">keep status</option><% statuses.forEach(function(s){ %><option value="<%= s %>" <%= ticket.status === s ? 'selected' : '' %>><%= s %></option><% }) %></select>
+        <span class="dim small mono">delivers instantly to the member's chat</span>
+      </div>
+    </form>
+  </section>
+
+  <aside style="display:grid;gap:14px;align-content:start">
+    <div class="card" data-anim="rise">
+      <div class="card-head"><h3>Actions</h3></div>
+      <div style="display:grid;gap:8px">
+        <% ['open','in_progress','waiting','resolved','closed'].forEach(function(s){ %>
+        <form method="post" action="/tickets/<%= ticket.id %>/status"><input type="hidden" name="keep" value="1"><input type="hidden" name="status" value="<%= s %>"><button class="btn <%= ticket.status === s ? 'gold' : '' %>" type="submit" style="justify-content:center" <%= ticket.status === s ? 'disabled' : '' %>><%= ticket.status === s ? 'current: ' : 'mark ' %><%= s %></button></form>
+        <% }) %>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Context</h3></div>
+      <% const memberships = ticket.user_id ? [] : []; %>
+      <ul class="dim small" style="margin:0;padding-left:16px;display:grid;gap:6px">
+        <li>Ticket opened <%= (ticket.created_at || '').slice(0, 16) %></li>
+        <li>Last update <%= (ticket.updated_at || '').slice(0, 16) %></li>
+        <li><%= msgs.length %> message(s) in this thread</li>
+        <li>Category: <b><%= ticket.category %></b></li>
+      </ul>
+      <a class="btn small" href="/members" style="margin-top:10px">Open member record →</a>
+    </div>
+  </aside>
+</div>

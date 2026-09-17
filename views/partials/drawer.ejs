@@ -1,0 +1,28 @@
+<div class="drawer" id="drawer" aria-hidden="true" role="dialog" aria-label="Menu">
+  <div class="drawer-panel">
+    <div class="drawer-head">
+      <span class="eyebrow"><%= lang === 'ja' ? 'メニュー' : 'MENU' %></span>
+      <button type="button" class="icon-btn" data-close-drawer aria-label="Close menu">✕</button>
+    </div>
+    <nav class="drawer-nav" aria-label="Mobile">
+      <% nav.forEach(function(item){ %><a href="<%= item.href %>"><span class="dnum"><%= item.num %></span><%= t(item.key) %><% if (item.tag) { %><span class="nav-tag"><%= item.tag %></span><% } %></a><% }) %>
+      <a href="/#membership"><span class="dnum">◆</span><%= t('sec.membership') %></a>
+      <a href="/#vault"><span class="dnum">◆</span><%= t('sec.vault') %></a>
+      <a href="/#booking"><span class="dnum">◆</span><%= t('sec.booking') %></a>
+    </nav>
+    <div class="drawer-member">
+      <div data-guest-only>
+        <b class="dm-title">FAMILY CLUB</b>
+        <p class="dm-sub"><%= lang === 'ja' ? '木村拓哉の公式サイトファンクラブ。' : 'Takuya Kimura’s official fan club.' %></p>
+        <div class="dm-cta"><button type="button" class="btn ghost small" data-open-member="login" data-close-drawer><%= t('cta.login') %></button><button type="button" class="btn primary small" data-open-member="signup" data-close-drawer><%= t('cta.signup') %></button></div>
+      </div>
+      <div data-member-only style="display:none">
+        <div class="dm-row">
+          <span class="dm-avatar"><%= user ? user.name.split(' ').map(function(s){return s[0]}).join('').slice(0,2).toUpperCase() : 'FC' %></span>
+          <div><b><%= user ? user.name : '' %></b><br><small><%= membership ? membership.tier_name + ' • ' + membership.card_no : (lang === 'ja' ? 'メンバー（カード未発行）' : 'Member — no card yet') %></small></div>
+        </div>
+        <div class="dm-cta"><a class="btn ghost small" href="/members/"><%= t('cta.dashboard') %></a><a class="btn primary small" href="/#membership"><%= t('cta.purchase') %></a></div>
+      </div>
+    </div>
+  </div>
+</div>

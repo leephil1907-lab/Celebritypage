@@ -1,0 +1,73 @@
+<% /* Admin console shell — same palette, denser, live via SSE */ %>
+<!doctype html>
+<html lang="<%= lang || 'ja' %>" data-build="<%= typeof version !== 'undefined' ? version : 'dev' %>" class="js-adm">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= typeof title !== 'undefined' ? title : 'Console' %> — <%= (site && site['site.brand']) || 'STARTO' %> Admin</title>
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="csrf-token" content="<%= csrf %>">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body class="adm adm-<%= (typeof page !== 'undefined' ? page : (key || 'console')) %>">
+  <div class="adm-shell">
+    <aside class="adm-side">
+      <a class="adm-brand" href="/"><span class="mark" aria-hidden="true">木</span><span><b>Console</b><span><%= (site && site['site.brand']) || 'Management' %></span></span></a>
+      <nav class="adm-nav" aria-label="Console">
+        <a href="/" class="<%= typeof kpi !== 'undefined' ? 'is-active' : '' %>"><i class="ic" aria-hidden="true">◫</i> Overview <span class="cnt" data-badge="open_tickets"></span></a>
+        <h5>Content</h5>
+        <a href="/content/hero"><i class="ic" aria-hidden="true">▣</i> Hero slides</a>
+        <a href="/content/news"><i class="ic" aria-hidden="true">❖</i> News <span class="cnt" data-badge="news"></span></a>
+        <a href="/content/schedule"><i class="ic" aria-hidden="true">◷</i> Schedule</a>
+        <a href="/content/works"><i class="ic" aria-hidden="true">◉</i> Film • TV • CM</a>
+        <a href="/content/releases"><i class="ic" aria-hidden="true">◍</i> Discography</a>
+        <a href="/content/tour"><i class="ic" aria-hidden="true">✈</i> Tour dates</a>
+        <a href="/content/vault"><i class="ic" aria-hidden="true">◆</i> Vault items</a>
+        <a href="/content/journal"><i class="ic" aria-hidden="true">✎</i> Journal <span class="cnt" data-badge="journal"></span></a>
+        <a href="/content/archive"><i class="ic" aria-hidden="true">◔</i> Archive</a>
+        <h5>Commerce</h5>
+        <a href="/content/tiers"><i class="ic" aria-hidden="true">❈</i> Fan card tiers</a>
+        <a href="/content/products"><i class="ic" aria-hidden="true">❐</i> Products</a>
+        <a href="/orders"><i class="ic" aria-hidden="true">▤</i> Orders <span class="cnt" data-badge="orders"></span></a>
+        <h5>People</h5>
+        <a href="/members"><i class="ic" aria-hidden="true">☺</i> Members <span class="cnt" data-badge="members"></span></a>
+        <a href="/bookings"><i class="ic" aria-hidden="true">✎</i> Bookings <span class="cnt" data-badge="pending_bookings"></span></a>
+        <a href="/tickets"><i class="ic" aria-hidden="true">✉</i> Ticket desk <span class="cnt" data-badge="open_tickets"></span></a>
+        <h5>Site</h5>
+        <a href="/content/stats"><i class="ic" aria-hidden="true">◫</i> About stats</a>
+        <a href="/settings"><i class="ic" aria-hidden="true">⚙</i> Settings</a>
+        <a href="/audit"><i class="ic" aria-hidden="true">◌</i> Audit log</a>
+      </nav>
+      <div class="adm-side-foot">
+        <div class="pill <%= typeof live !== 'undefined' && live.clients ? 'ok' : '' %>" data-live-pill><span class="live-dot" data-live-dot aria-hidden="true"></span> <span data-live-count><%= (typeof live !== 'undefined' && live && live.clients) || 0 %></span> live</div>
+        <a class="btn ghost small" href="<%= (site && site['site.url']) ? site['site.url'].replace(/\/$/,'') : 'http://localhost:8000' %>" target="_blank" rel="noopener noreferrer">View site ↗</a>
+        <form method="post" action="/logout"><button class="btn small" type="submit">Sign out — <%= user ? user.name : '' %></button></form>
+      </div>
+    </aside>
+
+    <main class="adm-main">
+      <header class="adm-top">
+        <h1><%= typeof title !== 'undefined' ? title : 'Console' %></h1>
+        <span class="pill gold mono" data-build-tag>build <%= typeof version !== 'undefined' ? version : 'dev' %></span>
+        <div class="tools">
+          <% if (typeof key !== 'undefined') { %><button type="button" class="btn small" id="newRowBtn">+ New</button><% } %>
+          <button type="button" class="btn small" id="refreshBtn" aria-label="Reload data">⟳ Refresh</button>
+          <button type="button" class="btn gold small" id="publishBtn">Publish live</button>
+        </div>
+      </header>
+      <div class="adm-body">
+        <% const q = (typeof req !== 'undefined' && req.query) || {}; %>
+        <% if (q.ok) { %><div class="flash">Saved — the public site was notified over SSE and refreshed its section cache.</div><% } %>
+        <% if (q.err === 'self') { %><div class="flash" style="border-color:rgba(208,121,106,.6);color:#f3cdc4">You cannot delete your own admin account.</div><% } %>
+        <%- include(bodyView, bodyData) %>
+      </div>
+    </main>
+  </div>
+  <div class="adm-toast" id="admToast" aria-live="polite"></div>
+  <script type="module" src="/static/js/admin.js"></script>
+</body>
+</html>

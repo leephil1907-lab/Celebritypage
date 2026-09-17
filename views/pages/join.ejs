@@ -1,0 +1,56 @@
+<% /* JOIN — membership entry, real POST, tier-aware */ %>
+<section class="join-wrap">
+  <aside class="join-aside" data-reveal>
+    <span class="eyebrow"><%= t('nav.join') %> • <%= lang === 'ja' ? '会員登録' : 'MEMBERSHIP' %></span>
+    <h1><%= lang === 'ja' ? 'ファンクラブに' : 'Join the' %> <em><%= lang === 'ja' ? '入会する' : 'Fan Club' %></em></h1>
+    <p class="dim"><%= lang === 'ja' ? '登録は無料 — ティアを選ぶとチケットが発行され、運営が支払い方法を送ります。' : 'Free account first — choosing a tier opens a ticket and Management sends payment details.' %></p>
+    <ul class="join-perks">
+      <li><i aria-hidden="true">✓</i> <%= lang === 'ja' ? 'デジタル Fan Card（即時発行）' : 'Digital Fan Card issued on approval' %></li>
+      <li><i aria-hidden="true">✓</i> <%= lang === 'ja' ? 'チケット先行 & 抽選' : 'Ticket pre-sale + lottery rank' %></li>
+      <li><i aria-hidden="true">✓</i> <%= lang === 'ja' ? 'ボルト — 舞台裏 & 配信' : 'Vault — rehearsal, streams, gallery' %></li>
+      <li><i aria-hidden="true">✓</i> <%= lang === 'ja' ? 'ミーグリ • プライベート予約' : 'Meet & Greet + private booking' %></li>
+      <li><i aria-hidden="true">✓</i> <%= lang === 'ja' ? 'ショップ会員割引 5〜20%' : 'Shop discount 5–20%' %></li>
+    </ul>
+    <div class="join-stats">
+      <% stats.slice(0,4).forEach(function(s){ %><div class="js-box"><b><%= s.value %></b><span class="mono dim"><%= s.label %></span></div><% }) %>
+    </div>
+  </aside>
+
+  <div class="join-card" data-reveal data-reveal="right">
+    <form class="join-form" method="post" action="/join/">
+      <fieldset>
+        <legend><%= lang === 'ja' ? '1. アカウント' : '1. Account' %></legend>
+        <% if (typeof formError !== 'undefined' && formError) { %><div class="form-msg show"><%= formError %></div><% } %>
+        <div class="field"><label for="jName"><%= lang === 'ja' ? 'お名前' : 'Full name' %></label><input id="jName" name="name" required autocomplete="name" value="<%= typeof form !== 'undefined' && form ? form.name || '' : '' %>"></div>
+        <div class="field" style="margin-top:10px"><label for="jEmail"><%= lang === 'ja' ? 'メール' : 'Email' %></label><input id="jEmail" name="email" type="email" required autocomplete="email" value="<%= typeof form !== 'undefined' && form ? form.email || '' : '' %>"></div>
+        <div class="field" style="margin-top:10px"><label for="jPass"><%= lang === 'ja' ? 'パスワード（8文字以上）' : 'Password (8+ characters)' %></label><input id="jPass" name="password" type="password" required minlength="8" autocomplete="new-password"></div>
+      </fieldset>
+      <fieldset>
+        <legend><%= lang === 'ja' ? '2. ティア選択' : '2. Choose a tier' %></legend>
+        <div class="tier-choices">
+          <% tiers.forEach(function(t){ %><label class="tc <%= t.featured ? 'is-featured' : '' %>">
+            <input type="radio" name="tier" value="<%= t.id %>" <%= t.featured ? 'checked' : '' %>>
+            <span class="tc-mark" aria-hidden="true"><%= t.icon %></span>
+            <b><%= t.name %></b><span class="mono dim"><%= t.price_label %> / <%= lang === 'ja' ? '年' : 'yr' %></span>
+            <small><%= t.tagline %></small>
+          </label><% }) %>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend><%= lang === 'ja' ? '3. 確認' : '3. Confirm' %></legend>
+        <label class="agree"><input type="checkbox" required> <%= lang === 'ja' ? '運営からの支払い・案内メールを受信することに同意します。' : 'I agree to receive payment and event messages from Management.' %></label>
+        <button class="btn gold wide" type="submit"><%= lang === 'ja' ? '登録してチケット発行 →' : 'Create account & open ticket →' %></button>
+        <p class="fineprint"><%= lang === 'ja' ? 'この画面の送信はサーバーで処理され、アカウント • カード • チケットが作られます。' : 'This posts to the server — account, card and ticket are created in one transaction.' %></p>
+      </fieldset>
+    </form>
+  </div>
+</section>
+
+<section class="section" id="nextsteps">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? '登録後' : 'What happens next' %></h2></div></div>
+  <div class="steps">
+    <% [[lang === 'ja' ? 'アカウント確定' : 'Account created', lang === 'ja' ? 'ダッシュボードとファンカードが即利用可能に。' : 'Dashboard and card preview are instantly available.'], [lang === 'ja' ? 'チケット発行' : 'Ticket opened', lang === 'ja' ? '運営が支払いリンクと会場案内を送ります。' : 'Management sends the payment link and venue brief.'], [lang === 'ja' ? '解除' : 'Unlocked', lang === 'ja' ? '承認後、ボルト • 先行 • 割引が有効になります。' : 'On approval the vault, pre-sales and discounts switch on.']].map(function(x){ return x; }).forEach(function(s, i){ %>
+    <div class="step-card" data-reveal data-reveal-delay="<%= i * 60 %>"><span class="step-num mono">0<%= i + 1 %></span><b><%= s[0] %></b><p class="dim"><%= s[1] %></p></div>
+    <% }) %>
+  </div>
+</section>

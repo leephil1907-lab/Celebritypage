@@ -1,0 +1,6 @@
+<% const items = (site['marquee.items'] || 'TAKUYA KIMURA • LIVE TOUR 2026 CHECKPOINT • ON SALE •').split('|'); %>
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <% for (let pass = 0; pass < 2; pass++) { %><% items.forEach(function(txt){ %><span><%= txt %></span><% }) %><% } %>
+  </div>
+</div>

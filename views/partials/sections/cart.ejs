@@ -1,0 +1,12 @@
+<% /* Cart summary fragment (live refresh target) */ %>
+<% const lines = (typeof cart !== 'undefined' && cart && cart.lines) ? cart.lines : []; %>
+<% if (!lines.length) { %><div class="empty"><%= lang === 'ja' ? 'カートは空です' : 'Cart empty — add some goods.' %></div><% } %>
+<% lines.forEach(function(l){ %>
+<div class="cart-line">
+  <img src="<%= l.image %>" alt=""><div><b><%= l.title %></b><span><%= l.unit_label || '' %> × <%= l.qty %></span></div>
+  <div class="cart-qty"><button type="button" data-cart-qty="<%= l.sku %>" data-value="<%= l.qty - 1 %>" aria-label="Decrease">−</button><b><%= l.qty %></b><button type="button" data-cart-qty="<%= l.sku %>" data-value="<%= l.qty + 1 %>" aria-label="Increase">+</button></div>
+  <button type="button" class="cart-x" data-cart-remove="<%= l.sku %>" aria-label="Remove">✕</button>
+</div>
+<% }) %>
+<div class="cart-totals"><span><%= (cart && cart.discount_label) || '' %></span><b id="cartTotal"><%= (cart && cart.total_label) || '¥0' %></b></div>
+<button type="button" class="btn primary" data-cart-checkout style="width:100%"><%= lang === 'ja' ? '注文を確定する →' : 'Confirm order →' %></button>

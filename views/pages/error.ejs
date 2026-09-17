@@ -1,0 +1,9 @@
+<section class="section err-page">
+  <div class="err-card" data-reveal>
+    <span class="err-code mono"><%= status || 500 %></span>
+    <h1><%= lang === 'ja' ? 'サーバーで問題が発生しました' : 'Something went wrong on our side' %></h1>
+    <p class="dim"><%= message || '' %></p>
+    <div class="err-links"><a href="/">TOP</a><a href="/members/"><%= t('cta.dashboard') %></a><a href="/support/"><%= t('nav.support') || 'Support' %></a></div>
+    <a class="btn primary" href="/">← <%= lang === 'ja' ? 'トップへ戻る' : 'Back to the site' %></a>
+  </div>
+</section>

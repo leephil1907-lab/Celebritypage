@@ -31,3 +31,17 @@ Thumbs.db
 # Keep public assets
 !public/
 !public/**
+
+# Runtime state
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/test-*.db*
+uploads/*
+!uploads/.gitkeep
+qa/*.png
+
+# local process scratch and editor state
+*.pid
+.claude/
+.tmp/

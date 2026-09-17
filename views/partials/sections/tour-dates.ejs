@@ -1,0 +1,21 @@
+<% /* Tour dates — live capacity from the database */ %>
+<div class="tour-grid">
+  <% tour.forEach(function(d, i){ %>
+  <article class="tour-card <%= d.sold_out ? 'is-done' : '' %>" data-reveal data-reveal-delay="<%= i * 60 %>" id="d-<%= d.id %>">
+    <header>
+      <span class="mono dim"><%= d.date %> • <%= d.time || '—' %></span>
+      <span class="tagchip <%= d.status === 'lottery' ? 'gold' : (d.sold_out ? 'solid' : '') %>"><%= d.status === 'lottery' ? (lang === 'ja' ? '抽選' : 'LOTTERY') : (d.sold_out ? (lang === 'ja' ? '終了' : 'SOLD OUT') : (lang === 'ja' ? '発売中' : 'ON SALE')) %></span>
+    </header>
+    <b><%= d.city %></b>
+    <div class="dim small"><%= d.venue %></div>
+    <p class="tc-note"><%= d.note %></p>
+    <div class="tc-meter" role="img" aria-label="<%= d.remaining %> of <%= d.capacity %> remaining"><i style="width:<%= d.fill_pct %>%"></i></div>
+    <div class="tc-foot">
+      <span class="mono"><%= d.remaining %>/<%= d.capacity %> <%= lang === 'ja' ? '席' : 'left' %></span>
+      <% if (d.tier_required) { %><span class="tagchip"><%= d.tier_required.toUpperCase() %>+</span><% } %>
+      <button type="button" class="btn gold small" data-book-slot="<%= 'Meet & Greet|' + d.date + '|' + Math.min(2, d.remaining || 1) %>" <%= d.sold_out ? 'disabled' : '' %>><%= d.sold_out ? (lang === 'ja' ? '終了' : 'Closed') : t('cta.book') %></button>
+    </div>
+  </article>
+  <% }) %>
+  <% if (!tour.length) { %><div class="empty"><%= t('msg.empty') %></div><% } %>
+</div>

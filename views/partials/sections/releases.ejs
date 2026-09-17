@@ -1,0 +1,42 @@
+<% /* Releases — discography carousel with a synced player panel */ %>
+<div class="release-shell" data-carousel-sync="music">
+  <div class="release-layout">
+    <div class="carousel is-rail release-rail" data-carousel data-c-mode="rail" data-c-interval="5200" data-c-autoplay="0" data-c-per-view="4" data-c-gap="14">
+      <div class="c-viewport" data-c-viewport><div data-c-track>
+        <% releases.forEach(function(r, i){ const cover = r.cover || '/image-search/takuya-kimura-starto-entertainment-offic-4.png'; %>
+        <div class="release-card" data-c-slide id="release-<%= r.id %>" data-sync-group="music">
+          <button type="button" class="rc-cover" data-play-release="<%= r.id %>" aria-label="Play <%= r.title %>">
+            <img src="<%= cover %>" alt="<%= r.title %> cover" loading="<%= i < 4 ? 'eager' : 'lazy' %>" data-img-fallback="/image-search/takuya-kimura-starto-entertainment-offic-4.png">
+            <span class="rc-play" aria-hidden="true">▶</span>
+          </button>
+          <div class="rc-body">
+            <div class="mc-meta"><span class="tagchip"><%= (r.kind || '').toUpperCase() %></span> <span class="mono dim"><%= r.release_date %></span></div>
+            <b><%= r.title %></b>
+            <div class="dim small"><%= r.artist %></div>
+            <% if (r.price_label) { %><div class="rc-price mono"><%= r.price_label %><% if (r.product_sku) { %> • <a href="/shop/#p-<%= r.product_sku %>"><%= lang === 'ja' ? '購入' : 'Buy' %></a><% } %></div><% } %>
+          </div>
+        </div>
+        <% }) %>
+      </div></div>
+      <div class="c-bar rail-bar"><span class="c-count" data-c-counter>01 / <%= String(releases.length).padStart(2, '0') %></span>
+        <span class="rail-actions"><button type="button" class="c-nav" data-c-prev aria-label="Previous release">‹</button><button type="button" class="c-nav" data-c-next aria-label="Next release">›</button></span></div>
+    </div>
+    <aside class="player-card" id="playerCard" data-sync-group="music">
+      <div class="pc-top"><span class="mono dim"><%= lang === 'ja' ? 'プレイヤー' : 'NOW PLAYING' %></span><span class="tagchip solid"><%= lang === 'ja' ? 'メンバー音源' : 'VAULT' %></span></div>
+      <% const first = releases[0] || {}; const tracks = first.tracks || []; %>
+      <div class="pc-art" id="pcArt" style="background-image:url(<%= first.cover || '' %>)" data-c-in>
+        <div class="pc-ring" aria-hidden="true"></div>
+      </div>
+      <h4 id="pcTitle"><%= first.title || 'CHECKPOINT' %></h4>
+      <div class="dim small" id="pcMeta"><%= first.artist || 'Takuya Kimura' %> • <%= first.release_date || '2026.08.12' %></div>
+      <div class="pc-bar"><i id="pcProg"></i></div>
+      <div class="pc-time mono"><span id="pcCur">00:00</span><span id="pcDur"><%= tracks.length ? (tracks.length * 3) + ':12' : '—' %></span></div>
+      <div class="pc-ctrl">
+        <button type="button" class="c-nav" id="pcPrev" aria-label="Previous track">‹</button>
+        <button type="button" class="pc-play" id="pcToggle" aria-label="Play / pause" aria-pressed="false">▶</button>
+        <button type="button" class="c-nav" id="pcNext" aria-label="Next track">›</button>
+      </div>
+      <ol class="pc-tracks" id="pcTracks"><% tracks.forEach(function(tr, i){ %><li data-track="<%= i %>"><span class="mono dim"><%= String(i + 1).padStart(2, '0') %></span><span><%= tr %></span></li><% }) %></ol>
+    </aside>
+  </div>
+</div>

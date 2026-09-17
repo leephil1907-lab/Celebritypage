@@ -1,0 +1,19 @@
+<% /* Ticket list (member page + dashboard) */ %>
+<% const list = (typeof tickets !== 'undefined' && tickets) ? tickets : []; %>
+<% if (!list.length) { %>
+<div class="empty"><%= lang === 'ja' ? 'チケットはまだありません — ファンカード購入または予約で自動発行されます。' : 'No tickets yet — a Fan Card purchase or booking request opens one automatically.' %></div>
+<% } %>
+<% list.forEach(function(tk, i){ %>
+<article class="ticket-card" data-reveal data-reveal-delay="<%= i * 45 %>">
+  <header>
+    <b class="mono">#<%= tk.code %></b>
+    <span class="st st-<%= tk.status %>"><%= tk.status.replace('_', ' ') %></span>
+  </header>
+  <h4><%= tk.subject %></h4>
+  <p class="dim"><%= (tk.last_message || '').slice(0, 140) %><%= (tk.last_message || '').length > 140 ? '…' : '' %></p>
+  <footer>
+    <span class="mono dim small"><%= tk.category %> • <%= tk.updated_at %></span>
+    <button type="button" class="btn ghost small" data-open-chat="<%= tk.id %>"><%= lang === 'ja' ? 'チャットを開く →' : 'Open chat →' %></button>
+  </footer>
+</article>
+<% }) %>

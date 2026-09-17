@@ -1,0 +1,71 @@
+<% /* SHOP — server-rendered catalogue, server-side cart, live stock over SSE */ %>
+<div class="member-head compact">
+  <div class="mh-left">
+    <span class="eyebrow"><%= t('nav.shop') %> • <%= lang === 'ja' ? '公式ショップ' : 'OFFICIAL SHOP' %></span>
+    <h1><%= t('sec.shop') %></h1>
+    <p class="dim"><%= site['shop.banner'] %></p>
+  </div>
+  <div class="mh-right">
+    <div class="shop-cart-pill">
+      <span class="mono dim"><%= t('lbl.cart') %></span><b data-cart-count><%= (cart.lines || []).reduce(function(s,l){ return s + l.qty; }, 0) %></b>
+      <button type="button" class="btn primary small" data-open-cart><%= lang === 'ja' ? 'カートを見る' : 'View cart' %> →</button>
+    </div>
+  </div>
+</div>
+
+<section class="section section-tight" id="featured">
+  <% if (products.length) { %>
+  <div class="carousel is-fade featured-strip" data-carousel data-c-mode="fade" data-c-interval="4800" data-c-kenburns="1">
+    <div class="c-viewport fs-viewport" data-c-viewport><div data-c-track>
+      <% products.slice(0,4).forEach(function(p, i){ %>
+      <div class="fs-slide<%= i === 0 ? ' is-active' : '' %>" data-c-slide>
+        <img <%- imgAttrs(p.image, { alt: p.title, class: 'fs-img', sizes: '(max-width: 900px) 92vw, 46vw', priority: i < 2, extra: 'data-img-fallback="/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg"' }) %>>
+        <div class="fs-copy">
+          <span class="tagchip gold" data-c-in><%= p.category %></span>
+          <h3 data-c-in><%= p.title %></h3>
+          <p data-c-in><%= p.blurb %></p>
+          <div class="fs-actions" data-c-in>
+            <b class="mono price"><%= p.price_label %></b>
+            <button type="button" class="btn primary small" data-add-cart="<%= p.sku %>" data-title="<%= p.title %>" data-qty="1" <%= p.available ? '' : 'disabled' %>><%= p.available ? t('cta.addToCart') : t('lbl.soldout') %></button>
+            <a class="btn ghost small on-dark" href="#p-<%= p.sku %>"><%= lang === 'ja' ? '詳細' : 'Details' %></a>
+          </div>
+        </div>
+      </div>
+      <% }) %>
+    </div></div>
+    <div class="hero-controls"><div class="c-dots" data-c-dots></div><button type="button" class="c-nav on-dark" data-c-prev aria-label="Previous">‹</button><button type="button" class="c-nav on-dark" data-c-next aria-label="Next">›</button></div>
+  </div>
+  <% } %>
+</section>
+
+<section class="section" id="catalogue">
+  <div class="catalogue-bar" data-reveal>
+    <div class="chips">
+      <a class="suggest <%= active === 'all' ? 'is-active' : '' %>" href="/shop/"><%= lang === 'ja' ? 'すべて' : 'All' %></a>
+      <% categories.forEach(function(c){ %><a class="suggest <%= active === c.category ? 'is-active' : '' %>" href="/shop/?cat=<%= encodeURIComponent(c.category) %>"><%= c.category %> <span class="mono dim"><%= c.n %></span></a><% }) %>
+    </div>
+    <div class="chips">
+      <button type="button" class="suggest is-active" data-filter-cat="all"><%= lang === 'ja' ? 'このページで絞る' : 'Instant filter' %></button>
+      <% categories.forEach(function(c){ %><button type="button" class="suggest" data-filter-cat="<%= c.category %>"><%= c.category %></button><% }) %>
+    </div>
+    <span class="mono dim small"><%= products.length %> SKU • <%= lang === 'ja' ? '在庫はリアルタイム' : 'live stock' %></span>
+  </div>
+  <div data-section="shop-grid"><%- include('../partials/sections/shop-grid') %></div>
+</section>
+
+<section class="section" id="how">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? '受け取り方法' : 'How pickup works' %></h2><p><%= lang === 'ja' ? '注文 → QR → 会場で提示 → 自動スタンプ' : 'Order → code → show it at the venue → passport stamp applied' %></p></div></div>
+  <div class="steps">
+    <% [[lang === 'ja' ? 'カートに追加' : 'Add to cart', lang === 'ja' ? '在庫はサーバーで確保されます。' : 'Stock is checked and reserved server-side.'], [lang === 'ja' ? '注文確定' : 'Confirm', lang === 'ja' ? 'メンバーのみ — 注文コードを発行。' : 'Members only — you get an order code.'], [lang === 'ja' ? '会場で提示' : 'Show at venue', lang === 'ja' ? 'チェックポイント・ブースで提示 → 引き換え。' : 'Present at the checkpoint booth — staff verify in one click.']].map(function(x,i){ return x; }).forEach(function(s, i){ %>
+    <div class="step-card" data-reveal data-reveal-delay="<%= i * 70 %>"><span class="step-num mono"><%= i + 1 %></span><b><%= s[0] %></b><p class="dim"><%= s[1] %></p></div>
+    <% }) %>
+  </div>
+</section>
+
+<section class="section" id="membernote">
+  <div class="note-band" data-reveal>
+    <div><b><%= lang === 'ja' ? 'メンバー割引' : 'Member discount' %></b>
+      <p class="dim"><%= lang === 'ja' ? 'Silver 5% → Diamond 20%、チェックアウトで自動適用されます。' : 'Silver 5% up to Diamond 20% — applied automatically at checkout.' %></p></div>
+    <div class="nb-cta"><a class="btn gold small" href="/#membership"><%= t('cta.purchase') %></a><a class="btn ghost small" href="/shop/verify"><%= lang === 'ja' ? '注文確認' : 'Verify an order' %></a></div>
+  </div>
+</section>

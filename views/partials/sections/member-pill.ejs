@@ -1,0 +1,9 @@
+<% if (user) { %>
+<button type="button" class="pill-btn" data-open-member="dashboard">
+  <span class="pill-avatar"><%= user.name.split(' ').map(function(s){return s[0]}).join('').slice(0,2).toUpperCase() %></span>
+  <span class="pill-name"><b id="pillName"><%= user.name.split(' ')[0] %></b><small id="pillTier"><%= membership ? membership.tier_name : 'FREE MEMBER' %></small></span>
+</button>
+<% } else { %>
+<button type="button" class="btn ghost small" data-guest-only data-open-member="login"><%= t('cta.login') %></button>
+<button type="button" class="btn primary small" data-guest-only data-open-member="signup"><%= t('cta.signup') %></button>
+<% } %>

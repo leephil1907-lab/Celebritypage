@@ -1,0 +1,58 @@
+<% /* ARCHIVE — timeline + gallery */ %>
+<%- include('../partials/sections/pagehero', { ph: {
+  interval: 7000,
+  kicker: lang === 'ja' ? 'アーカイブ • 1987 → 現在' : 'ARCHIVE • 1987 → NOW',
+  title: 'Archive', title2: lang === 'ja' ? '検証済みタイムライン' : 'A verified timeline',
+  sub: lang === 'ja' ? 'デビューから最新ツアーまで — 画像はクリックでlightbox表示。' : 'From debut to the current arena run — click any frame for the lightbox carousel.',
+  images: items.map(function(a){ return a.image; }).filter(Boolean),
+  cta: [[lang === 'ja' ? 'タイムライン' : 'Timeline', '#timeline'], [lang === 'ja' ? '出演作品' : 'Credits', '#credits']],
+  side: { kicker: 'SPANS', title: (items[0] || {}).year + ' → ' + (items[items.length - 1] || {}).year, body: items.length + ' ' + (lang === 'ja' ? 'エントリ' : 'entries') + '\n' + (lang === 'ja' ? '_drag / swipe 対応_' : 'drag + swipe enabled'), cta: [[lang === 'ja' ? '画像を見る' : 'Open gallery', '#gallery']] }
+} }) %>
+
+<section class="section" id="timeline">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? 'タイムライン' : 'Timeline' %></h2><p><%= lang === 'ja' ? '横にドラッグ • クリックで拡大' : 'Drag sideways • click a card to enlarge' %></p></div>
+    <span class="tagchip"><%= items.length %> ENTRIES</span></div>
+  <div class="timeline-rail" data-lightbox data-reveal-stagger>
+    <% items.forEach(function(a, i){ %>
+    <article class="tl-card big" data-lb-item data-lb-full="<%= a.image %>" data-lb-cap="<%= a.year %> — <%= a.title %> — <%= a.description %>" id="a-<%= a.year %>" data-reveal data-reveal-delay="<%= (i % 4) * 55 %>">
+      <div class="tl-img"><img <%- imgAttrs(a.image, { alt: a.title, sizes: '(max-width: 900px) 90vw, 30vw', priority: i < 2, extra: 'data-img-fallback="/image-search/takuya-kimura-starto-entertainment-offic-3.webp"' }) %>>
+        <span class="tl-year-badge mono"><%= a.year %></span></div>
+      <div class="tl-body"><span class="mono gold"><%= a.era %></span><b><%= a.title %></b><span class="dim small"><%= a.description %></span>
+        <% if (a.metric) { %><span class="tagchip"><%= a.metric %></span><% } %></div>
+    </article>
+    <% }) %>
+  </div>
+</section>
+
+<section class="section" id="eras">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? '年代別' : 'By era' %></h2></div></div>
+  <div class="era-grid">
+    <% const eras = {}; items.forEach(function(a){ const e = Math.floor(Number(a.year) / 10) * 10 + 's'; (eras[e] = eras[e] || []).push(a); }); %>
+    <% Object.keys(eras).sort().forEach(function(era, i){ %>
+    <div class="era-card" data-reveal data-reveal-delay="<%= i * 60 %>">
+      <b class="mono gold"><%= era %></b>
+      <ul><% eras[era].forEach(function(a){ %><li><span class="mono dim"><%= a.year %></span> <%= a.title %></li><% }) %></ul>
+    </div>
+    <% }) %>
+  </div>
+</section>
+
+<section class="section" id="credits">
+  <div class="section-head" data-reveal><div><h2><%= t('sec.film') %></h2><p><%= works.length %> <%= lang === 'ja' ? '作品' : 'credits' %></p></div><a class="link-arrow" href="/work/"><%= t('cta.viewAll') %> →</a></div>
+  <table class="data-table" data-reveal>
+    <thead><tr><th><%= lang === 'ja' ? '年' : 'Year' %></th><th><%= lang === 'ja' ? 'タイトル' : 'Title' %></th><th class="hide-s">TYPE</th><th class="hide-s"><%= lang === 'ja' ? '役' : 'Role' %></th></tr></thead>
+    <tbody><% works.forEach(function(w){ %><tr><td class="mono"><%= w.year %></td><td><b><%= w.title %></b></td><td class="hide-s"><span class="tagchip"><%= (w.kind||'').toUpperCase() %></span></td><td class="hide-s dim"><%= w.role %></td></tr><% }) %></tbody>
+  </table>
+</section>
+
+<section class="section" id="disc">
+  <div class="section-head" data-reveal><div><h2><%= t('sec.release') %></h2><p><%= lang === 'ja' ? '音源アーカイブ' : 'Recorded archive' %></p></div><a class="link-arrow" href="/music/"><%= t('cta.viewAll') %> →</a></div>
+  <div class="release-grid">
+    <% releases.forEach(function(r, i){ %>
+    <div class="release-card" data-reveal data-reveal-delay="<%= (i % 4) * 50 %>">
+      <img src="<%= r.cover %>" alt="<%= r.title %>" loading="lazy" data-img-fallback="/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg">
+      <div class="rc-body"><span class="tagchip"><%= (r.kind||'').toUpperCase() %></span> <span class="mono dim"><%= r.release_date %></span><b><%= r.title %></b></div>
+    </div>
+    <% }) %>
+  </div>
+</section>

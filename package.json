@@ -1,6 +1,35 @@
 {
-  "name": "celebritypage-static",
+  "name": "celebritypage-app",
+  "version": "2.0.0",
   "private": true,
-  "version": "1.0.0",
-  "description": "Celebritypage \u2014 plain HTML/CSS/JS static site (no framework, no bundler, public/ is output)"
+  "description": "Takuya Kimura \u2014 STARTO Premium Official Site (Full-stack Edition): Express + SQLite + EJS, real sessions, live sync, motion system",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "build": "node scripts/build.mjs",
+    "db:reset": "node server/db.js --reset && node server/seed.js",
+    "db:seed": "node server/seed.js",
+    "db:reseed": "node server/db.js --reset && node server/seed.js",
+    "check": "node scripts/check.mjs",
+    "test": "node --test --test-timeout=45000 tests/",
+    "verify": "npm run build && npm run check && npm test",
+    "qa": "node scripts/qa-browser.mjs",
+    "qa:headless": "node scripts/qa-browser.mjs",
+    "audit": "node scripts/audit.mjs",
+    "fonts": "node scripts/fetch-fonts.mjs",
+    "postinstall": "node scripts/build.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.3.0",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
 }

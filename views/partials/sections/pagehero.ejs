@@ -1,0 +1,53 @@
+<% /* Reusable page hero — image slide carousel with kicker/title/sub + optional CTA row.
+       locals: ph = { kicker, title, sub, images: [src...], cta: [[label,href]], tall } */ %>
+<% const p = ph || {};
+   /* the band is full-bleed (~1280px): keep only stills that can carry it, and take the largest
+      single file when a section's covers are all card-sized */
+   const SRC = (v) => (imgDims(v) || { width: 0, height: 0 });
+   const wideEnough = (src) => { const d = SRC(src); return d.width >= 1000 || (d.width >= 740 && d.width > d.height * 1.1); };
+   const TOP_UP = ['/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg',
+                   '/image-search/takuya-kimura-live-tour-checkpoint-2026--5.webp',
+                   '/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg'];
+   let pool = (p.images && p.images.length ? p.images : []).filter(wideEnough);
+   TOP_UP.forEach((src) => { if (pool.length < 3 && pool.indexOf(src) === -1 && wideEnough(src)) pool.push(src); });
+   if (!pool.length) pool = TOP_UP.filter(wideEnough).slice(0, 1);
+   const imgs = pool; %>
+<div class="page-hero-wrap<%= p.tall ? ' is-tall' : '' %>" id="top" data-section="pagehero">
+  <div class="page-hero hero" data-carousel data-c-mode="fade" data-c-interval="<%= p.interval || 5200 %>" data-c-kenburns="1">
+    <div class="c-viewport hero-viewport" data-c-viewport>
+      <div class="hero-slides" data-c-track>
+        <% imgs.forEach(function(src, i){ %>
+        <div class="hero-slide<%= i === 0 ? ' is-active' : '' %>" data-c-slide>
+          <img <%- imgAttrs(src, { alt: p.alt || p.title || '', sizes: '100vw', class: 'hero-img' + (i === 0 ? ' c-ken' : ''), priority: i === 0 }) %> data-img-fallback="/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg">
+          <div class="hero-overlay" aria-hidden="true"></div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+    <div class="hero-content page-hero-content">
+      <div class="ph-text">
+        <div class="hero-kicker" data-c-in><i aria-hidden="true"></i> <%= p.kicker %></div>
+        <h1 data-c-in><%= p.title %><% if (p.title2) { %><em><%= p.title2 %></em><% } %></h1>
+        <p data-c-in><%= p.sub %></p>
+        <% if (p.cta && p.cta.length) { %>
+        <div class="hero-cta" data-c-in><% p.cta.forEach(function(c, i){ %><a class="btn <%= i === 0 ? 'primary' : 'ghost on-dark' %>" href="<%= c[1] %>"><%= c[0] %> →</a><% }) %></div>
+        <% } %>
+      </div>
+      <% if (p.side) { %>
+      <div class="hero-side">
+        <div class="hero-side-card" data-c-in>
+          <small><%= p.side.kicker %></small><b><%= p.side.title %></b>
+          <div><% (p.side.body || '').split('\n').forEach(function(line, k){ %><%= line %><% if (k === 0) { %><br><% } %><% }) %></div>
+          <% if (p.side.cta) { %><div class="hsb-cta"><% p.side.cta.forEach(function(c, i){ %><a class="btn <%= i === 0 ? 'gold' : 'ghost on-dark' %> small" href="<%= c[1] %>"><%= c[0] %></a><% }) %></div><% } %>
+        </div>
+      </div>
+      <% } %>
+    </div>
+    <div class="hero-controls">
+      <div class="c-dots" data-c-dots></div>
+      <button type="button" class="c-nav on-dark" data-c-prev aria-label="Previous">‹</button>
+      <button type="button" class="c-nav on-dark" data-c-next aria-label="Next">›</button>
+    </div>
+    <div class="c-progress hero-progress"><i></i></div>
+  </div>
+</div>

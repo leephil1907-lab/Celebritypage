@@ -1,0 +1,31 @@
+<% /* Ticket desk — the inbox that answers the public chat */ %>
+<section class="card" data-anim="rise">
+  <div class="card-head">
+    <h3>Queue</h3><span class="pill mono <%= open ? 'warn' : 'ok' %>"><%= open %> open</span><span class="pill mono"><%= rows.length %> total</span>
+    <div class="tools"><div class="filters"><button type="button" class="chip is-active" data-tf="all">all</button><button type="button" class="chip" data-tf="open">open</button><button type="button" class="chip" data-tf="in_progress">in progress</button><button type="button" class="chip" data-tf="waiting">waiting</button><button type="button" class="chip" data-tf="resolved">resolved</button></div></div>
+  </div>
+  <div class="table-wrap">
+    <table class="adm-table" id="ticketRows">
+      <thead><tr><th>Code</th><th>Subject</th><th>From</th><th>Category</th><th>Msgs</th><th>Updated</th><th class="ta-r">Status</th></tr></thead>
+      <tbody>
+        <% rows.forEach(function(t){ %>
+        <tr data-status="<%= t.status %>" class="<%= selected === t.id ? 'is-updated' : '' %>">
+          <td class="mono"><a class="gold" href="/tickets/<%= t.id %>"><%= t.code %></a></td>
+          <td><b><%= t.subject %></b><br><span class="clip dim small" title="<%= t.last_body || '' %>"><%= (t.last_body || '').replace(/\n/g, ' ').slice(0, 90) %></span></td>
+          <td class="small"><%= t.name || '—' %><br><span class="dim mono small"><%= t.email || '' %></span></td>
+          <td><span class="pill mono"><%= t.category %></span></td>
+          <td class="mono"><%= t.msg_count %></td>
+          <td class="mono dim small"><%= (t.updated_at || '').slice(5, 16) %></td>
+          <td class="ta-r">
+            <form method="post" action="/tickets/<%= t.id %>/status" class="rowform">
+              <select name="status" aria-label="Status"><% ['open','in_progress','waiting','resolved','closed'].forEach(function(s){ %><option value="<%= s %>" <%= t.status === s ? 'selected' : '' %>><%= s %></option><% }) %></select>
+              <button class="btn small" type="submit">Set</button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+        <% if (!rows.length) { %><tr><td colspan="7" class="dim">No tickets — chat messages from the site open them automatically.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</section>

@@ -1,0 +1,16 @@
+<section class="section err-page">
+  <div class="err-card" data-reveal>
+    <span class="err-code mono"><%= lang === 'ja' ? 'エラー' : 'ERROR' %> 404</span>
+    <h1><%= lang === 'ja' ? 'このページは移動されました' : 'This page moved — or never existed' %></h1>
+    <p class="dim"><%= lang === 'ja' ? '探していたのはこれらのどこかにあるはずです。' : 'What you were looking for is probably one of these:' %></p>
+    <div class="err-links">
+      <a href="/#news"><%= t('sec.news') %></a><a href="/tour/"><%= t('nav.tour') %></a><a href="/music/"><%= t('nav.music') %></a>
+      <a href="/#membership"><%= t('sec.membership') %></a><a href="/shop/"><%= t('nav.shop') %></a><a href="/support/"><%= t('nav.support') || 'Support' %></a>
+      <a href="/search/"><%= t('nav.search') %></a>
+    </div>
+    <div class="err-search">
+      <form class="search-box" action="/search/" method="get"><input name="q" placeholder="<%= lang === 'ja' ? '検索…' : 'Search the site…' %>" aria-label="Search"><button class="btn primary" type="submit">⌕</button></form>
+    </div>
+    <a class="btn ghost" href="/">← TOP</a>
+  </div>
+</section>

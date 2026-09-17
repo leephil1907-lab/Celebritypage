@@ -1,0 +1,22 @@
+{
+  "build": "mu5v66zj",
+  "at": "2026-09-17T18:29:28.218Z",
+  "files": {
+    "public/css/app.css": {
+      "bytes": 126247,
+      "hash": "07093a8785"
+    },
+    "public/css/admin.css": {
+      "bytes": 16032,
+      "hash": "6e94358be3"
+    },
+    "public/js/app.js": {
+      "bytes": 62121,
+      "hash": "078548969e"
+    },
+    "public/js/admin.js": {
+      "bytes": 9385,
+      "hash": "f5d626ba53"
+    }
+  }
+}

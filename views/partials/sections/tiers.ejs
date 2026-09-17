@@ -1,0 +1,38 @@
+<% /* Fan card tiers + live preview card */ %>
+<div class="tier-grid" data-reveal-stagger>
+  <% tiers.forEach(function(tier){ const featured = !!tier.featured; %>
+  <article class="tier <%= featured ? 'featured' : '' %>" data-tier="<%= tier.id %>" data-reveal>
+    <% if (featured) { %><span class="ribbon"><%= lang === 'ja' ? '人気' : 'MOST POPULAR' %></span><% } %>
+    <div class="tier-top"><span class="tier-name"><%= tier.name %></span><span class="tier-icon" style="color:<%= tier.accent %>"><%= tier.icon %></span></div>
+    <h3><%= tier.name %></h3>
+    <div class="tier-tag"><%= tier.tagline %></div>
+    <div class="price"><b><%= tier.price_label %></b><span>/ <%= lang === 'ja' ? '年' : 'year' %></span></div>
+    <ul><% (Array.isArray(tier.perks) ? tier.perks : []).forEach(function(p){ %><li><i aria-hidden="true">✓</i><span><%= p %></span></li><% }) %></ul>
+    <button type="button" class="btn <%= featured ? 'gold' : 'primary' %> full" data-purchase-tier="<%= tier.id %>"><%= lang === 'ja' ? tier.name + ' を購入' : 'Purchase ' + tier.name %> →</button>
+    <p class="tier-note"><%= lang === 'ja' ? 'チケット発行 → 運営がチャットで返信' : 'Opens a ticket + Management chat' %></p>
+  </article>
+  <% }) %>
+</div>
+
+<div class="card-preview">
+  <div class="fan-card tier-diamond" id="fanCard" data-tilt="8" style="--accent:<%= (tiers.find(function(x){return x.featured}) || tiers[0] || {}).accent || '#c9a86a' %>">
+    <div class="fan-card-top"><b><%= site['site.brand'] %> • FAN CARD</b><span class="chip" aria-hidden="true"></span></div>
+    <h4>TAKUYA KIMURA</h4>
+    <div class="num" id="cardNumber">TK — 4821 • DIAMOND</div>
+    <div class="card-valid"><%= lang === 'ja' ? 'メンバープレビュー • 有効1年' : 'MEMBER PREVIEW • VALID 1 YEAR' %></div>
+    <div class="holder"><div><b id="cardHolder">YOUR NAME</b><br><span id="cardTierLabel">DIAMOND • ¥1,000,000</span></div><span>木村拓哉</span></div>
+    <span class="card-holo" aria-hidden="true"></span>
+  </div>
+  <div class="card-controls">
+    <h4><%= lang === 'ja' ? 'カードをプレビュー' : 'Preview Your Card' %></h4>
+    <p class="fineprint"><%= lang === 'ja' ? 'ティアを選ぶとカードが変化します。購入は無料登録 → チケット発行。' : 'Pick a tier — the card reacts. Purchase requires a free account, then a ticket.' %></p>
+    <label for="cardTierSelect" class="ctl-label"><%= lang === 'ja' ? 'ティア' : 'Select tier' %></label>
+    <select id="cardTierSelect"><% tiers.forEach(function(t){ %><option value="<%= t.id %>" <%= t.featured ? 'selected' : '' %>><%= t.name %> — <%= t.price_label %> / <%= lang === 'ja' ? '年' : 'yr' %></option><% }) %></select>
+    <label for="cardHolderInput" class="ctl-label"><%= lang === 'ja' ? '名前' : 'Holder name' %></label>
+    <input id="cardHolderInput" placeholder="Your Name" value="<%= user ? user.name : 'YOUR NAME' %>">
+    <div class="ctl-cta">
+      <button type="button" class="btn gold small" data-purchase-tier style="flex:1"><%= t('cta.purchase') %> →</button>
+      <a class="btn ghost small on-dark" href="/members/" style="flex:1"><%= t('cta.dashboard') %></a>
+    </div>
+  </div>
+</div>

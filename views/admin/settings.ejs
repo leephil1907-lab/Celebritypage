@@ -1,0 +1,23 @@
+<% /* Settings — every key the site reads, grouped by prefix */ %>
+<form method="post" action="/settings" data-anim="rise">
+  <section class="card">
+    <div class="card-head"><h3>Site copy &amp; configuration</h3><span class="pill mono"><%= rows.length %> keys</span>
+      <div class="tools"><button class="btn gold small" type="submit">Save all</button></div></div>
+    <% const groups = {}; rows.forEach(function(r){ const g = (r.key.split('.')[0] || 'site'); (groups[g] = groups[g] || []).push(r); }); %>
+    <div class="adm-form">
+      <% Object.keys(groups).sort().forEach(function(g){ %>
+        <div class="span-2" style="margin-top:6px"><span class="pill mono gold"><%= g %></span></div>
+        <% groups[g].forEach(function(r){ %>
+        <div class="<%= r.big ? 'span-2' : '' %>">
+          <label class="fl" for="s_<%= r.key %>"><%= r.label || r.key %> <span class="dim mono"><%= r.key %></span></label>
+          <% if (r.big) { %><textarea id="s_<%= r.key %>" name="<%= r.key %>"><%= r.value %></textarea><% } else { %><input id="s_<%= r.key %>" name="<%= r.key %>" type="text" value="<%= r.value %>" autocomplete="off"><% } %>
+        </div>
+        <% }) %>
+      <% }) %>
+    </div>
+    <div class="form-actions" style="margin-top:14px">
+      <button class="btn gold" type="submit">Save settings</button>
+      <span class="dim small mono">keys without a dot are ignored; hero/news/tiers sections re-render for visitors on save</span>
+    </div>
+  </section>
+</form>

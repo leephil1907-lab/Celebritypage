@@ -1,0 +1,15 @@
+<div class="topbar" id="topbar">
+  <div class="topbar-left">
+    <span class="live-dot" aria-hidden="true"></span>
+    <b><%= site['site.brand'] %></b>
+    <span class="tb-dim">— <%= typeof user && user ? ('WELCOME BACK, ' + user.name.split(' ')[0].toUpperCase()) : 'Takuya Kimura Official' %></span>
+    <span class="tb-faint">木村拓哉</span>
+  </div>
+  <div class="topbar-right">
+    <span class="tb-hide"><%= site['topbar.live'] %></span>
+    <a href="/#membership"><%= t('sec.membership') %></a>
+    <a href="/#booking"><%= t('sec.booking') %></a>
+    <a href="/support/"><%= t('nav.support') || 'SUPPORT' %></a>
+    <a href="/members/" data-open-member="<%= user ? 'dashboard' : 'login' %>" class="tb-accent"><%= user ? user.name.split(' ')[0] + ' ▾' : t('cta.login') %></a>
+  </div>
+</div>

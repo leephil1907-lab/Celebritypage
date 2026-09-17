@@ -1,0 +1,86 @@
+<% /* Overview — KPIs, activity, queues, sparklines */ %>
+<section class="kpis" data-anim="rise">
+  <% const cards = [
+    ['Members', kpi.members, 'users with role=member'],
+    ['Active cards', kpi.active_cards, 'paid & approved'],
+    ['Open tickets', kpi.open_tickets, 'needs a reply'],
+    ['Pending bookings', kpi.pending_bookings, 'review queue'],
+    ['Orders', kpi.orders, kpi.revenue_label + ' collected'],
+    ['Card MRR', kpi.mrr_label, 'annualised'],
+    ['Low stock', kpi.low_stock, '≤ 6 units'],
+  ]; %>
+  <% cards.forEach(function(c, i){ %>
+  <div class="kpi" data-anim="rise"><span><%= c[0] %></span><b><%= c[1] %></b><div class="delta mono"><%= c[2] %></div></div>
+  <% }) %>
+</section>
+
+<section class="two-col" data-anim="fade">
+  <div class="card">
+    <div class="card-head"><h3>Bookings / day</h3><span class="dim small mono">last 14 days</span></div>
+    <div class="spark"><% chart.week.forEach(function(w){ %><i style="height:<%= Math.max(6, Math.round(w.n / chart.max * 100)) %>%" title="<%= w.d %>: <%= w.n %>"></i><% }); if (!chart.week.length) { %><i style="height:6%"></i><i style="height:10%"></i><i style="height:8%"></i><i style="height:14%"></i><% } %></div>
+    <div class="spark-x"><% chart.week.slice(-8).forEach(function(w){ %><span><%= (w.d || '').slice(5) %></span><% }) %></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Ticket volume</h3><span class="dim small mono">replies keep the queue warm</span></div>
+    <div class="spark"><% chart.feeds.forEach(function(w){ %><i class="alt" style="height:<%= Math.max(6, Math.round(w.n / chart.max * 100)) %>%" title="<%= w.d %>: <%= w.n %>"></i><% }); if (!chart.feeds.length) { %><i class="alt" style="height:8%"></i><i class="alt" style="height:12%"></i><i class="alt" style="height:7%"></i><% } %></div>
+    <div class="spark-x"><% chart.feeds.slice(-8).forEach(function(w){ %><span><%= (w.d || '').slice(5) %></span><% }) %></div>
+  </div>
+</section>
+
+<section class="two-col">
+  <div class="card">
+    <div class="card-head"><h3>Ticket desk</h3><a class="btn small" href="/tickets">Open queue →</a></div>
+    <% if (tickets.length) { %>
+    <div class="tkt-list">
+      <% tickets.forEach(function(t){ %>
+      <a class="tkt-row" href="/tickets?id=<%= t.id %>"><span class="pill mono <%= t.status === 'open' ? 'warn' : (t.status === 'resolved' || t.status === 'closed' ? 'ok' : '') %>"><%= t.status %></span>
+        <span><b><%= t.subject %></b><br><span class="dim small"><%= t.name || t.email || 'guest' %> • <%= t.msg_count %> msg</span></span>
+        <span class="mono dim small"><%= (t.updated_at || '').slice(5, 16) %></span></a>
+      <% }) %>
+    </div>
+    <% } else { %><p class="dim small">Nothing waiting — the desk is clear.</p><% } %>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Newest members</h3><a class="btn small" href="/members">All members →</a></div>
+    <table class="adm-table"><tbody>
+      <% members.forEach(function(m){ %>
+      <tr><td><b><%= m.name %></b><br><span class="dim small mono"><%= m.email %></span></td>
+        <td><span class="pill <%= m.mstatus === 'active' ? 'gold' : '' %> mono"><%= m.tier || 'no card' %></span></td>
+        <td class="ta-r dim small mono"><%= (m.created_at || '').slice(0, 10) %></td></tr>
+      <% }) %>
+      <% if (!members.length) { %><tr><td class="dim">No members yet — sign-ups from /join/ land here.</td></tr><% } %>
+    </tbody></table>
+  </div>
+</section>
+
+<section class="two-col">
+  <div class="card">
+    <div class="card-head"><h3>Recent orders</h3><a class="btn small" href="/orders.csv">CSV ↓</a></div>
+    <table class="adm-table"><tbody>
+      <% recentOrders.forEach(function(o){ %>
+      <tr><td class="mono"><%= o.order_no %></td><td class="dim small"><%= o.email %></td><td><span class="pill mono <%= o.status === 'paid' ? 'ok' : 'gold' %>"><%= o.status %></span></td><td class="ta-r mono"><%= o.total_label %></td></tr>
+      <% }) %>
+      <% if (!recentOrders.length) { %><tr><td class="dim">No orders yet — the shop writes here on checkout.</td></tr><% } %>
+    </tbody></table>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Product velocity</h3><span class="dim small mono">units sold</span></div>
+    <table class="adm-table"><tbody>
+      <% topProducts.forEach(function(p){ %>
+      <tr><td class="clip"><b><%= p.title %></b><br><span class="dim small mono"><%= p.sku %></span></td>
+        <td class="mono"><%= p.sold %></td>
+        <td class="ta-r"><form class="rowform" data-stock="<%= p.sku %>"><button class="btn small" type="button" data-delta="-1">−</button><span class="mono" data-stock-n><%= p.stock %></span><button class="btn small" type="button" data-delta="1">+</button></form></td></tr>
+      <% }) %>
+    </tbody></table>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head"><h3>Audit trail</h3><a class="btn small" href="/audit">Full log →</a></div>
+  <table class="adm-table"><tbody>
+    <% activity.forEach(function(a){ %>
+    <tr><td class="mono dim small"><%= (a.created_at || '').slice(5, 16) %></td><td><b class="mono small"><%= a.action %></b></td><td class="dim small"><%= a.entity %> #<%= a.detail %></td><td class="ta-r dim small mono"><%= a.actor %></td></tr>
+    <% }) %>
+    <% if (!activity.length) { %><tr><td class="dim">No writes recorded yet.</td></tr><% } %>
+  </tbody></table>
+</section>

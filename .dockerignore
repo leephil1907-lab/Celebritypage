@@ -1,0 +1,19 @@
+# state, dependencies and anything the runtime never reads
+node_modules
+npm-debug.log*
+.git
+.gitignore
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.key
+legacy
+tests
+qa
+tmp
+.claude
+.env
+.env.*
+*.log
+.DS_Store
+# the dev database and uploaded files stay on the host; the image ships an empty /app/data

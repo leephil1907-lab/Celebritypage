@@ -1,0 +1,47 @@
+<header class="header" id="header">
+  <div class="header-inner">
+    <a class="brand" href="/" aria-label="Starto — home">
+      <span class="brand-mark" data-img-fallback="TK">
+        <img src="/images/logo-tk-gold.png" alt="" width="40" height="40" loading="eager" decoding="async">
+      </span>
+      <span class="brand-text"><b><%= site['site.brand'] %></b><em><%= site['site.brandSub'] %></em></span>
+    </a>
+
+    <ul class="nav" aria-label="Primary">
+      <% nav.forEach(function(item){ const active = (page === item.href.replace(/^\//,'').replace(/\/$/,'')) || (item.href === '/' && page === 'home'); %>
+      <li>
+        <a href="<%= item.href %>" class="<%= active ? 'active' : '' %>"><%= t(item.key) %>
+          <% if (item.num) { %><span class="nav-num"><%= item.num %></span><% } %>
+          <% if (item.tag) { %><span class="nav-tag"><%= item.tag %></span><% } %>
+          <% if (item.drop) { %><i class="caret" aria-hidden="true"></i><% } %>
+        </a>
+        <% if (item.drop) { %>
+        <div class="dropdown">
+          <% item.drop.forEach(function(d){ %><a href="<%= d.href %>"><%= d.label %><small><%= item.t ? '' : (t(item.key)) %></small></a><% }) %>
+        </div>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+
+    <div class="header-actions">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" class="lang-btn <%= lang === 'ja' ? 'is-active' : '' %>" data-lang="ja">JA</button>
+        <button type="button" class="lang-btn <%= lang === 'en' ? 'is-active' : '' %>" data-lang="en">EN</button>
+      </div>
+      <a class="icon-btn cart-link" href="/shop/?cart=1" data-open-cart aria-label="Cart">
+        <span aria-hidden="true">◫</span><span class="cart-count" data-cart-count><%= (cart.lines || []).reduce((s,l)=>s+l.qty,0) %></span>
+      </a>
+      <div id="memberPill" class="member-pill <%= user ? 'is-logged' : '' %>">
+        <button type="button" class="btn ghost small" data-guest-only data-open-member="login"><%= t('cta.login') %></button>
+        <button type="button" class="btn primary small" data-guest-only data-open-member="signup"><%= t('cta.signup') %></button>
+        <button type="button" class="pill-btn" data-member-only data-open-member="dashboard">
+          <span class="pill-avatar" id="pillAvatar"><%= user ? user.name.split(' ').map(function(s){return s[0]}).join('').slice(0,2).toUpperCase() : 'TK' %></span>
+          <span class="pill-name"><b id="pillName"><%= user ? user.name.split(' ')[0] : 'Member' %></b><small id="pillTier"><%= membership ? membership.tier_name : (user ? 'FREE MEMBER' : 'MEMBER') %></small>
+          </span>
+        </button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false"><span></span></button>
+    </div>
+  </div>
+</header>

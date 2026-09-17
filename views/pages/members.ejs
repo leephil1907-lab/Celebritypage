@@ -1,0 +1,119 @@
+<% /* MEMBERS — real dashboard, server rendered from the database */ %>
+<div class="member-head">
+  <div class="mh-left">
+    <span class="eyebrow"><%= t('nav.members') %> • <%= lang === 'ja' ? 'メンバー' : 'MEMBERS' %></span>
+    <h1><%= user ? user.name : (lang === 'ja' ? 'ファンクラブ ダッシュボード' : 'Fan Club Dashboard') %></h1>
+    <p class="dim"><%= user ? (lang === 'ja' ? 'カード • ツアーパスポート • チケット • ボルト — すべてサーバー側で管理されています。' : 'Card • passport • tickets • vault — all state lives on the server.') : (lang === 'ja' ? '登録するとカード発行・チケット・ボルトが使えるようになります。' : 'Sign up free to issue a card, open tickets and unlock the vault.') %></p>
+    <div class="mh-actions">
+      <% if (!user) { %><button type="button" class="btn primary" data-open-member="signup"><%= t('cta.signup') %></button>
+      <button type="button" class="btn ghost" data-open-member="login"><%= t('cta.login') %></button><% } else { %>
+      <a class="btn primary" href="/#membership"><%= t('cta.purchase') %></a>
+      <a class="btn ghost" href="/support/"><%= lang === 'ja' ? 'チケット作成' : 'New ticket' %></a>
+      <button type="button" class="btn ghost" id="logoutBtn"><%= t('cta.logout') %></button><% } %>
+    </div>
+  </div>
+  <div class="mh-right">
+    <div class="mh-stats">
+      <div class="mh-stat"><b data-ticket-count><%= tickets.length %></b><span class="mono dim"><%= t('lbl.tickets') %></span></div>
+      <div class="mh-stat"><b><%= bookings.length %></b><span class="mono dim"><%= t('sec.booking') %></span></div>
+      <div class="mh-stat"><b><%= orders.length %></b><span class="mono dim"><%= t('nav.shop') %></span></div>
+    </div>
+  </div>
+</div>
+
+<section class="section section-tight" id="card">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? '私のファンカード' : 'My Fan Card' %></h2><p><%= lang === 'ja' ? 'ステータスは運営の承認で変わります' : 'Status changes when Management approves the payment' %></p></div>
+    <% if (membership) { %><span class="tagchip gold"><%= membership.tier_name %> • <%= membership.status %></span><% } %></div>
+  <div class="member-grid">
+    <div class="mg-card" data-reveal>
+      <% if (user && membership) { %>
+      <div class="fan-card tier-<%= membership.tier %>" data-tilt="7">
+        <div class="fan-card-top"><b><%= site['site.brand'] %> • FAN CARD</b><span class="chip" aria-hidden="true"></span></div>
+        <h4><%= user.name.toUpperCase() %></h4>
+        <div class="num"><%= membership.card_no %> • <%= membership.tier_name %></div>
+        <div class="card-valid mono"><%= lang === 'ja' ? '発行' : 'ISSUED' %> <%= (membership.issued_at || '').slice(0,10) %> • <%= lang === 'ja' ? '有効' : 'VALID' %> <%= membership.valid_until %></div>
+        <div class="holder"><div><b><%= user.name %></b><br><span><%= yen(membership.price_yen) %> / <%= lang === 'ja' ? '年' : 'year' %></span></div><span>木村拓哉</span></div>
+      </div>
+      <% } else if (user) { %>
+      <div class="fan-card is-empty" data-tilt="5">
+        <div class="fan-card-top"><b><%= site['site.brand'] %> • FAN CARD</b><span class="chip" style="opacity:.3" aria-hidden="true"></span></div>
+        <h4 style="opacity:.7"><%= lang === 'ja' ? 'カード未発行' : 'NO CARD YET' %></h4>
+        <div class="num dim">SIGNUP COMPLETE — <%= user.email %></div>
+        <div class="holder"><div><b><%= user.name %></b><br><span><%= lang === 'ja' ? 'ティアを選んで発行' : 'Pick a tier to issue' %></span></div><span>木村拓哉</span></div>
+      </div>
+      <% } else { %>
+      <div class="empty big"><%= lang === 'ja' ? 'カードを表示するにはログインしてください。' : 'Log in to see your card.' %></div>
+      <% } %>
+      <div class="mg-tier"><b class="mono dim"><%= t('lbl.tier') %></b><span><%= membership ? membership.tier_name : 'NO CARD' %></span>
+        <b class="mono dim"><%= t('lbl.valid') %></b><span><%= membership ? membership.valid_until : '—' %></span></div>
+    </div>
+    <div class="mg-side">
+      <div class="panel" data-reveal data-reveal="right">
+        <h4 class="panel-h"><%= t('sec.vault') %></h4>
+        <p class="dim small"><%= membership ? (lang === 'ja' ? '✓ 解除済み — ' + vault.length + ' 件のドロップ' : '✓ Unlocked — ' + vault.length + ' drops available') : (lang === 'ja' ? 'カードを購入するとボルトが解除されます。' : 'Purchase a Fan Card to unlock the vault.') %></p>
+        <div class="vault-list">
+          <% vault.forEach(function(v){ %><div class="vl-row"><span class="mono dim"><%= v.code %></span><b><%= v.title %></b><span class="tagchip <%= membership && membership.rank >= 1 ? 'gold' : '' %>"><%= v.min_tier.toUpperCase() %>+</span></div><% }) %>
+        </div>
+        <a class="btn ghost small" href="/#vault"><%= lang === 'ja' ? 'ボルトへ →' : 'Go to vault →' %></a>
+      </div>
+      <div class="panel" data-reveal data-reveal="right" data-reveal-delay="80">
+        <h4 class="panel-h"><%= t('sec.passport') %></h4>
+        <div class="stamp-row">
+          <% stamps.forEach(function(s){ %><div class="stamp mini <%= s.stamped ? 'on' : '' %>"><span class="stamp-mark"><%= s.stamped ? '✓' : '○' %></span><b><%= s.city %></b><span class="mono dim small"><%= s.date %></span></div><% }) %>
+        </div>
+        <p class="fineprint"><%= lang === 'ja' ? '会場で注文QRを提示すると自動で押印されます。' : 'Scan your order QR at the kiosk and the stamp applies automatically.' %></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="tickets">
+  <div class="section-head" data-reveal><div><h2><%= t('lbl.tickets') %></h2><p><%= lang === 'ja' ? 'チケット → 運営がチャットで返信' : 'Every ticket is a live thread with Management' %></p></div>
+    <button type="button" class="btn ghost small" data-open-chat><%= lang === 'ja' ? 'チャットを開く' : 'Open chat' %></button></div>
+  <div class="tickets-grid" data-section="tickets"><%- include('../partials/sections/tickets') %></div>
+</section>
+
+<section class="section" id="bookings">
+  <div class="section-head" data-reveal><div><h2><%= t('sec.booking') %></h2></div><a class="link-arrow" href="/#booking"><%= t('cta.book') %> →</a></div>
+  <% if (bookings.length) { %>
+  <table class="data-table" data-reveal>
+    <thead><tr><th><%= lang === 'ja' ? '日付' : 'Date' %></th><th><%= lang === 'ja' ? '種別' : 'Type' %></th><th class="hide-s"><%= lang === 'ja' ? '人数' : 'Guests' %></th><th class="hide-s"><%= lang === 'ja' ? '予算' : 'Budget' %></th><th><%= lang === 'ja' ? '状態' : 'Status' %></th></tr></thead>
+    <tbody><% bookings.forEach(function(b){ %><tr><td class="mono"><%= b.date %></td><td><b><%= b.type %></b><br><span class="dim small"><%= (b.message || '').slice(0,60) %></span></td><td class="hide-s mono"><%= b.guests %></td><td class="hide-s mono"><%= b.budget_yen ? yen(b.budget_yen) : '—' %></td><td><span class="st st-<%= b.status.toLowerCase().replace(/ /g,'-') %>"><%= b.status %></span></td></tr><% }) %></tbody>
+  </table>
+  <% } else { %><div class="empty"><%= lang === 'ja' ? 'ブッキングはありません' : 'No booking requests yet.' %></div><% } %>
+</section>
+
+<section class="section" id="orders">
+  <div class="section-head" data-reveal><div><h2><%= t('nav.shop') %> — <%= lang === 'ja' ? '注文' : 'Orders' %></h2></div><a class="link-arrow" href="/shop/"><%= t('cta.viewAll') %> →</a></div>
+  <% if (orders.length) { %>
+  <div class="orders-grid">
+    <% orders.forEach(function(o, i){ %>
+    <div class="order-card" data-reveal data-reveal-delay="<%= i * 50 %>">
+      <header><b class="mono"><%= o.order_no %></b><span class="st st-<%= o.status %>"><%= o.status %></span></header>
+      <ul><% o.items.forEach(function(it){ %><li><span><%= it.title %></span><span class="mono dim">×<%= it.qty %> • <%= yen(it.unit_price * it.qty) %></span></li><% }) %></ul>
+      <footer><span class="mono"><%= lang === 'ja' ? '合計' : 'Total' %> <%= yen(o.total_yen) %></span><a class="btn ghost small" href="/shop/verify/<%= o.qr %>">QR →</a></footer>
+    </div>
+    <% }) %>
+  </div>
+  <% } else { %><div class="empty"><%= lang === 'ja' ? '注文はまだありません' : 'No orders yet.' %></div><% } %>
+</section>
+
+<% if (user) { %>
+<section class="section" id="account">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? 'アカウント設定' : 'Account' %></h2><p><%= user.email %> • <%= lang === 'ja' ? '登録日' : 'joined' %> <%= (user.created_at || '').slice(0,10) %></p></div></div>
+  <div class="acct-grid">
+    <form class="panel" id="passForm" data-action="password">
+      <h4 class="panel-h"><%= lang === 'ja' ? 'パスワード変更' : 'Change password' %></h4>
+      <div class="field"><label for="cpCur"><%= lang === 'ja' ? '現在のパスワード' : 'Current password' %></label><input id="cpCur" name="current" type="password" autocomplete="current-password" required></div>
+      <div class="field" style="margin-top:10px"><label for="cpNew"><%= lang === 'ja' ? '新しいパスワード（8文字以上）' : 'New password (8+ chars)' %></label><input id="cpNew" name="next" type="password" autocomplete="new-password" minlength="8" required></div>
+      <button type="submit" class="btn primary small" style="margin-top:12px"><%= lang === 'ja' ? '更新' : 'Update' %></button>
+      <div class="form-msg" id="passMsg"></div>
+    </form>
+    <div class="panel">
+      <h4 class="panel-h"><%= lang === 'ja' ? '通知' : 'Notifications' %></h4>
+      <% if (notifications.length) { %><ul class="notif-list"><% notifications.forEach(function(n){ %><li><b><%= n.title %></b><span class="dim small"><%= n.body %></span><span class="mono dim small"><%= (n.created_at || '').slice(0,16) %></span></li><% }) %></ul>
+      <% } else { %><p class="dim small"><%= lang === 'ja' ? '通知はまだありません。' : 'Nothing yet.' %></p><% } %>
+    </div>
+  </div>
+</section>
+<% } %>

@@ -1,0 +1,4 @@
+<% /* The single entry bundle. ?v= is the build id from public/build.json, so a deploy can never
+       serve a stale bundle next to new HTML (that is how "worked locally, broken in prod" starts). */ %>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="/js/app.js?v=<%= typeof version !== 'undefined' ? version : 'dev' %>" defer></script>

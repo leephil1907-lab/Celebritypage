@@ -1,0 +1,36 @@
+<% /* JOURNAL — editorial index with categories */ %>
+<%- include('../partials/sections/pagehero', { ph: {
+  interval: 6500,
+  kicker: lang === 'ja' ? 'ジャーナル • 編集' : 'JOURNAL • EDITORIAL',
+  title: 'Journal', title2: lang === 'ja' ? '公式デスクからの記録' : 'From the official desk',
+  sub: lang === 'ja' ? 'ツアー • 映画 • 音楽 • スタイル — 会員限定記事はボルトと連動。' : 'Tour • film • music • style — member entries link to the vault.',
+  images: posts.slice(0,4).map(function(p){ return p.image; }).filter(Boolean).concat(['/image-search/takuya-kimura-starto-entertainment-offic-3.webp']),
+  cta: [[lang === 'ja' ? '最新記事' : 'Latest', '#index'], [lang === 'ja' ? 'メンバー限定' : 'Members only', '/join/']],
+  side: { kicker: 'FEATURED', title: (posts[0] || {}).title || '', body: (posts[0] || {}).excerpt || '', cta: [[lang === 'ja' ? '読む' : 'Read', '/journal/' + ((posts[0] || {}).id || 1)], [t('cta.viewAll'), '#index']] }
+} }) %>
+
+<section class="section" id="index">
+  <div class="section-head" data-reveal>
+    <div><h2><%= lang === 'ja' ? '記事一覧' : 'All entries' %></h2><p><%= active === 'all' ? cats.join(' • ') : active %> — <%= posts.length %></p></div>
+    <div class="chips">
+      <a class="suggest <%= active === 'all' ? 'is-active' : '' %>" href="/journal/"><%= lang === 'ja' ? 'すべて' : 'All' %></a>
+      <% cats.forEach(function(c){ %><a class="suggest <%= active === c ? 'is-active' : '' %>" href="/journal/?cat=<%= encodeURIComponent(c) %>"><%= c %></a><% }) %>
+    </div>
+  </div>
+  <div data-section="journal"><%- include('../partials/sections/journal') %></div>
+</section>
+
+<section class="section" id="mail">
+  <div class="news-feature" data-reveal>
+    <div class="nf-text">
+      <span class="eyebrow"><%= lang === 'ja' ? 'ジャーナル更新' : 'JOURNAL UPDATES' %></span>
+      <h3><%= lang === 'ja' ? '新しい記録をチケットチャットで受け取る' : 'Get each new entry pushed to your ticket chat' %></h3>
+      <p class="dim"><%= lang === 'ja' ? 'メンバーは更新時に通知を受け取ります — メールは不要、運営とのチャットに届きます。' : 'Members receive a notification when the journal updates — it lands in your chat with Management.' %></p>
+      <div class="nf-cta"><button type="button" class="btn primary" data-open-member="<%= user ? 'dashboard' : 'signup' %>"><%= user ? t('cta.dashboard') : t('cta.signup') %></button><a class="btn ghost" href="/support/"><%= t('nav.support') || 'Support' %></a></div>
+    </div>
+    <div class="nf-side">
+      <div class="stat-box"><b><%= posts.length %></b><span class="mono dim small"><%= lang === 'ja' ? '公開記事' : 'published entries' %></span></div>
+      <div class="stat-box"><b><%= cats.length %></b><span class="mono dim small"><%= lang === 'ja' ? 'カテゴリー' : 'categories' %></span></div>
+    </div>
+  </div>
+</section>

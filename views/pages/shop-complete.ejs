@@ -1,0 +1,20 @@
+<% /* post-checkout confirmation */ %>
+<section class="section complete">
+  <div class="ok-panel" data-reveal>
+    <span class="ok-mark" aria-hidden="true">✓</span>
+    <h1><%= lang === 'ja' ? 'ご注文ありがとうございます' : 'Order confirmed' %></h1>
+    <% if (order) { %>
+    <p class="dim"><%= lang === 'ja' ? '注文番号' : 'Order' %> <b class="mono"><%= order.order_no %></b> • <%= lang === 'ja' ? '受取会場' : 'Pickup' %> <b><%= order.pickup_venue || '—' %></b></p>
+    <div class="code-card">
+      <span class="mono dim small"><%= lang === 'ja' ? '受取コード' : 'PICKUP CODE' %></span>
+      <b class="mono code"><%= order.qr %></b>
+      <span class="fineprint"><%= lang === 'ja' ? '会場のブースでこのコードを提示してください。' : 'Show this code at the venue booth.' %></span>
+      <div class="cc-cta"><a class="btn primary small" href="/shop/verify/<%= order.qr %>"><%= lang === 'ja' ? 'QR / 確認ページ' : 'Open verification page' %></a></div>
+    </div>
+    <table class="data-table tight"><tbody><% (order.items || []).forEach(function(it){ %><tr><td><%= it.title %></td><td class="mono">×<%= it.qty %></td><td class="mono ta-r"><%= yen(it.unit_price * it.qty) %></td></tr><% }) %><tr class="total"><td><b><%= lang === 'ja' ? '合計' : 'Total' %></b></td><td></td><td class="mono ta-r"><b><%= yen(order.total_yen) %></b></td></tr></tbody></table>
+    <% } else { %>
+    <p class="dim"><%= lang === 'ja' ? '完了した注文が見つかりません。ショップからご注文ください。' : 'No recent order found — add goods from the shop first.' %></p>
+    <a class="btn primary" href="/shop/"><%= t('nav.shop') %></a>
+    <% } %>
+  </div>
+</section>

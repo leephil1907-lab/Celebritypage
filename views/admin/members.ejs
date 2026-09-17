@@ -1,0 +1,41 @@
+<% /* Members — fan card issue / revoke / tier change */ %>
+<section class="card" data-anim="rise">
+  <div class="card-head">
+    <h3>Members</h3><span class="pill mono"><%= rows.length %></span>
+    <div class="tools">
+      <form method="get" class="rowform"><input type="search" name="q" value="<%= q %>" placeholder="name or email…" aria-label="Search members"><button class="btn small" type="submit">Search</button></form>
+      <a class="btn small" href="/members.csv">CSV ↓</a>
+      <% if (q) { %><a class="btn small ghost" href="/members">clear</a><% } %>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="adm-table">
+      <thead><tr><th>Member</th><th>Fan card</th><th>Tier</th><th>Valid until</th><th>Activity</th><th class="ta-r">Issue / revoke</th></tr></thead>
+      <tbody>
+        <% rows.forEach(function(m){ %>
+        <tr>
+          <td><b><%= m.name %></b><br><span class="dim small mono"><%= m.email %></span><br><span class="dim small mono">joined <%= (m.created_at || '').slice(0, 10) %></span></td>
+          <td class="mono"><%= m.card_no || '—' %></td>
+          <td><span class="pill mono <%= m.m_status === 'active' ? 'gold' : (m.m_status ? 'warn' : '') %>"><%= m.tier || 'none' %><% if (m.m_status) { %> • <%= m.m_status %><% } %></span></td>
+          <td class="mono dim small"><%= m.valid_until || '—' %><% if (m.price_yen) { %><br><span class="gold"><%= yen(m.price_yen) %></span><% } %></td>
+          <td class="mono small dim"><%= m.tickets %> tickets • <%= m.bookings %> bookings</td>
+          <td class="ta-r">
+            <div class="row-actions">
+              <form method="post" action="/members/<%= m.id %>/tier" class="rowform">
+                <select name="tier" aria-label="Tier for <%= m.name %>">
+                  <option value="none">— none —</option>
+                  <% tiers.forEach(function(x){ %><option value="<%= x.id %>" <%= m.tier === x.id ? 'selected' : '' %>><%= x.name %> · <%= x.price_label %></option><% }) %>
+                </select>
+                <select name="status" aria-label="Status"><option value="active">active</option><option value="pending">pending</option></select>
+                <button class="btn small gold" type="submit">Apply</button>
+              </form>
+              <form method="post" action="/members/<%= m.id %>/delete" data-confirm="Delete <%= m.name %> and every related row?"><button class="btn small danger" type="submit">Delete</button></form>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+        <% if (!rows.length) { %><tr><td colspan="6" class="dim">No members match. Sign-ups from <a class="gold" href="/join/" target="_blank" rel="noopener noreferrer">/join/</a> appear here instantly.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</section>

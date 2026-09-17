@@ -1,0 +1,77 @@
+<% /* MUSIC — campaign + discography + player */ %>
+<%- include('../partials/sections/pagehero', { ph: {
+  kicker: lang === 'ja' ? 'ミュージック • CHECKPOINT キャンペーン' : 'MUSIC • CHECKPOINT CAMPAIGN',
+  title: 'CHECKPOINT', title2: '2026.08.12 OUT NOW',
+  sub: lang === 'ja' ? '12トラック — 限定ヴァイナルとメンバー限定ボルト音源。' : 'Twelve tracks — limited pearl vinyl, plus the vault-only audio for members.',
+  images: releases.slice(0,4).map(function(r){ return r.cover; }).concat(['/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg']),
+  cta: [[lang === 'ja' ? 'ディスコグラフィ' : 'Discography', '#discography'], [lang === 'ja' ? 'ヴァイナル購入' : 'Get the vinyl', '/shop/#p-CKPT-VINYL']],
+  side: { kicker: lang === 'ja' ? '再生中' : 'NOW PLAYING', title: (releases[0] || {}).title || 'CHECKPOINT', body: (releases[0] || {}).blurb || '', cta: [[lang === 'ja' ? 'プレイヤー' : 'Player', '#player'], [t('cta.viewAll'), '#discography']] }
+} }) %>
+
+<section class="section" id="campaign">
+  <div class="section-head" data-reveal>
+    <div><h2><%= lang === 'ja' ? 'キャンペーン' : 'Campaign' %></h2><p><%= lang === 'ja' ? 'アルバム詳細 • トラックリスト • 会員限定音源' : 'Album detail • tracklist • member-only audio' %></p></div>
+    <span class="tagchip gold"><%= lang === 'ja' ? '発売中' : 'ON SALE' %></span>
+  </div>
+  <div class="campaign-grid">
+    <% releases.slice(0,2).forEach(function(r, i){ %>
+    <article class="campaign-card <%= i === 0 ? 'is-lead' : '' %>" data-reveal data-reveal-delay="<%= i * 80 %>">
+      <div class="cc-cover">
+        <img src="<%= r.cover %>" alt="<%= r.title %> cover" data-img-fallback="/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg">
+        <% if (i === 0) { %><span class="cc-badge mono">12 TRACKS • <%= r.release_date %></span><% } %>
+      </div>
+      <div class="cc-body">
+        <span class="eyebrow"><%= (r.kind || '').toUpperCase() %> • <%= r.release_date %></span>
+        <h3><%= r.title %></h3>
+        <p><%= r.blurb %></p>
+        <ol class="cc-tracks"><% (r.tracks || []).slice(0, i === 0 ? 6 : 4).forEach(function(tr, k){ %><li><span class="mono dim"><%= String(k + 1).padStart(2, '0') %></span><span><%= tr %></span><span class="mono dim small"><%= 3 + (k % 3) %>:<%= String(12 + k * 5).padStart(2, '0') %></span></li><% }) %></ol>
+        <div class="cc-actions">
+          <% if (r.product_sku) { %><button type="button" class="btn gold small" data-add-cart="<%= r.product_sku %>" data-title="<%= r.title %>"><%= lang === 'ja' ? 'カートに追加' : 'Add to cart' %> — <%= r.price_label %></button><% } %>
+          <a class="btn ghost small" href="#player"><%= lang === 'ja' ? 'プレイヤーへ' : 'Open player' %></a>
+        </div>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+</section>
+
+<section class="section" id="player">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? 'プレイヤー' : 'Player' %></h2><p><%= lang === 'ja' ? 'リリースを選ぶと同期します' : 'Pick a release — the panel follows' %></p></div></div>
+  <div data-section="releases"><%- include('../partials/sections/releases') %></div>
+</section>
+
+<section class="section" id="discography">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? 'ディスコグラフィ' : 'Discography' %></h2><p><%= releases.length %> <%= lang === 'ja' ? '作品' : 'releases' %></p></div></div>
+  <table class="data-table" data-reveal>
+    <thead><tr><th><%= lang === 'ja' ? '日付' : 'Date' %></th><th><%= lang === 'ja' ? 'タイトル' : 'Title' %></th><th class="hide-s">TYPE</th><th class="hide-s"><%= lang === 'ja' ? 'トラック' : 'Tracks' %></th><th><%= lang === 'ja' ? '価格' : 'Price' %></th><th></th></tr></thead>
+    <tbody>
+      <% releases.forEach(function(r){ %>
+      <tr id="release-row-<%= r.id %>">
+        <td class="mono"><%= r.release_date %></td>
+        <td><b><%= r.title %></b><br><span class="dim small"><%= r.blurb || '' %></span></td>
+        <td class="hide-s"><span class="tagchip"><%= (r.kind || '').toUpperCase() %></span></td>
+        <td class="hide-s mono"><%= (r.tracks || []).length %></td>
+        <td class="mono"><%= r.price_label || '—' %></td>
+        <td class="ta-r"><% if (r.product_sku) { %><button type="button" class="btn gold small" data-add-cart="<%= r.product_sku %>" data-title="<%= r.title %>">+</button><% } %> <button type="button" class="btn ghost small" data-play-release="<%= r.id %>">▶</button></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+
+<section class="section" id="tie">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? 'ツアーと連動' : 'Tied to the tour' %></h2><p><%= lang === 'ja' ? '会場ではチェックポイント・ブースでメンバー音源を配布' : 'Checkpoint booths at each venue hand out the member audio drop' %></p></div><a class="link-arrow" href="/tour/"><%= t('nav.tour') %> →</a></div>
+  <div class="grid-4">
+    <% tour.forEach(function(d, i){ %>
+    <div class="mini-card" data-reveal data-reveal-delay="<%= i * 50 %>">
+      <span class="mono gold"><%= d.date %></span><b><%= d.city %></b><span class="dim small"><%= d.venue %></span>
+      <div class="mc-foot"><span class="tagchip <%= d.remaining ? '' : 'solid' %>"><%= d.remaining ? d.remaining + ' M&G' : (lang === 'ja' ? '抽選' : 'LOTTERY') %></span></div>
+    </div>
+    <% }) %>
+  </div>
+</section>
+
+<section class="section" id="buy">
+  <div class="section-head" data-reveal><div><h2><%= t('sec.shop') %></h2><p><%= lang === 'ja' ? 'ヴァイナル • CD — 会員割引適用' : 'Vinyl & CD — member discount applies at checkout' %></p></div><a class="link-arrow" href="/shop/"><%= lang === 'ja' ? 'ショップへ' : 'Shop all' %> →</a></div>
+  <div data-section="shop-grid"><%- include('../partials/sections/shop-grid') %></div>
+</section>

@@ -1,0 +1,67 @@
+<% /* JOURNAL detail — locked entries render the gate server-side */ %>
+<article class="article-wrap">
+  <header class="article-head">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">TOP</a><span>›</span><a href="/journal/"><%= t('sec.journal') %></a><span>›</span><%= post.category %></nav>
+    <div class="ah-grid">
+      <div>
+        <span class="tagchip solid"><%= post.category %></span>
+        <h1><%= post.title %></h1>
+        <p class="lead"><%= post.excerpt %></p>
+        <div class="ah-meta mono dim"><span><%= post.published_at %></span><span>•</span><span><%= post.read_minutes %> MIN</span><% if (post.locked) { %><span>•</span><span class="gold"><%= lang === 'ja' ? 'メンバー限定' : 'MEMBERS ONLY' %></span><% } %></div>
+      </div>
+      <figure class="ah-figure">
+        <img <%- imgAttrs(post.image, { alt: post.title, sizes: '(max-width: 900px) 92vw, 42vw', priority: true, extra: 'data-img-fallback="/image-search/takuya-kimura-starto-entertainment-offic-3.webp"' }) %>>
+        <figcaption class="mono dim small"><%= site['about.kanji'] %> • <%= site['site.brand'] %></figcaption>
+      </figure>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <% if (post.locked) { %>
+    <div class="lock-card">
+      <div class="lock-copy">
+        <span class="lock-emoji" aria-hidden="true">🔒</span>
+        <h3><%= lang === 'ja' ? 'メンバー限定の記事です' : 'This entry is for members' %></h3>
+        <p class="dim"><%= lang === 'ja' ? '無料登録して Fan Card を選ぶと、全文とボルト音源が解放されます。' : 'Sign up free and choose a Fan Card to read the full entry with its vault audio.' %></p>
+        <div class="nf-cta"><button type="button" class="btn gold" data-purchase-tier="gold"><%= lang === 'ja' ? 'GOLD で解除' : 'Unlock with GOLD' %></button><a class="btn ghost" href="/#membership"><%= lang === 'ja' ? 'ティアを見る' : 'See tiers' %></a></div>
+      </div>
+      <div class="lock-preview">
+        <p><%= (post.body || '').slice(0, 180) %>…</p>
+        <span class="mono dim small"><%= lang === 'ja' ? 'プレビュー' : 'preview' %></span>
+      </div>
+    </div>
+    <% } else { %>
+    <% (post.body || '').split('\n\n').forEach(function(par, i){ %><p class="<%= i === 0 ? 'drop' : '' %>"><%= par %></p><% }) %>
+    <div class="pull">“<%= (post.excerpt || '').replace(/[.。]$/, '') %>”<span class="mono dim small">— <%= site['about.name'] %></span></div>
+    <p class="dim"><%= lang === 'ja' ? '取材・撮影：公式デスク。転載は運営の許諾が必要です。' : 'Reported and shot by the official desk. Reproduction requires Management approval.' %></p>
+    <% } %>
+  </div>
+
+  <footer class="article-foot">
+    <div class="af-share">
+      <span class="eyebrow"><%= t('lbl.share') %></span>
+      <div class="sb-row">
+        <a href="https://x.com/intent/post?text=<%= encodeURIComponent(post.title) %>&url=<%= encodeURIComponent(req.protocol + '://' + req.get('host') + req.path) %>" target="_blank" rel="noopener noreferrer">𝕏</a>
+        <a href="mailto:?subject=<%= encodeURIComponent(post.title) %>" aria-label="Email">✉</a>
+        <button type="button" class="copy-link" data-copy="<%= req.protocol + '://' + req.get('host') + req.path %>">⧉</button>
+      </div>
+    </div>
+    <a class="link-arrow" href="/journal/"><%= lang === 'ja' ? '一覧へ戻る →' : 'Back to journal →' %></a>
+  </footer>
+</article>
+
+<% if (related && related.length) { %>
+<section class="section" id="relatedPosts">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? '併せて読む' : 'Read next' %></h2></div></div>
+  <div class="carousel is-rail" data-carousel data-c-mode="rail" data-c-autoplay="0" data-c-per-view="3" data-c-gap="16">
+    <div class="c-viewport" data-c-viewport><div data-c-track>
+      <% related.forEach(function(r){ %>
+      <a class="media-card rel-card" data-c-slide href="/journal/<%= r.id %>">
+        <div class="mc-img"><img src="<%= r.image %>" alt="<%= r.title %>" loading="lazy" data-img-fallback="/image-search/takuya-kimura-starto-entertainment-offic-3.webp"></div>
+        <div class="mc-body"><div class="mc-meta mono dim"><%= r.category %> • <%= r.published_at %></div><h4><%= r.title %></h4><p><%= r.excerpt %></p></div>
+      </a>
+      <% }) %>
+    </div></div>
+  </div>
+</section>
+<% } %>

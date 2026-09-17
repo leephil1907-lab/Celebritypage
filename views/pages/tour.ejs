@@ -1,0 +1,79 @@
+<% /* TOUR — center, dates, passport, goods */ %>
+<%- include('../partials/sections/pagehero', { ph: {
+  kicker: lang === 'ja' ? 'ライブ ツアー 2026 • チェックポイント' : 'LIVE TOUR 2026 • CHECKPOINT',
+  title: 'Live Tour 2026', title2: 'Checkpoint — Fukuoka → Taipei',
+  sub: lang === 'ja' ? '9月5日〜11月23日 — アリーナ6都市。ミーグリ抽選とQRツアーパスポート。' : 'Sep 5 – Nov 23, six arenas. Meet & Greet lottery plus the QR Tour Passport for members.',
+  images: ['/image-search/takuya-kimura-live-tour-checkpoint-2026--1.gif','/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg','/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg','/image-search/takuya-kimura-live-tour-checkpoint-2026--4.webp','/image-search/takuya-kimura-live-tour-checkpoint-2026--5.webp'],
+  cta: [[lang === 'ja' ? '日程を見る' : 'See dates', '#dates'], [lang === 'ja' ? 'パスポート' : 'Passport', '#pass']],
+  side: { kicker: lang === 'ja' ? '次公演' : 'NEXT UP', title: 'Fukuoka — TOTTEI PARK', body: (lang === 'ja' ? '9月10日 12:00開場\n残り6席 • ファンクラブ先行' : 'Sep 10, doors 12:00\n6 slots left • Fan Club pre-sale'), cta: [[t('cta.book'), '#booking'], [lang === 'ja' ? 'グッズ' : 'Goods', '#goods']] }
+} }) %>
+
+<section class="section" id="dates">
+  <div class="section-head" data-reveal>
+    <div><h2><%= lang === 'ja' ? '日程 • 会場' : 'Dates & Venues' %></h2><p><%= lang === 'ja' ? '残席と抽選はデータベースからリアルタイム取得' : 'Capacity and lottery state come live from the database' %></p></div>
+    <a class="link-arrow" href="/#booking"><%= t('cta.book') %> →</a>
+  </div>
+  <div data-section="tour-dates"><%- include('../partials/sections/tour-dates') %></div>
+</section>
+
+<section class="section" id="pass">
+  <div class="section-head" data-reveal><div><h2><%= t('sec.passport') %></h2><p><%= lang === 'ja' ? '会場でQR提示 → 自動でスタンプ' : 'Scan your order QR at the kiosk — the stamp lands automatically' %></p></div>
+    <span class="tagchip <%= stamps.filter(function(s){return s.stamped}).length ? 'gold' : '' %>"><%= stamps.filter(function(s){return s.stamped}).length %> / <%= stamps.length %></span>
+  </div>
+  <div class="passport" data-reveal>
+    <div class="pp-cover">
+      <div class="pp-ring" aria-hidden="true"></div>
+      <span class="pp-brand mono"><%= site['site.brand'] %></span>
+      <b><%= lang === 'ja' ? 'ツアーパスポート' : 'TOUR PASSPORT' %></b>
+      <span class="mono dim small"><%= user ? user.name : 'GUEST' %> • <%= membership ? membership.card_no : 'NO CARD' %></span>
+      <div class="pp-live"><span class="live-dot" aria-hidden="true"></span> <%= lang === 'ja' ? 'ライブ同期' : 'LIVE SYNC' %></div>
+    </div>
+    <div class="pp-stamps">
+      <% stamps.forEach(function(s, i){ %>
+      <div class="stamp <%= s.stamped ? 'on' : '' %> <%= s.locked && !s.stamped ? 'locked' : '' %>" data-reveal data-reveal-delay="<%= i * 70 %>">
+        <span class="stamp-mark"><%= s.stamped ? '✓' : (s.locked ? '🔒' : '○') %></span>
+        <b><%= s.city %></b><span class="mono dim small"><%= s.date %></span>
+        <% if (!s.stamped && s.locked) { %><span class="dim small"><%= lang === 'ja' ? '上位ティア必要' : 'Higher tier required' %></span><% } %>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="booking">
+  <div class="section-head" data-reveal><div><h2><%= t('sec.booking') %></h2><p><%= lang === 'ja' ? 'ミーグリ • プライベート • 企業' : 'Meet & Greet • private • corporate' %></p></div></div>
+  <div class="grid-3">
+    <% [['Meet & Greet', lang === 'ja' ? '各都市20名 • 写真 & 握手 • Fan Card 必須' : '20 per city • photo + greeting • Fan Card required', 'gold'], ['Private Session', lang === 'ja' ? '少人数の対話 • 運営が日程調整' : 'Small-group conversation • scheduled by Management', 'primary'], ['Corporate', lang === 'ja' ? '企業イベント • 見積りはチケットで' : 'Brand events — request a quote via ticket', 'ghost']].map(function(x, i) { return x; }).forEach(function(card, i) { %>
+    <div class="mini-card feature" data-reveal data-reveal-delay="<%= i * 60 %>">
+      <span class="mc-num mono dim">0<%= i + 1 %></span>
+      <b><%= card[0] %></b><p class="dim"><%= card[1] %></p>
+      <a class="btn <%= card[2] %> small" href="/#booking"><%= t('cta.book') %> →</a>
+    </div>
+    <% }) %>
+  </div>
+</section>
+
+<section class="section" id="goods">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? 'ツアーグッズ' : 'Tour Goods' %></h2><p><%= lang === 'ja' ? '会場受取 — QRで引き換え' : 'Venue pickup — collect with your order code' %></p></div><a class="link-arrow" href="/shop/"><%= t('cta.viewAll') %> →</a></div>
+  <div class="carousel is-rail goods-rail" data-carousel data-c-mode="rail" data-c-autoplay="0" data-c-per-view="4" data-c-gap="16">
+    <div class="c-viewport" data-c-viewport><div data-c-track>
+      <% products.forEach(function(p, i){ %>
+      <div class="goods-card" data-c-slide>
+        <img src="<%= p.image %>" alt="<%= p.title %>" loading="lazy" data-img-fallback="/image-search/takuya-kimura-live-tour-checkpoint-2026--1.gif">
+        <b><%= p.title %></b>
+        <div class="gf-row"><span class="mono"><%= p.price_label %></span><button type="button" class="btn gold small" data-add-cart="<%= p.sku %>" data-title="<%= p.title %>" <%= p.available ? '' : 'disabled' %>><%= p.available ? '+' : '—' %></button></div>
+      </div>
+      <% }) %>
+    </div></div>
+    <div class="c-bar rail-bar"><span class="c-count mono dim" data-c-counter>01</span></div>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? 'よくある質問' : 'Before you come' %></h2></div></div>
+  <div class="faq">
+    <% [[lang === 'ja' ? '同行者は何人まで？' : 'How many guests can I bring?', lang === 'ja' ? 'Silver/Gold は1名、Platinum は2名、Diamond はコンシェルジュが手配します。' : 'Silver and Gold: 1 guest. Platinum: 2. Diamond: concierge arranges private sessions.'], [lang === 'ja' ? 'チケットの紛失は？' : 'Lost my ticket', lang === 'ja' ? 'ダッシュボードから再発行できます — QR はアカウントに紐づきます。' : 'Re-issue from your dashboard — the code is bound to your account.'], [lang === 'ja' ? '写真撮影は？' : 'Photography', lang === 'ja' ? 'ミーグリ中は運営スタッフが撮影し、ボルトで配布します。' : 'Staff shoot during the Meet & Greet and the set lands in your vault.']].forEach(function(f, i){ %>
+    <details class="faq-item" <%= i === 0 ? 'open' : '' %> data-reveal data-reveal-delay="<%= i * 50 %>"><summary><b><%= f[0] %></b><span aria-hidden="true">＋</span></summary><p><%= f[1] %></p></details>
+    <% }) %>
+  </div>
+</section>

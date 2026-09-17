@@ -1,0 +1,21 @@
+<% /* welcome / next steps after server-side signup */ %>
+<section class="section complete">
+  <div class="ok-panel" data-reveal>
+    <span class="ok-mark" aria-hidden="true">✓</span>
+    <h1><%= lang === 'ja' ? 'ようこそ' : 'Welcome' %><% if (user) { %>, <%= user.name.split(' ')[0] %><% } %></h1>
+    <p class="dim"><%= lang === 'ja' ? 'アカウントを作成しました。次のステップで Fan Card を発行します。' : 'Account created. Two steps left to issue your Fan Card.' %></p>
+    <ol class="next-list">
+      <li><b><%= lang === 'ja' ? 'ティアを確認' : 'Confirm your tier' %></b><span class="dim"><%= lang === 'ja' ? '運営が支払いリンクをチケットに送ります。' : 'Management posts the payment link into your ticket.' %></span></li>
+      <li><b><%= lang === 'ja' ? 'ボルトを解除' : 'Unlock the vault' %></b><span class="dim"><%= lang === 'ja' ? 'カード発行後、リハ映像 & 配信が解放されます。' : 'Rehearsal streams open once the card is active.' %></span></li>
+      <li><b><%= lang === 'ja' ? 'ミーグリ抽選' : 'Enter the lottery' %></b><span class="dim"><%= lang === 'ja' ? '順位はティアで上がります。' : 'Your rank follows your tier.' %></span></li>
+    </ol>
+    <% if (tickets && tickets.length) { %>
+    <div class="tickets-grid"><%- include('../partials/sections/tickets', { tickets: tickets }) %></div>
+    <% } %>
+    <div class="ok-cta">
+      <a class="btn gold" href="/#membership"><%= t('cta.purchase') %></a>
+      <a class="btn primary" href="/members/"><%= t('cta.dashboard') %> →</a>
+      <button type="button" class="btn ghost" data-open-chat><%= lang === 'ja' ? 'チャットで相談' : 'Ask in chat' %></button>
+    </div>
+  </div>
+</section>

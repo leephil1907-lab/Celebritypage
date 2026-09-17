@@ -1,0 +1,127 @@
+/**
+ * scripts/fetch-fonts.mjs — vendor the brand typefaces locally.
+ *
+ * The site used to depend on the Google Fonts CDN, which means a blocked/slow CDN (corporate
+ * networks, offline demos, some PaaS egress rules) silently changes the whole look. This script
+ * downloads the *variable* woff2 files for latin + latin-ext only and writes
+ * public/css/fonts.css with matching unicode-ranges, so the site renders identically with zero
+ * third-party requests.
+ *
+ *   node scripts/fetch-fonts.mjs           # download anything missing
+ *   node scripts/fetch-fonts.mjs --force   # re-download everything
+ *
+ * Network access is required only for this maintenance step; the committed repo has the files.
+ */
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const P = (...s) => path.join(ROOT, ...s);
+const FORCE = process.argv.includes('--force');
+
+/* The exact faces the site uses (see views/partials/head.ejs and client/css/site.css tokens).
+   Each entry lists the preferred request first, then fallbacks: a family that has no variable
+   axis on Google Fonts answers 400, so the static-weight request is used instead. */
+const FACES = [
+  { family: 'Inter', urls: [
+    'https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&display=swap',
+    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+  ] },
+  { family: 'Cormorant Garamond', urls: [
+    'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&display=swap',
+    'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap',
+  ] },
+  { family: 'JetBrains Mono', urls: [
+    'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400..600&display=swap',
+    'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap',
+  ] },
+];
+/* latin + latin-ext cover EN + the diacritics used in the copy; JP comes from the system stack. */
+const KEEP = /^\s*\/\*\s*(latin|latin-ext)\s*\*\//;
+/* A UA that gets woff2 (no UA => TTF) and variable fonts. */
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+
+const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+async function cssFor(urls) {
+  let lastErr = null;
+  for (const url of [].concat(urls)) {
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': UA } });
+      if (!res.ok) { lastErr = new Error(`${res.status} for ${url}`); continue; }
+      const css = await res.text();
+      if (parse(css).some((f) => KEEP.test(`/* ${f.subset} */`))) return css;
+      lastErr = new Error(`no woff2 latin subset in ${url}`);
+    } catch (err) { lastErr = err; }
+  }
+  throw lastErr || new Error('no usable font request');
+}
+
+/** Split Google's CSS into { subset, block } pairs so we can filter to the subsets we keep. */
+function parse(css) {
+  const out = [];
+  const re = /\/\*\s*([\w-]+)\s*\*\/\s*@font-face\s*\{([^}]*)\}/g;
+  let m;
+  while ((m = re.exec(css))) {
+    const body = m[2];
+    const get = (k) => (body.match(new RegExp(`${k}:\\s*([^;]+);`)) || [])[1]?.trim();
+    const src = (body.match(/url\((https:[^)]+\.woff2)\)/) || [])[1];
+    if (!src) continue;
+    out.push({
+      subset: m[1],
+      family: get('font-family')?.replace(/^['"]|['"]$/g, ''),
+      style: get('font-style') || 'normal',
+      weight: get('font-weight') || '400',
+      display: get('font-display') || 'swap',
+      unicodeRange: get('unicode-range'),
+      url: src,
+    });
+  }
+  return out;
+}
+
+async function main() {
+  const fontDir = P('public', 'fonts');
+  await mkdir(fontDir, { recursive: true });
+
+  let rules = [];
+  let bytes = 0;
+  for (const face of FACES) {
+    const all = parse(await cssFor(face.urls)).filter((f) => KEEP.test(`/* ${f.subset} */`));
+    if (!all.length) throw new Error(`no latin subsets found for ${face.family} — did Google change the CSS?`);
+    for (const f of all) {
+      const wPart = /^[\d.\s]+$/.test(f.weight) ? f.weight.trim().split(/\s+/).join('-') : 'var';
+      const name = `${slug(f.family)}-${wPart}-${f.subset}${f.style === 'italic' ? '-italic' : ''}.woff2`;
+      const dest = path.join(fontDir, name);
+      let buf;
+      if (!FORCE) {
+        try { buf = await readFile(dest); } catch { /* missing -> download */ }
+      }
+      if (!buf) {
+        const res = await fetch(f.url);
+        if (!res.ok) throw new Error(`${res.status} downloading ${f.url}`);
+        buf = Buffer.from(await res.arrayBuffer());
+        await writeFile(dest, buf);
+      }
+      bytes += buf.length;
+      rules.push({ ...f, local: `/fonts/${name}` });
+    }
+    console.log(`[fonts] ${face.family}: ${all.length} subset file(s)`);
+  }
+
+  const css = `/* GENERATED by scripts/fetch-fonts.mjs — self-hosted brand faces (latin + latin-ext).
+   Japanese and other scripts resolve through the local system stacks in client/css/site.css. */
+${rules.map((r) => `@font-face {
+  font-family: '${r.family}';
+  font-style: ${r.style};
+  font-weight: ${r.weight};
+  font-display: swap;
+  src: url('${r.local}') format('woff2');${r.unicodeRange ? `\n  unicode-range: ${r.unicodeRange};` : ''}
+}`).join('\n')}
+`;
+  await writeFile(P('public', 'css', 'fonts.css'), css);
+  console.log(`[fonts] wrote public/css/fonts.css — ${rules.length} faces, ${(bytes / 1024).toFixed(0)} kb on disk`);
+}
+
+main().catch((err) => { console.error('[fonts] FAILED:', err.message); process.exit(1); });

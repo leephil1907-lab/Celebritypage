@@ -1,0 +1,66 @@
+<% /*
+  head.ejs — every document header comes through here, and every value comes from server/seo.js.
+  Rules that matter: absolute URLs for social tags, no third-party requests, one cache-busted
+  stylesheet, and truthful og:image dimensions. `seo` is always present (makeRender builds it);
+  the guards exist for bare renders (404/error) that skip the normal locals.
+*/ %>
+<% const seo = (typeof meta !== 'undefined' && meta) || null; %>
+<% const brand = (site && site['site.brand']) || 'STARTO ENTERTAINMENT'; %>
+<% const headTitle = seo ? seo.title : ((typeof title !== 'undefined' && title) ? title : (site && site['site.title']) || 'Takuya Kimura — Official'); %>
+<% const headDesc = seo ? seo.description : ((typeof description !== 'undefined' && description) ? description : (site && site['site.description'] || '')); %>
+<% const og = (seo && seo.og) || { type: 'website', title: headTitle, description: headDesc, image: '', imageAlt: headTitle, url: '', locale: 'ja_JP', localeAlternate: 'en_US', siteName: brand }; %>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title><%= headTitle %></title>
+<meta name="description" content="<%= headDesc %>">
+<meta name="robots" content="<%= seo ? seo.robots : 'noindex, follow' %>">
+<meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f0e0c" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta name="format-detection" content="telephone=no">
+<meta name="csrf-token" content="<%= csrf %>">
+<meta name="build" content="<%= typeof version !== 'undefined' ? version : 'dev' %>">
+<link rel="canonical" href="<%= seo ? seo.canonical : '' %>">
+<% if (seo && seo.alternates) { seo.alternates.forEach(function (a) { %>
+<link rel="alternate" hreflang="<%= a.lang %>" href="<%= a.href %>">
+<% }); } %>
+<link rel="alternate" type="application/rss+xml" title="<%= (site && site['site.title']) || 'Takuya Kimura — Official' %>" href="/rss.xml">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+<% /* brand faces are self-hosted and inlined into app.css; preload only what the first screen needs */ %>
+<link rel="preload" as="font" type="font/woff2" href="/fonts/inter-300-700-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="/fonts/cormorant-garamond-300-700-latin.woff2" crossorigin>
+<link rel="stylesheet" href="/css/app.css?v=<%= typeof version !== 'undefined' ? version : 'dev' %>">
+
+<meta property="og:type" content="<%= og.type %>">
+<meta property="og:site_name" content="<%= og.siteName %>">
+<meta property="og:locale" content="<%= og.locale %>">
+<meta property="og:locale:alternate" content="<%= og.localeAlternate %>">
+<meta property="og:title" content="<%= og.title %>">
+<meta property="og:description" content="<%= og.description %>">
+<meta property="og:url" content="<%= og.url %>">
+<meta property="og:image" content="<%= og.image %>">
+<meta property="og:image:alt" content="<%= og.imageAlt %>">
+<% if (og.imageWidth && og.imageHeight) { %>
+<meta property="og:image:width" content="<%= og.imageWidth %>">
+<meta property="og:image:height" content="<%= og.imageHeight %>">
+<% } %>
+<% if (og.type === 'article' && og.publishedTime) { %>
+<meta property="article:published_time" content="<%= og.publishedTime %>">
+<% } %>
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<%= og.title %>">
+<meta name="twitter:description" content="<%= og.description %>">
+<meta name="twitter:image" content="<%= og.image %>">
+<meta name="twitter:image:alt" content="<%= og.imageAlt %>">
+
+<% /* LCP: the first hero slide is the largest paint on most pages — same-origin relative URLs only */ %>
+<% if (typeof hero !== 'undefined' && hero && hero[0] && hero[0].image && String(hero[0].image).charAt(0) === '/' && !/\.(gif|webm|mp4)$/i.test(hero[0].image)) { %>
+<link rel="preload" as="image" fetchpriority="high" <%- preloadAttrs(hero[0].image, '100vw') %>>
+<% } %>
+<script type="application/ld+json"><%- seo ? seo.jsonLd : '{"@context":"https://schema.org"}' %></script>
+<noscript><style>.js-on [data-reveal].reveal{opacity:1!important;transform:none!important;filter:none!important}#scrollProgress{display:none}</style></noscript>

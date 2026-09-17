@@ -1,0 +1,28 @@
+<% /* Shop grid — cards with carousel gallery per product */ %>
+<div class="shop-grid cards" data-filter-scope="shop">
+  <% products.forEach(function(p, i){ const imgs = (p.images && p.images.length ? p.images : [p.image]); %>
+  <article class="media-card product <%= p.available ? '' : 'is-out' %>" data-cat="<%= p.category %>" data-tags="<%= p.category %>" data-sku="<%= p.sku %>" data-stock="<%= p.stock %>" data-reveal data-reveal-delay="<%= (i % 4) * 55 %>" id="p-<%= p.sku %>">
+    <% if (!p.available) { %><span class="badge out"><%= t('lbl.soldout') %></span><% } else if (p.low_stock) { %><span class="badge warn"><%= lang === 'ja' ? '残り' : 'Only' %> <%= p.stock %></span><% } else { %><span class="badge"><%= p.category %></span><% } %>
+    <div class="carousel p-carousel" data-carousel data-c-mode="fade" data-c-autoplay="<%= imgs.length > 1 ? 1 : 0 %>" data-c-interval="3400" data-c-kenburns="0">
+      <div class="c-viewport mc-img" data-c-viewport>
+        <div data-c-track>
+          <% imgs.forEach(function(src, k){ %><div class="p-slide<%= k === 0 ? ' is-active' : '' %>" data-c-slide><img src="<%= src %>" alt="<%= p.title %> — view <%= k + 1 %>" loading="<%= i < 4 ? 'eager' : 'lazy' %>" data-img-fallback="/image-search/takuya-kimura-starto-entertainment-offic-1.png"></div><% }) %>
+        </div>
+      </div>
+      <% if (imgs.length > 1) { %><div class="p-dots c-dots" data-c-dots></div><% } %>
+    </div>
+    <div class="mc-body">
+      <div class="mc-meta"><span class="mono"><%= p.sku %></span><% if (p.member_discount) { %><span class="tagchip gold"><%= p.member_discount %>% member</span><% } %></div>
+      <h4><%= p.title %></h4>
+      <p><%= p.blurb %></p>
+      <div class="price-row">
+        <b class="mono price"><%= p.price_label %></b>
+        <button type="button" class="btn gold small btn-add" data-add-cart="<%= p.sku %>" data-title="<%= p.title %>" <%= p.available ? '' : 'disabled' %>>
+          <%= p.available ? t('cta.addToCart') : t('lbl.soldout') %>
+        </button>
+      </div>
+    </div>
+  </article>
+  <% }) %>
+  <% if (!products.length) { %><div class="empty"><%= lang === 'ja' ? '商品はまだありません' : 'No products published yet.' %></div><% } %>
+</div>

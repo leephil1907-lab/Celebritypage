@@ -1,0 +1,100 @@
+<% /* WORK — film • tv • cm archive, all from the works table */ %>
+<%- include('../partials/sections/pagehero', { ph: {
+  kicker: (lang === 'ja' ? 'ワーク • 検証済みフィルモグラフィ' : 'WORK • VERIFIED FILMOGRAPHY'),
+  title: 'WORK', title2: lang === 'ja' ? 'アーカイブ' : 'Archive',
+  sub: lang === 'ja' ? '映画 • ドラマ • CM • レギュラー — 1987年から現在まで。' : 'Film • TV • CM • Regular — from 1987 to now, each entry tied to its source row.',
+  images: ['/image-search/takuya-kimura-live-tour-checkpoint-2026--5.webp','/image-search/takuya-kimura-starto-entertainment-offic-2.png','/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg','/image-search/takuya-kimura-starto-entertainment-offic-5.jpg'],
+  cta: [[lang === 'ja' ? 'フィルモグラフィ' : 'Filmography', '#film'], [lang === 'ja' ? 'ニュース' : 'News', '#news'], [t('cta.join'), '/join/']],
+  side: { kicker: lang === 'ja' ? '注目' : 'NOW', title: 'TOKYO TAXI — 2026.11.01', body: (lang === 'ja' ? '山田洋次監督 — ロードムービー\nPremiere: Tokyo & Fukuoka' : 'Directed by Yoji Yamada — road movie\nPremiere: Tokyo & Fukuoka'), cta: [[lang === 'ja' ? '詳細' : 'Details', '#selected'], [t('cta.viewAll'), '/archive/']] }
+} }) %>
+
+<section class="section" id="selected">
+  <div class="section-head" data-reveal>
+    <div><h2><%= lang === 'ja' ? '主な出演作品' : 'Selected Works' %></h2><p><%= lang === 'ja' ? '代表作 — スクロールまたは矢印で移動' : 'Key credits — drag, swipe or use the arrows' %></p></div>
+    <span class="mono dim small" data-filter-count="works"><%= works.length %> items</span>
+  </div>
+
+  <div class="c-head" data-filter-group="works" data-reveal>
+    <div class="chips">
+      <button type="button" class="suggest is-active" data-filter="all"><%= lang === 'ja' ? 'すべて' : 'All' %></button>
+      <button type="button" class="suggest" data-filter="movie">MOVIE</button>
+      <button type="button" class="suggest" data-filter="drama">DRAMA</button>
+      <button type="button" class="suggest" data-filter="tv">TV</button>
+      <button type="button" class="suggest" data-filter="radio">RADIO</button>
+      <button type="button" class="suggest" data-filter="magazine">MAGAZINE</button>
+      <button type="button" class="suggest" data-filter="cm">CM</button>
+    </div>
+  </div>
+
+  <div class="carousel is-rail works-rail" data-carousel data-c-mode="rail" data-c-autoplay="0" data-c-per-view="3" data-c-gap="18" data-filter-scope="works">
+    <div class="c-viewport" data-c-viewport><div data-c-track>
+      <% works.filter(function(w){ return ['movie','drama','tv','radio','magazine'].includes(w.kind); }).forEach(function(w, i){ %>
+      <div class="media-card work-card" data-c-slide data-tags="<%= w.kind %>" id="work-<%= w.id %>" data-reveal data-reveal-delay="<%= (i % 3) * 60 %>">
+        <div class="mc-img"><img <%- imgAttrs(w.image, { alt: w.title, sizes: '(max-width: 900px) 90vw, 30vw', priority: i < 3, extra: 'data-img-fallback="/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg"' }) %>>
+          <span class="year-badge mono"><%= w.year %></span><span class="kind-badge"><%= (w.kind || '').toUpperCase() %></span></div>
+        <div class="mc-body">
+          <div class="mc-meta"><span class="mono dim"><%= w.release_date || w.meta %></span></div>
+          <h4><%= w.title %></h4>
+          <p><%= w.description %></p>
+          <div class="role-line"><span class="dim mono small"><%= lang === 'ja' ? '役' : 'Role' %></span> <%= w.role || '—' %></div>
+        </div>
+        <span class="mc-arrow" aria-hidden="true">→</span>
+      </div>
+      <% }) %>
+    </div></div>
+    <div class="c-bar rail-bar"><span class="c-count mono dim" data-c-counter>01</span>
+      <span class="mono dim small"><%= lang === 'ja' ? 'ドラッグでスクロール' : 'drag to scroll' %></span></div>
+  </div>
+</section>
+
+<section class="section" id="film">
+  <div class="section-head" data-reveal><div><h2><%= t('sec.film') %></h2><p><%= lang === 'ja' ? '全作品 — 年順' : 'Complete credits — newest first' %></p></div></div>
+  <table class="data-table" data-reveal>
+    <thead><tr><th><%= lang === 'ja' ? '年' : 'Year' %></th><th><%= lang === 'ja' ? 'タイトル' : 'Title' %></th><th><%= lang === 'ja' ? '種別' : 'Kind' %></th><th><%= lang === 'ja' ? '役柄' : 'Role' %></th><th class="hide-s"><%= lang === 'ja' ? '備考' : 'Notes' %></th></tr></thead>
+    <tbody>
+      <% works.filter(function(w){ return ['movie','drama'].includes(w.kind); }).forEach(function(w){ %>
+      <tr id="film-<%= w.id %>"><td class="mono"><%= w.year %></td><td><b><%= w.title %></b></td><td><span class="tagchip"><%= (w.kind || '').toUpperCase() %></span></td><td><%= w.role %></td><td class="hide-s dim"><%= w.description %></td></tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+
+<section class="section" id="cm">
+  <div class="section-head" data-reveal><div><h2><%= t('sec.cm') %></h2><p><%= lang === 'ja' ? '企業・ブランド契約' : 'Commercial & brand partnerships' %></p></div></div>
+  <div class="cm-grid">
+    <% works.filter(function(w){ return w.kind === 'cm'; }).forEach(function(c, i){ %>
+    <div class="cm-card" data-reveal data-reveal-delay="<%= (i % 6) * 40 %>"><b><%= c.title %></b><span class="dim mono small"><%= c.meta %></span><span class="cm-year mono"><%= c.year %></span></div>
+    <% }) %>
+  </div>
+</section>
+
+<section class="section" id="regular">
+  <div class="section-head" data-reveal><div><h2><%= t('sec.regular') %></h2><p><%= lang === 'ja' ? ' radio • tv • magazine' : 'Radio • TV • Magazine regulars' %></p></div></div>
+  <div class="grid-3">
+    <% works.filter(function(w){ return ['radio','tv','magazine','regular'].includes(w.kind); }).forEach(function(w, i){ %>
+    <article class="media-card" data-reveal data-reveal-delay="<%= i * 60 %>">
+      <div class="mc-img"><img src="<%= w.image %>" alt="<%= w.title %>" loading="lazy" data-img-fallback="/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg"></div>
+      <div class="mc-body"><span class="tagchip solid"><%= (w.kind || '').toUpperCase() %></span><h4><%= w.title %></h4><p><%= w.description %></p></div>
+    </article>
+    <% }) %>
+  </div>
+</section>
+
+<section class="section" id="news">
+  <div class="section-head" data-reveal><div><h2><%= t('sec.news') %></h2><p><%= lang === 'ja' ? '情報 — 最新順' : 'Information — newest first' %></p></div><a class="link-arrow" href="/journal/"><%= t('sec.journal') %> →</a></div>
+  <div data-section="news"><%- include('../partials/sections/news') %></div>
+</section>
+
+<section class="section" id="timeline">
+  <div class="section-head" data-reveal><div><h2><%= t('sec.archive') %></h2><p><%= lang === 'ja' ? 'タイムライン — 1987 →' : 'Timeline — 1987 → today' %></p></div><a class="link-arrow" href="/archive/"><%= t('cta.viewAll') %> →</a></div>
+  <ol class="timeline" data-lightbox>
+    <% archive.forEach(function(a, i){ %>
+    <li class="tl-row" data-reveal data-reveal-delay="<%= (i % 4) * 55 %>" data-lb-item data-lb-full="<%= a.image %>" data-lb-cap="<%= a.year %> — <%= a.title %>">
+      <span class="tl-year mono gold"><%= a.year %></span>
+      <span class="tl-dot" aria-hidden="true"></span>
+      <div class="tl-body"><b><%= a.title %></b><span class="dim"><%= a.description %></span></div>
+      <% if (a.image) { %><img class="tl-thumb" src="<%= a.image %>" alt="" loading="lazy" data-img-fallback="/image-search/takuya-kimura-starto-entertainment-offic-3.webp"><% } %>
+    </li>
+    <% }) %>
+  </ol>
+</section>

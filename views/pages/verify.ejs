@@ -1,0 +1,40 @@
+<% /* ORDER VERIFY — member view + staff kiosk check (POSTs to the API) */ %>
+<section class="section verify">
+  <div class="verify-grid">
+    <div class="v-left" data-reveal>
+      <span class="eyebrow"><%= lang === 'ja' ? '注文確認' : 'ORDER VERIFICATION' %></span>
+      <h1><%= order ? (lang === 'ja' ? '受け取り準備完了' : 'Ready for pickup') : (lang === 'ja' ? 'コードを確認' : 'Check a code') %></h1>
+      <% if (order) { %>
+      <p class="dim"><%= lang === 'ja' ? '注文' : 'Order' %> <b class="mono"><%= order.order_no %></b> • <%= order.email %></p>
+      <div class="code-card big">
+        <span class="mono dim small"><%= lang === 'ja' ? '受取コード' : 'PICKUP CODE' %></span>
+        <b class="mono code"><%= order.qr %></b>
+        <div class="code-strip" aria-hidden="true"><% for (let i = 0; i < 44; i++) { %><i style="width:<%= (i % 3 === 0 ? 3 : 1) %>px"></i><% } %></div>
+        <span class="fineprint"><%= lang === 'ja' ? 'スタッフがこのコードを入力 → 即時検証。' : 'Staff enter this code — verified instantly against the order table.' %></span>
+        <div class="status-line"><span class="st st-<%= order.status %>"><%= order.status %></span><span class="mono dim small"><%= order.pickup_venue || '' %></span></div>
+      </div>
+      <table class="data-table tight"><tbody><% (order.items || []).forEach(function(it){ %><tr><td><%= it.title %></td><td class="mono">×<%= it.qty %></td><td class="mono ta-r"><%= yen(it.unit_price * it.qty) %></td></tr><% }) %></tbody></table>
+      <% } else { %>
+      <p class="dim"><%= lang === 'ja' ? '注文コード（例: 8桁の英数字）を入力してください。存在しないコードはエラーになります。' : 'Enter an order code (8 characters). Unknown codes return an error.' %></p>
+      <% } %>
+    </div>
+    <div class="v-right" data-reveal data-reveal="right">
+      <div class="panel">
+        <h4 class="panel-h"><%= lang === 'ja' ? 'スタッフ / 本人確認' : 'Check a code' %></h4>
+        <form id="verifyForm">
+          <div class="field"><label for="vq"><%= lang === 'ja' ? '注文コード' : 'Order code' %></label><input id="vq" name="qr" value="<%= order ? order.qr : '' %>" placeholder="a1b2c3d4" autocomplete="off" required></div>
+          <button type="submit" class="btn primary" style="width:100%;margin-top:12px"><%= lang === 'ja' ? '検証する →' : 'Verify →' %></button>
+        </form>
+        <div id="verifyOut" class="verify-out"></div>
+      </div>
+      <% if (my && my.length) { %>
+      <div class="panel">
+        <h4 class="panel-h"><%= lang === 'ja' ? '私の注文' : 'My orders' %></h4>
+        <ul class="my-orders"><% my.forEach(function(o){ %><li><a href="/shop/verify/<%= o.qr %>"><b class="mono"><%= o.order_no %></b><span class="st st-<%= o.status %>"><%= o.status %></span></a><span class="mono dim small"><%= o.total_label %></span></li><% }) %></ul>
+      </div>
+      <% } else if (!user) { %>
+      <div class="panel"><h4 class="panel-h"><%= t('lbl.member') %></h4><p class="dim small"><%= lang === 'ja' ? 'ログインすると自分の注文がここに表示されます。' : 'Log in to see your own orders here.' %></p><button type="button" class="btn ghost small" data-open-member="login"><%= t('cta.login') %></button></div>
+      <% } %>
+    </div>
+  </div>
+</section>

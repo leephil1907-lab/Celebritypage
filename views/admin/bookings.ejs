@@ -1,0 +1,36 @@
+<% /* Bookings — review queue, status change writes to the linked ticket + notification */ %>
+<section class="card" data-anim="rise">
+  <div class="card-head"><h3>Booking requests</h3><span class="pill mono"><%= rows.length %></span>
+    <div class="tools">
+      <div class="filters"><button type="button" class="chip is-active" data-bf="all">all</button><button type="button" class="chip" data-bf="pending review">pending</button><button type="button" class="chip" data-bf="approved">approved</button><button type="button" class="chip" data-bf="completed">completed</button></div>
+      <a class="btn small" href="/bookings.csv">CSV ↓</a>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="adm-table" id="bookingRows">
+      <thead><tr><th>Requested</th><th>Guest</th><th>Type</th><th>Date</th><th>Guests / budget</th><th>Note</th><th class="ta-r">Status</th></tr></thead>
+      <tbody>
+        <% rows.forEach(function(b){ %>
+        <tr data-status="<%= b.status.toLowerCase() %>">
+          <td class="mono dim small"><%= (b.created_at || '').slice(5, 16) %></td>
+          <td><b><%= b.name %></b><br><span class="dim small mono"><%= b.email %></span><% if (b.uname) { %><br><span class="pill mono gold small"><%= b.uname %></span><% } %></td>
+          <td><%= b.type %></td>
+          <td class="mono"><%= b.date %><% if (b.time) { %> <span class="dim"><%= b.time %></span><% } %></td>
+          <td class="mono small"><%= b.guests %> pax<br><%= b.budget_label %></td>
+          <td><span class="clip dim small" title="<%= b.message || '' %>"><%= b.message || '—' %></span></td>
+          <td class="ta-r">
+            <div class="row-actions">
+              <form method="post" action="/bookings/<%= b.id %>/status" class="rowform">
+                <select name="status" aria-label="Status for booking <%= b.id %>"><% statuses.forEach(function(s){ %><option value="<%= s %>" <%= b.status === s ? 'selected' : '' %>><%= s %></option><% }) %></select>
+                <button class="btn small" type="submit">Set</button>
+              </form>
+              <form method="post" action="/bookings/<%= b.id %>/delete" data-confirm="Delete this booking request?"><button class="btn small danger" type="submit">✕</button></form>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+        <% if (!rows.length) { %><tr><td colspan="7" class="dim">Empty queue — the booking form on the site writes here.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</section>

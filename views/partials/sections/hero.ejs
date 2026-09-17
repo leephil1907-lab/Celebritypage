@@ -1,0 +1,56 @@
+<% /* Hero — carousel engine driven, server-rendered slides (works with JS off: first slide visible) */ %>
+<div class="hero" id="hero" data-carousel data-c-mode="fade" data-c-interval="<%= 6000 %>" data-c-kenburns="1" data-c-loop="1" data-c-start="1">
+  <div class="c-viewport hero-viewport" data-c-viewport>
+    <div class="hero-slides" data-c-track>
+      <% hero.forEach(function(s, i){ const titleParts = String(s.title || '').split('|'); %>
+      <div class="hero-slide tone-<%= s.tone || 'light' %><%= i === 0 ? ' is-active' : '' %>" data-c-slide aria-label="<%= i + 1 %> / <%= hero.length %>">
+        <img <%- imgAttrs(s.image, { alt: s.alt || 'Takuya Kimura', sizes: '100vw', class: i === 0 ? 'c-ken' : '', priority: i === 0, extra: 'data-img-fallback="/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg"' }) %>>
+        <% if (s.video_url) { %><% /* ambient loop: fades in over the still once it can actually play (client/player.js) */ %>
+        <video class="hero-media" data-ambient muted loop playsinline autoplay preload="<%= i === 0 ? 'metadata' : 'none' %>" poster="<%= s.image %>" aria-hidden="true" tabindex="-1"<%= i === 0 ? ' fetchpriority="high"' : '' %>>
+          <source src="<%= s.video_url %>" type="<%= /\.webm$/i.test(s.video_url) ? 'video/webm' : 'video/mp4' %>">
+        </video><% } %>
+        <div class="hero-overlay" aria-hidden="true"></div>
+        <div class="hero-caption">
+          <div class="hero-caption-inner">
+            <div class="hero-kicker" data-c-in><i aria-hidden="true"></i> <%= s.kicker %></div>
+            <h1 data-c-in><%= titleParts[0] %><% if (titleParts[1]) { %><em><%= titleParts[1] %></em><% } %></h1>
+            <p data-c-in><%= s.subtitle %></p>
+            <div class="hero-cta" data-c-in>
+              <% if (s.cta_href) { %><a class="btn primary" href="<%= s.cta_href %>"><%= s.cta_label || 'More' %> →</a><% } %>
+              <a class="btn ghost on-dark" href="/join/"><%= t('cta.join') %></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <div class="hero-strip">
+    <span class="hero-chip"><i aria-hidden="true"></i> <%= site['site.brand'] %> • <%= lang === 'ja' ? '公式' : 'OFFICIAL' %></span>
+    <span class="hero-chip c-count on-dark" data-c-counter>01 / <%= String(hero.length).padStart(2, '0') %></span>
+  </div>
+
+  <div class="hero-side-card-wrap">
+    <div class="hero-side-card" data-c-in>
+      <small><%= t('lbl.nextUp') %> — Fukuoka</small>
+      <b><%= site['hero.sideTitle'] %></b>
+      <div><% (site['hero.sideBody'] || '').split('\n').forEach(function(line, k){ %><%= line %><% if (k === 0) { %><br><% } %><% }) %></div>
+      <div class="hsb-cta">
+        <a class="btn gold small" href="/#booking"><%= lang === 'ja' ? 'ミーグリ予約' : 'Book Meet & Greet' %></a>
+        <a class="btn ghost small on-dark" href="/tour/"><%= lang === 'ja' ? 'チケット' : 'Tickets' %></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-controls">
+    <div class="c-dots" data-c-dots></div>
+    <button type="button" class="c-nav on-dark" data-c-prev aria-label="Previous slide">‹</button>
+    <button type="button" class="c-nav on-dark" data-c-next aria-label="Next slide">›</button>
+    <button type="button" class="c-toggle" data-c-toggle aria-pressed="true" aria-label="Pause autoplay">❚❚</button>
+  </div>
+  <div class="c-progress hero-progress"><i></i></div>
+  <div class="hero-thumbs" aria-hidden="true">
+    <% hero.forEach(function(s, i){ %><button type="button" class="hero-thumb<%= i === 0 ? ' is-active' : '' %>" data-c-dot="<%= i %>" style="background-image:url(<%= s.image %>)" aria-label="Slide <%= i + 1 %>"></button><% }) %>
+  </div>
+</div>

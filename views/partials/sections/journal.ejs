@@ -1,0 +1,20 @@
+<% /* Journal cards — locked entries show a gate, never a broken state */ %>
+<% const LIST = (typeof posts !== 'undefined' && posts) || (typeof journal !== 'undefined' && journal) || []; %>
+<div class="journal-grid cards" data-filter-scope="journal">
+  <% LIST.forEach(function(p, i){ %>
+  <article class="media-card journal-card" data-tags="<%= p.category %>" data-reveal data-reveal-delay="<%= (i % 3) * 70 %>">
+    <div class="mc-img">
+      <img src="<%= p.image || '/image-search/takuya-kimura-starto-entertainment-offic-3.webp' %>" alt="<%= p.title %>" loading="<%= i < 2 ? 'eager' : 'lazy' %>" data-img-fallback="/image-search/takuya-kimura-starto-entertainment-offic-3.webp">
+      <% if (p.locked) { %><span class="j-lock">🔒 <%= lang === 'ja' ? 'メンバー限定' : 'Members' %></span><% } %>
+    </div>
+    <div class="mc-body">
+      <div class="mc-meta"><span class="tagchip solid"><%= p.category %></span> <span class="mono dim"><%= p.published_at %></span> <span class="dim mono">· <%= p.read_minutes %> min</span></div>
+      <h4><%= p.title %></h4>
+      <p><%= p.excerpt %></p>
+      <a class="link-arrow j-link" href="/journal/<%= p.id %>"><%= p.locked ? (lang === 'ja' ? '解除して読む →' : 'Unlock to read →') : (lang === 'ja' ? '読む →' : 'Read →') %></a>
+    </div>
+    <span class="mc-arrow" aria-hidden="true">→</span>
+  </article>
+  <% }) %>
+  <% if (!LIST.length) { %><div class="empty"><%= t('msg.empty') %></div><% } %>
+</div>

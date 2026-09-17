@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>" data-build="<%= typeof version !== 'undefined' ? version : 'dev' %>">
+<head>
+<%- include('partials/head', bodyData) %>
+</head>
+<body class="page-<%= page %>" data-locale="<%= lang %>">
+<a class="skip-link" href="#app-shell"><%= lang === 'ja' ? '本文へスキップ' : 'Skip to content' %></a>
+<div id="scrollProgress" aria-hidden="true"></div>
+<div id="app">
+  <%- include('partials/topbar', bodyData) %>
+  <%- include('partials/header', bodyData) %>
+  <%- include('partials/marquee', bodyData) %>
+  <main id="app-shell" tabindex="-1">
+<%- include(bodyView, bodyData) %>
+  </main>
+  <%- include('partials/footer', bodyData) %>
+</div>
+<%- include('partials/drawer', bodyData) %>
+<%- include('partials/modals', bodyData) %>
+<%- include('partials/chat', bodyData) %>
+<%- include('partials/scripts', bodyData) %>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<% /* Orders — pickup status, passport stamps ride on this */ %>
+<section class="card" data-anim="rise">
+  <div class="card-head"><h3>Shop orders</h3><span class="pill mono"><%= rows.length %></span>
+    <div class="tools"><a class="btn small" href="/orders.csv">CSV ↓</a></div></div>
+  <div class="table-wrap">
+    <table class="adm-table">
+      <thead><tr><th>Order</th><th>Email</th><th>Items</th><th>Total</th><th>Pickup</th><th class="ta-r">Status</th></tr></thead>
+      <tbody>
+        <% rows.forEach(function(o){ %>
+        <tr>
+          <td class="mono"><%= o.order_no %><br><span class="dim small"><%= (o.created_at || '').slice(5, 16) %></span></td>
+          <td class="small"><%= o.email %><% if (o.user_id) { %><br><span class="pill mono ok small">member #<%= o.user_id %></span><% } %></td>
+          <td class="small"><% (o.items || []).forEach(function(it){ %><span class="clip" title="<%= it.title %>"><%= it.title %> ×<%= it.qty %></span><br><% }); if (!(o.items || []).length) { %><span class="dim">—</span><% } %></td>
+          <td class="mono"><%= o.total_label %></td>
+          <td class="small dim"><%= o.pickup_venue || '—' %><br><span class="mono small"><%= o.qr %></span></td>
+          <td class="ta-r">
+            <form method="post" action="/orders/<%= o.order_no %>/status" class="rowform">
+              <select name="status" aria-label="Order status"><% ['paid','preparing','ready','collected','refunded'].forEach(function(s){ %><option value="<%= s %>" <%= o.status === s ? 'selected' : '' %>><%= s %></option><% }) %></select>
+              <button class="btn small" type="submit">Set</button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+        <% if (!rows.length) { %><tr><td colspan="6" class="dim">No orders yet — checkout on the site writes here and debits stock in the same transaction.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</section>

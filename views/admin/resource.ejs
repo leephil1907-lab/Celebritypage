@@ -1,0 +1,110 @@
+<% /* Generic CMS screen — list + inline editor, driven entirely by the resource descriptor */ %>
+<% const FIELDS = resource.fields; const LIST = resource.list || FIELDS.slice(0,5).map(function(f){ return f.key; }); %>
+<p class="dim small" data-anim="fade"><%= resource.blurb || 'Edit rows below — saving publishes the affected section to every open browser tab.' %></p>
+
+<section class="card" id="editor" data-anim="rise">
+  <div class="card-head">
+    <h3><%= editing ? 'Edit #' + editing.id : 'New ' + resource.label.replace(/s$/, '').toLowerCase() %></h3>
+    <% if (editing) { %><span class="pill mono gold">editing row <%= editing.id %></span><% } %>
+    <div class="tools"><button type="button" class="btn small" id="closeEditor"><%= editing ? 'Close' : 'Cancel' %></button></div>
+  </div>
+  <form method="post" action="/content/<%= key %>" class="adm-form" id="rowForm">
+    <% if (editing) { %><input type="hidden" name="id" value="<%= editing.id %>"><% } %>
+    <% FIELDS.forEach(function(f){ %>
+      <% const val = editing ? editing[f.key] : (f.default !== undefined ? f.default : ''); %>
+      <% const wide = f.type === 'textarea' || f.type === 'lines' || f.key === 'perks' || f.key === 'tracks' || f.key === 'images'; %>
+      <div class="<%= wide ? 'span-2' : '' %>" data-field="<%= f.key %>">
+        <% if (f.type === 'check') { %>
+          <label class="check"><input type="checkbox" name="<%= f.key %>" value="1" <%= Number(val) === 1 ? 'checked' : '' %>> <%= f.label %></label>
+        <% } else if (f.type === 'select') { %>
+          <label class="fl" for="f_<%= f.key %>"><%= f.label %></label>
+          <select id="f_<%= f.key %>" name="<%= f.key %>" <%= f.required ? 'required' : '' %>>
+            <% (f.options || []).forEach(function(o){ %><option value="<%= o %>" <%= String(val) === String(o) ? 'selected' : '' %>><%= o %></option><% }) %>
+          </select>
+        <% } else if (f.type === 'textarea' || f.type === 'lines') { %>
+          <label class="fl" for="f_<%= f.key %>"><%= f.label %><% if (f.type === 'lines') { %> <span class="dim">— one per line</span><% } %></label>
+          <textarea id="f_<%= f.key %>" name="<%= f.key %>" <%= f.required ? 'required' : '' %> placeholder="<%= f.type === 'lines' ? 'line one\nline two' : '' %>"><%= val || '' %></textarea>
+        <% } else if (f.type === 'image' || f.type === 'media') {
+             const isMedia = f.type === 'media';
+             const isVideo = /\.(mp4|webm|mov|m4v)$/i.test(String(val || ''));
+             const placeholder = '/image-search/takuya-kimura-starto-entertainment-offic-4.png'; %>
+          <label class="fl" for="f_<%= f.key %>"><%= f.label %><% if (f.hint) { %> <span class="dim">— <%= f.hint %></span><% } %></label>
+          <div class="field-image" data-accept="<%= isMedia ? 'image/*,video/*' : 'image/*' %>">
+            <% if (isVideo) { %>
+            <video src="<%= val %>" data-preview-for="f_<%= f.key %>" muted loop playsinline preload="metadata"></video>
+            <% } else { %>
+            <img src="<%= val || '/static' + placeholder %>" alt="" data-preview-for="f_<%= f.key %>" data-img-guard="<%= val ? '' : 'empty' %>">
+            <% } %>
+            <div>
+              <input id="f_<%= f.key %>" name="<%= f.key %>" type="text" value="<%= val || '' %>" <%= f.required ? 'required' : '' %> placeholder="<%= isMedia ? '/uploads/clip.mp4 — leave empty for none' : '/image-search/… or /uploads/…' %>">
+              <div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap">
+                <label class="btn small" for="up_<%= f.key %>">Upload…</label>
+                <input id="up_<%= f.key %>" type="file" accept="<%= isMedia ? 'image/*,video/*' : 'image/*' %>" hidden data-upload-for="f_<%= f.key %>">
+                <% if (!isMedia) { %>
+                <button type="button" class="btn small ghost" data-pick-image="/static/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg">Tour 2</button>
+                <button type="button" class="btn small ghost" data-pick-image="/static/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg">Tour 3</button>
+                <button type="button" class="btn small ghost" data-pick-image="/static/image-search/takuya-kimura-starto-entertainment-offic-1.png">Official 1</button>
+                <button type="button" class="btn small ghost" data-pick-image="/static/image-search/takuya-kimura-starto-entertainment-offic-4.png">Official 4</button>
+                <% } else if (!val) { %>
+                <span class="dim small">no clip — the still image is used instead</span>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% } else { %>
+          <label class="fl" for="f_<%= f.key %>"><%= f.label %></label>
+          <input id="f_<%= f.key %>" name="<%= f.key %>" type="<%= f.type === 'number' ? 'number' : 'text' %>" value="<%= val === null || val === undefined ? '' : val %>" <%= f.required ? 'required' : '' %> <%= f.immutable && editing ? 'readonly' : '' %> autocomplete="off">
+        <% } %>
+      </div>
+    <% }) %>
+    <div class="span-2 form-actions">
+      <button class="btn gold" type="submit"><%= editing ? 'Save row' : 'Create row' %></button>
+      <button class="btn" type="submit" name="__publish" value="1">Save &amp; publish</button>
+      <span class="dim small mono" id="formHint">POST /content/<%= key %></span>
+    </div>
+  </form>
+</section>
+
+<section class="card" data-anim="rise">
+  <div class="card-head">
+    <h3><%= resource.label %></h3>
+    <span class="pill mono"><span data-row-count><%= rows.length %></span> rows</span>
+    <div class="tools"><input type="search" id="rowFilter" placeholder="filter rows…" aria-label="Filter rows"></div>
+  </div>
+  <div class="table-wrap">
+    <table class="adm-table" id="rows">
+      <thead><tr>
+        <th>#</th>
+        <% LIST.forEach(function(col){ %><th><%= col.replace(/_/g, ' ') %></th><% }) %>
+        <th class="ta-r">Actions</th>
+      </tr></thead>
+      <tbody>
+        <% rows.forEach(function(row){ %>
+        <tr data-row="<%= row.id %>" data-text="<%= LIST.map(function(c){ return row[c]; }).join(' ').toLowerCase() %>">
+          <td class="mono dim"><%= row.id %></td>
+          <% LIST.forEach(function(col){ %>
+            <% const v = row[col]; %>
+            <% if (col === 'image' || col === 'cover') { %>
+              <td><img class="thumb" src="<%= v || '' %>" alt="" loading="lazy"></td>
+            <% } else if (/(status|active|featured|visibility|state)/.test(col)) { %>
+              <td><span class="pill mono <%= String(v) === 'published' || String(v) === 'on_sale' || String(v) === 'active' || String(v) === '1' ? 'ok' : (String(v) === 'draft' || String(v) === '0' || v === 0 ? 'warn' : 'gold') %>"><%= v === null || v === undefined ? '—' : String(v) %></span></td>
+            <% } else if (typeof v === 'number') { %>
+              <td class="mono"><%= v.toLocaleString('en-US') %></td>
+            <% } else { %>
+              <td><span class="clip" title="<%= v === undefined || v === null ? '' : String(v) %>"><%= v === undefined || v === null ? '—' : String(v) %></span></td>
+            <% } %>
+          <% }) %>
+          <td class="ta-r">
+            <div class="row-actions">
+              <% if (row.id !== undefined && resource.table !== 'tiers') { %><button type="button" class="btn small" data-toggle-row="<%= row.id %>" data-key="<%= key %>" title="Toggle status / active">⇄</button><% } %>
+              <a class="btn small" href="/content/<%= key %>?edit=<%= row.id %>#editor">Edit</a>
+              <form method="post" action="/content/<%= key %>/<%= row.id %>/delete" data-confirm="Delete <%= resource.label %> #<%= row.id %>? this cannot be undone."><button class="btn small danger" type="submit">Delete</button></form>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+        <% if (!rows.length) { %><tr><td colspan="<%= LIST.length + 2 %>" class="dim">Empty — create the first row above.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</section>

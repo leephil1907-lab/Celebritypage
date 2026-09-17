@@ -1,0 +1,31 @@
+<% /* SEARCH — server-side LIKE search across every table; instant client feedback */ %>
+<section class="section search-hero">
+  <div class="sh-copy" data-reveal>
+    <span class="eyebrow"><%= t('nav.search') %> • <%= lang === 'ja' ? '検索' : 'SEARCH' %></span>
+    <h1><%= lang === 'ja' ? '公式サイト全体を検索' : 'Search the whole official site' %></h1>
+    <p class="dim"><%= lang === 'ja' ? 'ニュース • 出演作品 • 音源 • ジャーナル • ショップ • ツアー日程。' : 'News • works • releases • journal • shop • tour dates.' %></p>
+  </div>
+  <form class="search-box big" action="/search/" method="get" data-reveal data-reveal="right">
+    <span class="sb-icon" aria-hidden="true">⌕</span>
+    <input id="siteSearch" name="q" value="<%= q %>" placeholder="<%= lang === 'ja' ? 'キーワード… (例: tour, vinyl, 1996, vault)' : 'Try: tour, vinyl, 1996, vault' %>" autocomplete="off" aria-label="Search query">
+    <button class="btn primary" type="submit"><%= t('nav.search') %></button>
+  </form>
+  <div class="chips" data-reveal>
+    <% ['tour','CHECKPOINT','vinyl','HERO','vault','passport','1996','Meet & Greet'].forEach(function(s){ %><button type="button" class="suggest" data-search-suggest="<%= s %>"><%= s %></button><% }) %>
+  </div>
+</section>
+<section class="section" id="results">
+  <div class="section-head" data-reveal>
+    <div><h2><%= q ? '"' + q + '"' : (lang === 'ja' ? '結果' : 'Results') %></h2><p class="mono"><span data-result-count><%= results.length %></span> <%= lang === 'ja' ? '件' : 'matches' %></p></div>
+    <% if (q) { %><a class="link-arrow" href="/search/"><%= lang === 'ja' ? 'クリア' : 'Clear' %></a><% } %>
+  </div>
+  <div id="searchResults" class="results">
+    <% if (q) { %>
+      <% if (results.length) { %>
+      <% results.forEach(function(r){ %><a class="search-hit" href="<%= r.href %>"><span class="k"><%= r.kind %></span><b><%= r.title %></b><small><%= r.meta || '' %></small><span class="arr" aria-hidden="true">→</span></a><% }) %>
+      <% } else { %><div class="empty"><%= lang === 'ja' ? '見つかりませんでした' : 'Nothing matched' %> “<%= q %>”.</div><% } %>
+    <% } else { %>
+      <div id="searchHint" class="empty"><%= t('msg.search') || 'Type a keyword to search' %> — tour / vinyl / vault / 1996.</div>
+    <% } %>
+  </div>
+</section>

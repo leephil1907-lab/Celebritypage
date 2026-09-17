@@ -1,0 +1,13 @@
+<% /* Schedule strip */ %>
+<div class="schedule-grid" data-filter-scope="schedule">
+  <% schedule.forEach(function(s, i){ %>
+  <div class="schedule-card" data-reveal data-reveal-delay="<%= i * 55 %>" data-tags="<%= s.kind %>">
+    <div class="mono dim"><%= s.starts_on %> • <%= s.starts_at || '—' %></div>
+    <b><%= s.title %></b>
+    <div class="dim small"><%= s.meta || '' %></div>
+    <span class="tagchip kind-<%= (s.kind||'').toLowerCase() %>"><%= s.kind %></span>
+    <span class="sc-bar" aria-hidden="true"><i style="width:<%= 18 + (i * 13) % 90 %>%"></i></span>
+  </div>
+  <% }) %>
+  <% if (!schedule.length) { %><div class="empty"><%= t('msg.empty') %></div><% } %>
+</div>

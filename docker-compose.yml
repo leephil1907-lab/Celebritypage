@@ -1,0 +1,24 @@
+# docker compose up -d   →  site http://localhost:8080  ·  admin http://localhost:8081
+# data/ and uploads/ are bind-mounted, so content survives rebuilds and `docker compose down`.
+services:
+  site:
+    build: .
+    image: starto-site
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      NODE_ENV: production
+      # leave SITE_URL empty to derive canonical/OG/sitemap URLs from the request host;
+      # set it as soon as you are behind a proxy, a CDN or a preview domain
+      SITE_URL: ""
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped

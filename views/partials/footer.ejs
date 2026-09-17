@@ -1,0 +1,53 @@
+<footer class="footer">
+  <div class="footer-inner">
+    <div style="height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.5;margin-bottom:28px"></div>
+    <div class="footer-top">
+      <div>
+        <div class="foot-brand">
+          <span class="brand-mark" data-img-fallback="TK"><img src="/images/logo-tk-gold.png" alt="" width="36" height="36"></span>
+          <div><b><%= site['site.brand'] %></b><br><em><%= site['site.brandSub'] %></em></div>
+        </div>
+        <p class="foot-tag"><% (site['footer.tagline'] || '').split('\n').forEach(function(line,i){ %><%= line %><% if (i===0) { %><br><% } %><% }) %></p>
+        <div class="foot-social">
+          <a href="<%= site['social.x'] %>" target="_blank" rel="noopener noreferrer" aria-label="X">𝕏</a>
+          <a href="<%= site['social.ig'] %>" target="_blank" rel="noopener noreferrer" aria-label="Instagram">◎</a>
+          <a href="<%= site['social.yt'] %>" target="_blank" rel="noopener noreferrer" aria-label="YouTube">▶</a>
+          <a href="<%= site['link.starto'] %>" target="_blank" rel="noopener noreferrer" aria-label="STARTO official">↗</a>
+        </div>
+      </div>
+      <div class="footer-col"><h4><%= lang === 'ja' ? 'サイト内' : 'Explore' %></h4>
+        <a href="/#about"><%= t('sec.about') %></a>
+        <a href="/#news"><%= t('sec.news') %></a>
+        <a href="/#schedule"><%= t('sec.schedule') %></a>
+        <a href="/tour/"><%= t('sec.tour') %></a>
+        <a href="/work/#film"><%= t('sec.film') %></a>
+        <a href="/music/#discography"><%= t('sec.release') %></a>
+        <a href="/archive/"><%= t('sec.archive') %></a>
+      </div>
+      <div class="footer-col"><h4><%= t('sec.membership') %></h4>
+        <a href="/#membership"><%= lang === 'ja' ? 'ティアー一覧' : 'Membership Tiers' %></a>
+        <a href="/join/"><%= t('cta.join') %></a>
+        <a href="/members/"><%= t('cta.dashboard') %></a>
+        <a href="/#vault"><%= t('sec.vault') %></a>
+        <a href="/#booking"><%= t('sec.booking') %></a>
+      </div>
+      <div class="footer-col"><h4><%= lang === 'ja' ? 'サポート・規約' : 'Support & Legal' %></h4>
+        <a href="/support/"><%= t('nav.support') || 'Support' %></a>
+        <a href="/members/#tickets"><%= t('lbl.tickets') %></a>
+        <a href="/shop/verify"><%= lang === 'ja' ? '注文QR確認' : 'Order QR check' %></a>
+        <a href="/search/"><%= t('nav.search') %></a>
+        <a href="mailto:<%= site['contact.email'] %>"><%= lang === 'ja' ? '運営へ連絡' : 'Contact — Management' %></a>
+      </div>
+    </div>
+    <div class="foot-bar">
+      <div>© <%= year %> <%= site['site.brand'] %> Inc. • Takuya Kimura • 木村拓哉 • <%= lang === 'ja' ? '公式サイト' : 'Official Digital World' %> • JP • EN</div>
+      <div class="foot-bar-right">
+        <span class="gold"><%= t('lbl.tier') %> ¥300,000 — ¥1,000,000</span><span>•</span>
+        <span><%= lang === 'ja' ? '運営が直接回答' : 'Replies from Official Site / Management' %></span>
+        <span class="foot-live" aria-hidden="true"></span>
+        <span class="foot-live-label" data-live-state>● live</span>
+      </div>
+    </div>
+    <div class="foot-legal"><%= site['footer.legal'] %></div>
+  </div>
+</footer>

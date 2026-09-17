@@ -1,0 +1,52 @@
+<% /* SUPPORT — ticket desk: works with or without JS (form posts to the server) */ %>
+<section class="section support-hero">
+  <div class="sh-copy" data-reveal>
+    <span class="eyebrow"><%= t('nav.support') || 'SUPPORT' %> • <%= lang === 'ja' ? 'チケット制' : 'TICKET BASED' %></span>
+    <h1><%= lang === 'ja' ? '運営へ問い合わせ' : 'Talk to Official Site / Management' %></h1>
+    <p class="dim"><%= lang === 'ja' ? '質問はすべてチケットになり、チャットで返信します。返信は運営のみ — ボットや自動クローズはありません。' : 'Every question becomes a ticket and is answered in chat. Replies come from Management only.' %></p>
+    <div class="support-meta">
+      <span class="tagchip"><%= lang === 'ja' ? '平均返信' : 'MEDIAN REPLY' %> &lt; 4h</span>
+      <span class="tagchip"><%= lang === 'ja' ? '対応言語' : 'LANGUAGES' %> JA / EN</span>
+      <a class="tagchip gold" href="mailto:<%= site['contact.email'] %>"><%= site['contact.email'] %></a>
+    </div>
+  </div>
+  <div class="support-card" data-reveal data-reveal="right">
+    <h3><%= lang === 'ja' ? 'チケット作成' : 'Create a ticket' %></h3>
+    <p class="dim small"><%= lang === 'ja' ? '送信するとチケットとチャットが同時に作られます。' : 'Submitting opens a ticket and a chat thread at the same time.' %></p>
+    <form class="booking-form" id="supportForm" method="post" action="/support/ticket">
+      <div class="field"><label for="stSubject"><%= lang === 'ja' ? '件名' : 'Subject' %></label><input id="stSubject" name="subject" placeholder="<%= lang === 'ja' ? '例: Fan Card の支払いについて' : 'e.g. Fan Card payment' %>" required></div>
+      <div class="grid2" style="margin-top:10px">
+        <div class="field"><label for="stCat"><%= lang === 'ja' ? '分類' : 'Category' %></label>
+          <select id="stCat" name="category"><option value="membership"><%= lang === 'ja' ? 'ファンクラブ' : 'Fan club' %></option><option value="booking"><%= t('sec.booking') %></option><option value="shop"><%= t('nav.shop') %></option><option value="general"><%= lang === 'ja' ? 'その他' : 'General' %></option></select></div>
+        <div class="field"><label for="stEmail"><%= lang === 'ja' ? 'メール' : 'Email' %></label><input id="stEmail" name="email" type="email" value="<%= user ? user.email : '' %>" <%= user ? 'readonly' : 'required' %> placeholder="you@example.com"></div>
+      </div>
+      <div class="field" style="margin-top:10px"><label for="stMsg"><%= lang === 'ja' ? 'メッセージ' : 'Message' %></label><textarea id="stMsg" name="message" required placeholder="<%= lang === 'ja' ? '状況を教えてください…' : 'Tell us what is happening…' %>"></textarea></div>
+      <button class="btn primary" type="submit" style="width:100%;margin-top:12px"><%= lang === 'ja' ? 'チケット作成 & チャット →' : 'Create ticket & chat →' %></button>
+      <p class="fineprint"><%= lang === 'ja' ? 'ログイン済みなら自動で紐づきます。' : 'Logged-in members are linked automatically.' %></p>
+    </form>
+    <div id="supportOk" class="ok-banner<%= justOpened ? ' show' : '' %>">
+      <% const openTicket = justOpened ? (my || []).find(function(x){ return x.id === justOpened; }) : null; %>
+      <% if (openTicket) { %>
+      <b><%= openTicket.code %> — <%= openTicket.subject %></b>
+      <span><%=( (openTicket.messages && openTicket.messages.length ? openTicket.messages[openTicket.messages.length - 1].body : openTicket.last_message) || 'Management has your ticket.' ).slice(0, 300) %></span>
+      <% } else if (justOpened) { %>
+      <b><%= lang === 'ja' ? 'チケットが開きました' : 'Ticket opened' %></b>
+      <span><%= lang === 'ja' ? '運営からの返信はこのページとチャットに届きます。' : 'Management replies here and in the chat.' %></span>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<% if (my && my.length) { %>
+<section class="section" id="mytickets">
+  <div class="section-head" data-reveal><div><h2><%= lang === 'ja' ? '私のチケット' : 'Your tickets' %></h2><p><%= my.length %> • <%= lang === 'ja' ? '状態は更新されます' : 'status stays live' %></p></div><button type="button" class="btn ghost small" data-open-chat><%= lang === 'ja' ? 'チャットを開く' : 'Open chat' %></button></div>
+  <div class="tickets-grid"><%- include('../partials/sections/tickets', { tickets: my }) %></div>
+</section>
+<% } %>
+
+<section class="section" id="faq">
+  <div class="section-head" data-reveal><div><h2>FAQ</h2><p><%= lang === 'ja' ? 'よくある質問' : 'Answered before you ask' %></p></div></div>
+  <div class="faq">
+    <% faq.forEach(function(f, i){ %><details class="faq-item" <%= i === 0 ? 'open' : '' %> data-reveal data-reveal-delay="<%= i * 45 %>"><summary><b><%= f.q %></b><span aria-hidden="true">＋</span></summary><p><%= f.a %></p></details><% }) %>
+  </div>
+</section>

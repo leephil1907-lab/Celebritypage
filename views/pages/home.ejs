@@ -1,0 +1,329 @@
+<% /* ============ HOME — motion edition, all sections data-driven ============ */ %>
+
+<!-- HERO -->
+<div class="hero-wrap" id="top" data-section="hero"><%- include('../partials/sections/hero') %></div>
+
+<!-- DAILY STRIP -->
+<section class="section section-tight" id="daily">
+  <div class="daily-strip" data-reveal>
+    <span class="daily-badge"><span class="live-dot" aria-hidden="true"></span> <%= lang === 'ja' ? '本日 • デイリー更新' : 'TODAY • Daily Update' %></span>
+    <span class="daily-text" id="dailyText"><%= site['daily.text'] %></span>
+    <span class="daily-date mono" id="dailyDate"></span>
+    <a class="daily-link" href="#news"><%= lang === 'ja' ? 'ニュースを見る →' : 'View news →' %></a>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="section" id="about">
+  <div class="section-head" data-reveal>
+    <div>
+      <h2><span class="dot-mark" aria-hidden="true">◉</span><%= t('sec.about') %> <i><%= lang === 'ja' ? 'Artist' : 'Artist' %></i></h2>
+      <p><%= site['about.name'] %> — Actor / Singer / Radio Host • <%= site['site.brand'] %></p>
+    </div>
+    <a class="link-arrow" href="/work/#film"><%= t('cta.viewAll') %> →</a>
+  </div>
+  <div class="about-grid">
+    <figure class="about-media" data-parallax="0.05">
+      <div class="carousel is-fade about-carousel" data-carousel data-c-mode="fade" data-c-interval="5200" data-c-kenburns="1">
+        <div class="c-viewport" data-c-viewport><div data-c-track>
+          <% /* sized to this frame: every source here is >= 750px wide, so nothing is upscaled */ %>
+          <% [ ['/image-search/takuya-kimura-starto-entertainment-offic-3.webp','Portrait — editorial'],
+               ['/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg','Arena — tour still'],
+               ['/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg','Fan club — premium'],
+               ['/image-search/takuya-kimura-live-tour-checkpoint-2026--5.webp','Film — TOKYO TAXI'],
+               ['/image-search/takuya-kimura-live-tour-checkpoint-2026--1.gif','Rehearsal — Checkpoint'] ].forEach(function(pair, i){ %>
+          <div class="ab-slide<%= i === 0 ? ' is-active' : '' %>" data-c-slide><img <%- imgAttrs(pair[0], { alt: pair[1], sizes: '(max-width: 900px) 100vw, 52vw', class: i === 0 ? 'c-ken' : '', priority: i === 0, extra: `data-img-fallback="${site['about.image'] || pair[0]}"` }) %>></div>
+          <% }) %>
+        </div></div>
+        <figcaption><%= site['about.caption'] %></figcaption>
+        <div class="c-dots on-ink-wrap" data-c-dots></div>
+      </div>
+    </figure>
+    <div class="about-text" data-reveal data-reveal="right">
+      <h3><%= lang === 'ja' ? '日本の' : 'An icon of' %> <span><%= lang === 'ja' ? '芸能界' : 'Japan’s entertainment' %></span></h3>
+      <p class="lead"><%= site['about.lead'] %></p>
+      <p class="about-body"><%= site['about.body'] %></p>
+      <div class="about-stats" data-reveal-stagger>
+        <% stats.forEach(function(s){ %>
+        <div class="stat">
+          <span class="stat-icon" aria-hidden="true"><%= s.icon %></span>
+          <b><% const n = Number(String(s.value).replace(/[^\d]/g, '')); if (n) { %><span data-count="<%= n %>"><%= n %></span><%= String(s.value).slice(String(s.value).indexOf(String(n)) + String(n).length) %><% } else { %><%= s.value %><% } %></b>
+          <span><%= s.label %></span>
+          <small><%= s.note %></small>
+        </div>
+        <% }) %>
+      </div>
+      <div class="about-badges">
+        <span class="ab-pill"><span class="live-dot" aria-hidden="true"></span> <%= lang === 'ja' ? 'ライブ • 毎日更新' : 'Live • daily update' %></span>
+        <span class="ab-pill mono">Awards — Best Jeanist / HERO</span>
+        <span class="ab-pill mono">♪ Flow — Sundays 11:30</span>
+      </div>
+      <div class="about-cta">
+        <a class="btn primary" href="/#membership"><%= t('cta.join') %> →</a>
+        <button type="button" class="btn ghost" data-open-member="signup"><%= lang === 'ja' ? '無料で登録' : 'Sign Up Free' %></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MEMBERSHIP -->
+<section class="membership" id="membership">
+  <div class="membership-inner">
+    <div class="membership-head" data-reveal>
+      <div>
+        <h2><%= lang === 'ja' ? 'ファンクラブ' : 'Fan Club' %> <em><%= lang === 'ja' ? 'メンバーシップ' : 'Membership' %></em> <span class="mono gold small">FAN CARD • <%= tiers.length %> TIERS</span></h2>
+        <p><%= lang === 'ja' ? 'まずサイトを一周 — それから Fan Card を選びます。購入はチケット発行になり、運営がチャットで対応します。' : 'Tour the site first — then choose your Fan Card. Purchase opens a support ticket and direct chat with Management.' %></p>
+      </div>
+      <a class="link-arrow on-dark" href="/join/"><%= t('cta.signup') %> →</a>
+    </div>
+    <div data-section="tiers"><%- include('../partials/sections/tiers') %></div>
+  </div>
+</section>
+
+<!-- VAULT -->
+<section class="section" id="vault">
+  <div class="section-head" data-reveal>
+    <div>
+      <h2><span class="dot-mark" aria-hidden="true">◆</span><%= t('sec.vault') %> <i><%= lang === 'ja' ? 'Members only' : 'Members only' %></i></h2>
+      <p><%= lang === 'ja' ? '舞台裏・写真・ボイスメモ・サプライズ配信' : 'Behind-the-scenes, vault photos, voice notes — surprise sessions for members' %></p>
+    </div>
+    <span class="dim mono small"><%= lang === 'ja' ? 'サーバー側でティア判定' : 'Gated server-side' %></span>
+  </div>
+  <div data-section="vault"><%- include('../partials/sections/vault') %></div>
+</section>
+
+<!-- BOOKING -->
+<section class="section" id="booking">
+  <div class="section-head" data-reveal>
+    <div>
+      <h2><span class="dot-mark" aria-hidden="true">✦</span><%= t('sec.booking') %> <i><%= lang === 'ja' ? 'Meet & Greet' : 'Meet & Greet' %></i></h2>
+      <p><%= lang === 'ja' ? 'ミーグリ • プライベート • 企業イベント' : 'Meet & Greet • Private • Corporate — official' %></p>
+    </div>
+    <span class="dim small"><%= lang === 'ja' ? 'チケット + チャットで運営が返信' : 'Via ticket + chat • Management replies' %></span>
+  </div>
+  <div class="booking">
+    <div class="booking-card dark" data-reveal>
+      <h3><%= lang === 'ja' ? 'ミーエンドグリート' : 'Meet & Greet' %></h3>
+      <p class="dim-light"><%= lang === 'ja' ? 'Checkpoint ツアーに添えた少人数セッション。各都市20名。Fan Card が必要。' : 'Intimate sessions around the Checkpoint tour. Limited to 20 per city. Requires a Fan Card.' %></p>
+      <div class="lottery">
+        <div class="lottery-head"><b><%= lang === 'ja' ? 'LOTTERY ダッシュボード • ライブ' : 'LOTTERY DASHBOARD • Live' %></b>
+          <span class="tagchip gold"><%= lang === 'ja' ? 'あなたの順位' : 'Your rank' %> <b id="lotteryRank">#342</b></span></div>
+        <div class="lottery-cities">
+          <% (tour || []).slice(0, 3).forEach(function(d, i){ %>
+          <div class="lc <%= d.remaining ? '' : 'is-locked' %>">
+            <span class="lc-city mono"><%= d.city.toUpperCase() %></span>
+            <b><%= d.remaining || '—' %></b>
+            <span class="lc-sub mono"><%= d.remaining ? d.remaining + ' / ' + d.capacity : (lang === 'ja' ? d.tier_required.toUpperCase() + '+ のみ' : d.tier_required.toUpperCase() + ' only') %></span>
+            <span class="lc-bar"><i style="width:<%= d.capacity ? Math.round(((d.capacity - d.remaining) / d.capacity) * 100) : 100 %>%"></i></span>
+          </div>
+          <% }) %>
+        </div>
+        <div class="lottery-foot"><span><%= lang === 'ja' ? '次の抽選:' : 'Next draw:' %> <b class="mono" data-countdown="<%= Date.now() + 2 * 3600 * 1000 + 14 * 60 * 1000 %>">02:14:33</b></span><span class="dim"><%= lang === 'ja' ? 'ティアで順位をブースト →' : 'Boost rank with a tier →' %></span></div>
+      </div>
+      <div class="slot-list">
+        <% (tour || []).forEach(function(d){ %>
+        <div class="slot">
+          <span class="slot-mark" aria-hidden="true"><%= d.remaining ? '★' : '◎' %></span>
+          <div><b><%= d.city %> — <%= d.date.slice(5).replace('-', '.') %></b><br><span class="dim mono small"><%= d.time %> • <%= d.venue %> • <%= d.remaining ? d.remaining + (lang === 'ja' ? ' 席' : ' left') : (lang === 'ja' ? '抽選' : 'lottery') %></span></div>
+          <button type="button" class="btn <%= d.remaining ? 'gold' : 'ghost on-dark' %> small" data-book-slot="<%= 'Meet & Greet|' + d.date + '|' + (d.remaining ? Math.min(2, d.remaining) : 1) %>" <%= d.remaining ? '' : 'disabled' %>><%= t('cta.book') %></button>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+    <div class="booking-card" id="bookingFormCard" data-reveal data-reveal="right">
+      <h3><%= lang === 'ja' ? 'チケットで作る申請' : 'Request via Ticket' %></h3>
+      <p class="dim"><%= lang === 'ja' ? '個別のブッキング希望はこちら — 運営がチャットで直接対応します。' : 'Prefer a personal booking? Create a ticket — Management replies in chat.' %></p>
+      <form class="booking-form" id="bookingForm">
+        <div class="grid2">
+          <div class="field"><label for="bkType"><%= lang === 'ja' ? '種別' : 'Occasion type' %></label>
+            <select id="bkType" name="type" required><option value=""><%= lang === 'ja' ? '選択…' : 'Select…' %></option><option>Meet & Greet</option><option>Private Event</option><option>Corporate</option><option>Birthday</option></select></div>
+          <div class="field"><label for="bkDate"><%= lang === 'ja' ? '日付' : 'Date' %></label><input id="bkDate" name="date" type="date" required></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="bkGuests"><%= lang === 'ja' ? '人数' : 'Guests' %></label><input id="bkGuests" name="guests" type="number" min="1" max="20" value="1"></div>
+          <div class="field"><label for="bkBudget"><%= lang === 'ja' ? '予算' : 'Budget' %></label>
+            <select id="bkBudget" name="budget_yen"><option value="300000">¥300,000</option><option value="500000">¥500,000</option><option value="750000">¥750,000</option><option value="1000000">¥1,000,000</option><option value=""><%= lang === 'ja' ? '応相談' : 'Custom' %></option></select></div>
+        </div>
+        <div class="field"><label for="bkMsg"><%= lang === 'ja' ? 'メッセージ' : 'Message' %></label><textarea id="bkMsg" name="message" placeholder="<%= lang === 'ja' ? 'ご希望の概要を...' : 'Tell us about the occasion…' %>" required></textarea></div>
+        <button class="btn primary" type="submit" style="width:100%"><%= lang === 'ja' ? 'チケット作成 → チャット' : 'Create Ticket & Chat →' %></button>
+        <p class="fineprint"><%= site['booking.note'] %></p>
+      </form>
+      <div id="bookingOk" class="ok-banner"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOUR -->
+<section class="section" id="tour">
+  <div class="section-head" data-reveal>
+    <div>
+      <h2><%= t('sec.tour') %></h2>
+      <p>TAKUYA KIMURA Live Tour 2026 Checkpoint — <%= lang === 'ja' ? '追加公演・抽選' : 'added shows, lottery & passport' %></p>
+    </div>
+    <a class="link-arrow" href="/tour/"><%= t('cta.details') %> →</a>
+  </div>
+  <div class="tour-feature" data-reveal>
+    <div class="tf-media">
+      <div class="carousel is-fade" data-carousel data-c-mode="fade" data-c-interval="4200" data-c-kenburns="1">
+        <div class="c-viewport tf-vp" data-c-viewport><div data-c-track>
+          <% ['/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg','/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg','/image-search/takuya-kimura-live-tour-checkpoint-2026--1.gif'].forEach(function(src, i){ %>
+          <div class="tf-slide<%= i === 0 ? ' is-active' : '' %>" data-c-slide><img <%- imgAttrs(src, { alt: 'Live Tour 2026 Checkpoint', sizes: '(max-width: 900px) 100vw, 52vw', class: i === 0 ? 'c-ken' : '', priority: i === 0, extra: 'data-img-fallback="/image-search/takuya-kimura-live-tour-checkpoint-2026--2.jpg"' }) %>></div>
+          <% }) %>
+        </div></div>
+      </div>
+    </div>
+    <div class="tf-info">
+      <span class="mono dim">2026.09.05 — 2026.11.23</span>
+      <h3>TAKUYA KIMURA Live Tour 2026 Checkpoint</h3>
+      <p><%= lang === 'ja' ? 'アリーナツアー — 福岡・ソウル・台北ほか。ミーグリ抽選とツアーパスポートはメンバー限定。' : 'Arena tour Sep 5 – Nov 23, produced with C&C STAGE. Meet & Greet lottery and the QR Tour Passport are member-only.' %></p>
+      <div class="tf-actions"><a class="btn primary" href="/tour/"><%= lang === 'ja' ? 'ツアー詳細 →' : 'Tour center →' %></a><a class="btn ghost" href="/tour/#pass"><%= t('sec.passport') %></a></div>
+    </div>
+  </div>
+  <div data-section="tour-dates"><%- include('../partials/sections/tour-dates') %></div>
+</section>
+
+<!-- NEWS -->
+<section class="section" id="news">
+  <div class="section-head" data-reveal>
+    <div>
+      <h2><%= t('sec.news') %></h2>
+      <p><%= lang === 'ja' ? '最新情報 — 毎日更新' : 'Latest information — updated daily' %></p>
+    </div>
+    <a class="link-arrow" href="/work/#news"><%= t('cta.viewAll') %> →</a>
+  </div>
+  <div data-section="news"><%- include('../partials/sections/news', { layoutMode: 'carousel' }) %></div>
+</section>
+
+<!-- SCHEDULE -->
+<section class="section" id="schedule">
+  <div class="section-head" data-reveal>
+    <div><h2><%= t('sec.schedule') %></h2><p><%= lang === 'ja' ? '放送 • 配信 • 限定配信' : 'Broadcast • streaming • member streams' %></p></div>
+    <a class="link-arrow" href="/tour/"><%= t('cta.viewAll') %> →</a>
+  </div>
+  <div data-section="schedule"><%- include('../partials/sections/schedule') %></div>
+</section>
+
+<!-- REGULAR + CM -->
+<section class="section" id="regular">
+  <div class="section-head" data-reveal>
+    <div><h2><%= t('sec.regular') %></h2><p><%= lang === 'ja' ? 'ラジオ • TV • 雑誌' : 'Radio • TV • Magazine' %></p></div>
+    <a class="link-arrow" href="/work/#regular"><%= t('cta.viewAll') %> →</a>
+  </div>
+  <div class="grid-3">
+    <% (works.regular || []).forEach(function(w, i){ %>
+    <article class="media-card" data-reveal data-reveal-delay="<%= i * 70 %>">
+      <div class="mc-img"><img src="<%= w.image %>" alt="<%= w.title %>" loading="lazy" data-img-fallback="/image-search/takuya-kimura-starto-entertainment-offic-1.png"></div>
+      <div class="mc-body">
+        <span class="tagchip solid"><%= (w.kind || '').toUpperCase() %></span>
+        <h4><%= w.title %></h4>
+        <p><%= w.description %></p>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+  <div class="cm-marquee" data-reveal>
+    <div class="cm-track">
+      <% for (let pass = 0; pass < 2; pass++) { %><% (works.cm || []).concat(works.cm || []).forEach(function(c){ %>
+      <span class="cm-card"><b><%= c.title %></b><small><%= c.meta %></small></span>
+      <% }) %><% } %>
+    </div>
+  </div>
+</section>
+
+<!-- FILM -->
+<section class="section" id="film">
+  <div class="section-head" data-reveal>
+    <div><h2><%= t('sec.film') %></h2><p><%= lang === 'ja' ? '映画 • ドラマ — 検証済み' : 'Film & drama — verified credits' %></p></div>
+    <a class="link-arrow" href="/work/#film"><%= t('cta.viewAll') %> →</a>
+  </div>
+  <div class="carousel is-rail film-rail" data-carousel data-c-mode="rail" data-c-autoplay="0" data-c-per-view="3" data-c-gap="16">
+    <div class="c-viewport" data-c-viewport><div data-c-track>
+      <% [].concat(works.film || [], works.drama || []).forEach(function(w, i){ %>
+      <div class="media-card film-card" data-c-slide data-reveal data-reveal-delay="<%= (i % 3) * 60 %>">
+        <div class="mc-img"><img src="<%= w.image %>" alt="<%= w.title %>" loading="lazy" data-img-fallback="/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg"><span class="year-badge mono"><%= w.year %></span></div>
+        <div class="mc-body">
+          <div class="mc-meta"><span class="tagchip"><%= (w.kind || '').toUpperCase() %></span> <span class="mono dim"><%= w.release_date %></span></div>
+          <h4><%= w.title %></h4>
+          <p><%= w.description %></p>
+          <div class="role-line mono dim"><%= lang === 'ja' ? '役' : 'Role' %>: <%= w.role %></div>
+        </div>
+      </div>
+      <% }) %>
+    </div></div>
+    <div class="c-bar rail-bar"><span class="c-count mono dim" data-c-counter>01 / <%= String((works.film || []).length + (works.drama || []).length).padStart(2, '0') %></span>
+      <span class="rail-actions"><button type="button" class="c-nav" data-c-prev aria-label="Previous">‹</button><button type="button" class="c-nav" data-c-next aria-label="Next">›</button></span></div>
+  </div>
+</section>
+
+<!-- RELEASE -->
+<section class="section" id="release">
+  <div class="section-head" data-reveal>
+    <div><h2><%= t('sec.release') %></h2><p><%= lang === 'ja' ? 'アルバム • シングル • プレイヤー' : 'Albums, singles and the members-only player' %></p></div>
+    <a class="link-arrow" href="/music/"><%= t('cta.viewAll') %> →</a>
+  </div>
+  <div data-section="releases"><%- include('../partials/sections/releases') %></div>
+</section>
+
+<!-- SHOP PREVIEW -->
+<section class="section" id="shopPreview">
+  <div class="section-head" data-reveal>
+    <div><h2><%= t('sec.shop') %></h2><p><%= site['shop.banner'] %></p></div>
+    <a class="link-arrow" href="/shop/"><%= lang === 'ja' ? 'すべて見る →' : 'Shop all →' %></a>
+  </div>
+  <div class="carousel is-rail shop-rail" data-carousel data-c-mode="rail" data-c-autoplay="0" data-c-per-view="4" data-c-gap="16" data-section="shop-grid">
+    <div class="c-viewport" data-c-viewport><div data-c-track>
+      <%- include('../partials/sections/shop-grid') %>
+    </div></div>
+    <div class="c-bar rail-bar"><span class="c-count mono dim" data-c-counter>01 / <%= String(products.length).padStart(2, '0') %></span>
+      <span class="rail-actions"><button type="button" class="c-nav" data-c-prev aria-label="Previous products">‹</button><button type="button" class="c-nav" data-c-next aria-label="Next products">›</button></span></div>
+  </div>
+</section>
+
+<!-- JOURNAL PREVIEW -->
+<section class="section" id="journalPreview">
+  <div class="section-head" data-reveal>
+    <div><h2><%= t('sec.journal') %></h2><p><%= lang === 'ja' ? 'ツアー • 映画 • 音楽 • スタイル' : 'Tour • film • music • style' %></p></div>
+    <a class="link-arrow" href="/journal/"><%= t('cta.viewAll') %> →</a>
+  </div>
+  <div data-section="journal"><%- include('../partials/sections/journal') %></div>
+</section>
+
+<!-- ARCHIVE PREVIEW -->
+<section class="section" id="archivePreview">
+  <div class="section-head" data-reveal>
+    <div><h2><%= t('sec.archive') %></h2><p><%= lang === 'ja' ? '1987 → 現在 — 検証済みタイムライン' : '1987 → today — verified timeline' %></p></div>
+    <a class="link-arrow" href="/archive/"><%= t('cta.viewAll') %> →</a>
+  </div>
+  <div class="timeline-rail" data-lightbox>
+    <% archive.forEach(function(a, i){ %>
+    <a class="tl-card" href="/archive/#a-<%= a.year %>" data-lb-item data-lb-full="<%= a.image %>" data-lb-cap="<%= a.year %> — <%= a.title %>" data-reveal data-reveal-delay="<%= (i % 4) * 60 %>">
+      <div class="tl-img"><img src="<%= a.image %>" alt="<%= a.title %>" loading="lazy" data-img-fallback="/image-search/takuya-kimura-starto-entertainment-offic-3.webp"></div>
+      <div class="tl-body"><span class="mono gold"><%= a.year %></span><b><%= a.title %></b><span class="dim small"><%= a.description %></span></div>
+    </a>
+    <% }) %>
+  </div>
+</section>
+
+<!-- RELATED / SHARE -->
+<section class="section" id="related">
+  <div class="related-grid">
+    <div class="related-links" data-reveal>
+      <span class="eyebrow"><%= t('lbl.related') %></span>
+      <div class="rl-row">
+        <a class="rl" href="<%= site['link.starto'] %>" target="_blank" rel="noopener noreferrer"><span class="mono dim">01</span><b>STARTO ENTERTAINMENT</b><span class="dim"><%= lang === 'ja' ? '公式アーティストページ' : 'Official artist page' %></span><span class="arr">↗</span></a>
+        <a class="rl" href="https://www.c-and-c-stage.com/" target="_blank" rel="noopener noreferrer"><span class="mono dim">02</span><b>C&amp;C STAGE</b><span class="dim"><%= lang === 'ja' ? 'ツアー制作' : 'Tour production' %></span><span class="arr">↗</span></a>
+        <a class="rl" href="/search/"><span class="mono dim">03</span><b><%= t('nav.search') %></b><span class="dim"><%= lang === 'ja' ? 'サイト内を検索' : 'Search the whole site' %></span><span class="arr">→</span></a>
+      </div>
+    </div>
+    <div class="share-box" data-reveal data-reveal="right">
+      <span class="sb-head"><%= t('lbl.share') %></span>
+      <div class="sb-row">
+        <a href="https://x.com/intent/post?text=<%= encodeURIComponent('TAKUYA KIMURA — Live Tour 2026 Checkpoint') %>&url=<%= encodeURIComponent(req.protocol + '://' + req.get('host') + '/') %>" target="_blank" rel="noopener noreferrer" aria-label="Share on X">𝕏</a>
+        <a href="https://line.me/R/share?text=<%= encodeURIComponent(site['site.title'] + ' ' + req.protocol + '://' + req.get('host') + '/') %>" target="_blank" rel="noopener noreferrer" aria-label="Share on LINE">L</a>
+        <a href="mailto:?subject=<%= encodeURIComponent(site['site.title']) %>&body=<%= encodeURIComponent(req.protocol + '://' + req.get('host') + '/') %>" aria-label="Share by email">✉</a>
+        <button type="button" class="copy-link" data-copy="<%= req.protocol + '://' + req.get('host') + '/' %>" aria-label="Copy link">⧉</button>
+      </div>
+    </div>
+  </div>
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">TOP</a> <span>›</span> <a href="/work/"><%= lang === 'ja' ? 'アーティスト一覧' : 'Artist list' %></a> <span>›</span> Takuya Kimura</nav>
+</section>

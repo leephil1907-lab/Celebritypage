@@ -5,11 +5,24 @@
 :root{
   --ink:#0f0e0c;--paper:#fdfbf7;--pearl:#fbf6ee;--pearl2:#f5ece0;--line:#e8ddd0;
   --gold:#c9a86a;--gold2:#ddc28a;--gold3:#7a5f2e;--muted:#6e6a63;
-  --max:1320px;--pad:28px;--ease:cubic-bezier(.22,1,.36,1);
+  --max:1320px;--pad:28px;
+  /* type — self-hosted brand faces (public/css/fonts.css) + local JP fallbacks, no CDN */
+  --sans:"Inter","Noto Sans JP","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
+  --serif:"Cormorant Garamond","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",Georgia,serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  /* motion — one easing/duration scale for the whole site, so transitions feel authored */
+  --ease:cubic-bezier(.22,1,.36,1);
+  --ease-out-expo:cubic-bezier(.16,1,.3,1);
+  --ease-out-quart:cubic-bezier(.25,1,.5,1);
+  --ease-in-out-quart:cubic-bezier(.76,0,.24,1);
+  --ease-spring:cubic-bezier(.34,1.42,.5,1);
+  --dur-1:.16s;--dur-2:.26s;--dur-3:.42s;--dur-4:.68s;--dur-5:.95s;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--pearl);color:var(--ink);font-family:"Inter","Noto Sans JP",sans-serif;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+::selection{background:var(--gold);color:#0a0a0a}
+body{margin:0;background:var(--pearl);color:var(--ink);font-family:var(--sans);line-height:1.65;font-optical-sizing:auto;font-kerning:normal;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:clip}
 a{color:inherit;text-decoration:none}
 button{font:inherit;cursor:pointer}
 img{display:block;max-width:100%}
@@ -31,7 +44,7 @@ ul{list-style:none;margin:0;padding:0}
 .header{position:sticky;top:0;z-index:40;background:rgba(253,251,247,.92);backdrop-filter:saturate(1.3) blur(14px);border-bottom:1px solid var(--line)}
 .header-inner{max-width:var(--max);margin:0 auto;padding:0 var(--pad);height:72px;display:flex;align-items:center;justify-content:space-between;gap:24px}
 .brand{display:flex;align-items:center;gap:14px}
-.brand-mark{width:40px;height:40px;background:#0a0a0a;color:var(--gold);display:grid;place-items:center;font-family:'Cormorant Garamond',serif;font-weight:700;letter-spacing:.12em;font-size:11px;border:1px solid #1a1a1a;overflow:hidden}
+.brand-mark{width:40px;height:40px;background:#0a0a0a;color:var(--gold);display:grid;place-items:center;font-family:var(--serif);font-weight:700;letter-spacing:.12em;font-size:11px;border:1px solid #1a1a1a;overflow:hidden}
 .brand-mark img{width:100%;height:100%;object-fit:cover}
 .brand-text b{display:block;font-size:13px;letter-spacing:.22em;font-weight:700;line-height:1}
 .brand-text em{display:block;font-size:9.5px;letter-spacing:.18em;color:var(--muted);font-style:normal;margin-top:3px}
@@ -78,7 +91,7 @@ ul{list-style:none;margin:0;padding:0}
 .hero-content{position:absolute;left:46px;bottom:46px;right:46px;z-index:3;color:#fff;display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:end}
 .hero-kicker{display:inline-flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(8px);padding:7px 10px;margin-bottom:16px}
 .hero-kicker i{width:6px;height:6px;background:var(--gold2);border-radius:99px;box-shadow:0 0 10px var(--gold)}
-.hero-content h1{margin:0;font-family:"Cormorant Garamond",serif;font-weight:300;font-size:52px;line-height:.92;text-shadow:0 8px 32px rgba(0,0,0,.45)}
+.hero-content h1{margin:0;font-family:var(--serif);font-weight:300;font-size:52px;line-height:.92;text-shadow:0 8px 32px rgba(0,0,0,.45)}
 .hero-content h1 em{font-style:normal;font-weight:500;font-size:.62em;display:block;margin-top:6px;color:var(--gold2)}
 .hero-content p{margin:12px 0 0;font-size:12.5px;opacity:.92;line-height:1.7;max-width:420px}
 .hero-side{text-align:right}
@@ -100,8 +113,8 @@ ul{list-style:none;margin:0;padding:0}
 /* SECTIONS — VISIBLE BY DEFAULT, no opacity hack */
 .section{max-width:var(--max);margin:0 auto;padding:64px var(--pad) 0}
 .section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--ink);margin-bottom:28px}
-.section-head h2{margin:0;font-family:"Cormorant Garamond",serif;font-weight:300;font-size:32px;line-height:1}
-.section-head h2 i{font-style:normal;font-family:"Inter",sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-left:12px;font-weight:600;vertical-align:middle}
+.section-head h2{margin:0;font-family:var(--serif);font-weight:300;font-size:32px;line-height:1}
+.section-head h2 i{font-style:normal;font-family: var(--sans);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-left:12px;font-weight:600;vertical-align:middle}
 .section-head p{margin:4px 0 0;font-size:12.5px;color:var(--muted);line-height:1.6}
 .link-arrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;border-bottom:1px solid #0a0a0a;padding-bottom:2px}
 
@@ -110,12 +123,12 @@ ul{list-style:none;margin:0;padding:0}
 .about-media{position:relative;overflow:hidden;border:1px solid var(--line);background:var(--paper);padding:8px}
 .about-media img{width:100%;aspect-ratio:4/5;object-fit:cover;object-position:center top}
 .about-media figcaption{position:absolute;left:16px;bottom:16px;background:#0a0a0a;color:#fff;padding:10px 12px;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
-.about-text h3{margin:0;font-family:"Cormorant Garamond",serif;font-weight:300;font-size:36px;line-height:1}
+.about-text h3{margin:0;font-family:var(--serif);font-weight:300;font-size:36px;line-height:1}
 .about-text h3 span{color:var(--gold3);font-style:italic}
 .about-text .lead{margin-top:14px;font-size:14px;line-height:1.9;color:#2b2b2b}
 .about-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
 .stat{border:1px solid var(--line);background:var(--paper);padding:14px;text-align:center}
-.stat b{display:block;font-family:"Cormorant Garamond",serif;font-size:26px;font-weight:500}
+.stat b{display:block;font-family:var(--serif);font-size:26px;font-weight:500}
 .stat span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 
 /* MEMBERSHIP */
@@ -123,7 +136,7 @@ ul{list-style:none;margin:0;padding:0}
 .membership::before{content:"";position:absolute;inset:0;background:radial-gradient(900px 500px at 18% 0%,rgba(185,151,91,.14),transparent 60%)}
 .membership-inner{max-width:var(--max);margin:0 auto;padding:64px var(--pad);position:relative}
 .membership-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;border-bottom:1px solid #222;padding-bottom:18px;margin-bottom:26px}
-.membership-head h2{margin:0;font-family:"Cormorant Garamond",serif;font-weight:300;font-size:34px}
+.membership-head h2{margin:0;font-family:var(--serif);font-weight:300;font-size:34px}
 .membership-head h2 em{font-style:italic;color:var(--gold2)}
 .membership-head p{margin:6px 0 0;font-size:11.5px;color:#9a958f}
 .tier-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
@@ -133,7 +146,7 @@ ul{list-style:none;margin:0;padding:0}
 .tier-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
 .tier-name{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold2)}
 .tier-icon{width:36px;height:36px;border:1px solid #2a2a2a;display:grid;place-items:center;background:#0a0a0a;color:var(--gold)}
-.tier h3{margin:0;font-family:"Cormorant Garamond",serif;font-weight:400;font-size:22px}
+.tier h3{margin:0;font-family:var(--serif);font-weight:400;font-size:22px}
 .tier .price{margin-top:10px;display:flex;align-items:baseline;gap:6px}
 .tier .price b{font-size:24px}
 .tier .price span{font-size:11px;color:#8a8680}
@@ -150,8 +163,8 @@ ul{list-style:none;margin:0;padding:0}
 .fan-card-top{display:flex;align-items:center;justify-content:space-between}
 .fan-card-top b{font-size:10px;letter-spacing:.18em;color:var(--gold2)}
 .chip{width:36px;height:26px;border-radius:4px;background:linear-gradient(135deg,#d4b78a,#b9975b);border:1px solid rgba(255,255,255,.3)}
-.fan-card h4{margin:14px 0 4px;font-family:"Cormorant Garamond",serif;font-weight:400;font-size:22px}
-.fan-card .num{font-family:"JetBrains Mono",monospace;font-size:13px;letter-spacing:.18em;opacity:.9}
+.fan-card h4{margin:14px 0 4px;font-family:var(--serif);font-weight:400;font-size:22px}
+.fan-card .num{font-family: var(--mono);font-size:13px;letter-spacing:.18em;opacity:.9}
 .fan-card .holder{margin-top:18px;display:flex;align-items:flex-end;justify-content:space-between}
 .fan-card .holder b{font-size:11px;letter-spacing:.12em;text-transform:uppercase}
 .fan-card .holder span{font-size:10px;letter-spacing:.12em;color:var(--gold2)}
@@ -172,7 +185,7 @@ ul{list-style:none;margin:0;padding:0}
 .booking{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}
 .booking-card{border:1px solid var(--line);background:var(--paper);padding:18px}
 .booking-card.dark{background:#0a0a0a;color:#fff;border-color:#0a0a0a}
-.booking-card h3{margin:0;font-family:"Cormorant Garamond",serif;font-weight:400;font-size:22px}
+.booking-card h3{margin:0;font-family:var(--serif);font-weight:400;font-size:22px}
 .booking-form{display:grid;gap:12px;margin-top:14px}
 .field label{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:#fff;padding:11px 12px;font-size:12.5px}
@@ -183,7 +196,7 @@ ul{list-style:none;margin:0;padding:0}
 /* NEWS / SCHEDULE / REGULAR / CM / FILM / RELEASE */
 .news-list{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--line)}
 .news-item{display:grid;grid-template-columns:86px 84px 1fr 20px;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);align-items:start}
-.news-date{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted)}
+.news-date{font-family: var(--mono);font-size:11px;color:var(--muted)}
 .news-cat{font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line);padding:4px 6px;text-align:center;background:#fff;border-radius:999px}
 .news-title{font-size:13px;line-height:1.5}
 .regular-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}

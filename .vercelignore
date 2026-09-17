@@ -1,9 +1,0 @@
-# Only ignore root non-static dirs — do NOT ignore public/ contents
-/backend
-/database
-/admin-panel
-/admin_new_block.js
-/gen_pages2.py
-/uploads
-/.vercel
-/.npm

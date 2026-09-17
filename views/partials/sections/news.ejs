@@ -1,0 +1,43 @@
+<% /* News — carousel of cards + classic list, both from the same rows */ %>
+<% const layout = (typeof layoutMode !== 'undefined' && layoutMode) || 'list'; %>
+<% if (layout === 'carousel') { %>
+<div class="carousel is-rail news-rail" data-carousel data-c-mode="rail" data-c-interval="7000" data-c-autoplay="0" data-c-per-view="3" data-c-gap="16">
+  <div class="c-viewport" data-c-viewport><div data-c-track>
+    <% news.forEach(function(n, i){ %>
+    <div class="news-card c-card" data-c-slide data-tags="<%= n.category %>">
+      <div class="mc-img"><img src="<%= n.image || '/image-search/takuya-kimura-starto-entertainment-offic-3.webp' %>" alt="<%= n.title %>" loading="<%= i < 3 ? 'eager' : 'lazy' %>" data-img-fallback="/image-search/takuya-kimura-starto-entertainment-offic-3.webp"></div>
+      <div class="mc-body">
+        <div class="mc-meta"><span class="tagchip <%= n.category === 'CONCERT' ? 'gold' : '' %>"><%= n.category %></span> <span class="mono"><%= n.date %></span></div>
+        <h4><%= n.title %></h4>
+        <p><%= (n.body || '').slice(0, 130) %><%= (n.body || '').length > 130 ? '…' : '' %></p>
+        <span class="mc-arrow" aria-hidden="true">→</span>
+      </div>
+    </div>
+    <% }) %>
+  </div></div>
+  <div class="c-bar rail-bar"><span class="c-count" data-c-counter>01 / <%= String(news.length).padStart(2, '0') %></span>
+    <span class="rail-actions"><button type="button" class="c-nav" data-c-prev aria-label="Previous news">‹</button><button type="button" class="c-nav" data-c-next aria-label="Next news">›</button></span></div>
+</div>
+<% } else { %>
+<% const here = (typeof page !== 'undefined' && page === 'work'); %>
+<div class="news-list" data-filter-scope="news">
+  <% news.forEach(function(n, i){ %>
+  <% if (here) { %>
+  <% /* on the work page the row IS the destination: full body, addressable id, nothing to fetch */ %>
+  <article class="news-row is-entry" id="news-<%= n.id %>" data-reveal data-reveal-delay="<%= (i % 6) * 45 %>">
+    <span class="nd mono"><%= n.date %></span>
+    <span class="tagchip <%= n.category === 'CONCERT' ? 'gold' : (n.category === 'REGULAR' ? 'solid' : '') %>"><%= n.category %></span>
+    <span class="nt"><b><%= n.title %></b><% if (n.body) { %><small><%= n.body %></small><% } %></span>
+    <a class="na" href="/journal/" aria-label="More from the official desk">→</a>
+  </article>
+  <% } else { %>
+  <a class="news-row" href="/work/#news-<%= n.id %>" data-reveal data-reveal-delay="<%= i * 45 %>">
+    <span class="nd mono"><%= n.date %></span>
+    <span class="tagchip <%= n.category === 'CONCERT' ? 'gold' : (n.category === 'REGULAR' ? 'solid' : '') %>"><%= n.category %></span>
+    <span class="nt"><%= n.title %></span>
+    <span class="na" aria-hidden="true">→</span>
+  </a>
+  <% } %>
+  <% }) %>
+</div>
+<% } %>

@@ -1,0 +1,22 @@
+<% /* Audit log — every write, who did it, when */ %>
+<section class="card" data-anim="rise">
+  <div class="card-head"><h3>Audit log</h3><span class="pill mono"><%= rows.length %> events</span>
+    <div class="tools"><input type="search" id="auditFilter" placeholder="filter actions…" aria-label="Filter audit"></div></div>
+  <div class="table-wrap">
+    <table class="adm-table" id="auditRows">
+      <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead>
+      <tbody>
+        <% rows.forEach(function(a){ %>
+        <tr data-text="<%= (a.action + ' ' + a.entity + ' ' + a.actor + ' ' + a.detail).toLowerCase() %>">
+          <td class="mono dim small"><%= (a.created_at || '').slice(0, 19) %></td>
+          <td class="mono small"><%= a.actor %></td>
+          <td><b class="mono small gold"><%= a.action %></b></td>
+          <td class="dim small"><%= a.entity %></td>
+          <td class="mono small"><%= a.detail %></td>
+        </tr>
+        <% }) %>
+        <% if (!rows.length) { %><tr><td colspan="5" class="dim">Nothing recorded yet.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</section>

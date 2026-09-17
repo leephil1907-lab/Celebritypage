@@ -1,0 +1,34 @@
+<% /* Vault — coverflow carousel of member drops, gated server-side */ %>
+<div class="vault-shell">
+  <div class="carousel is-coverflow vault-carousel" data-carousel data-c-mode="coverflow" data-c-interval="6500" data-c-autoplay="0" data-c-per-view="1.35" data-c-gap="18">
+    <div class="c-viewport" data-c-viewport><div data-c-track>
+      <% const RANK = { none:0, silver:1, gold:2, platinum:3, diamond:4 }; const myRank = (typeof tierRank !== 'undefined' && tierRank) || (membership && membership.is_active ? RANK[membership.tier] : 0) || 0; %>
+      <% vault.forEach(function(v, i){ const unlocked = myRank >= (RANK[v.min_tier] || 1); %>
+      <div class="vault-card<%= unlocked ? ' is-open' : '' %>" data-c-slide data-vault-open="<%= v.id %>" tabindex="0" role="button" aria-label="<%= v.title %>">
+        <img <%- imgAttrs(v.image, { alt: v.title, sizes: '(max-width: 700px) 92vw, 62vw', priority: i === 0, extra: 'data-img-fallback="/image-search/takuya-kimura-live-tour-checkpoint-2026--3.jpg"' }) %>>
+        <div class="vault-card-body">
+          <span class="mono dim"><%= v.code %></span>
+          <b><%= v.title %></b>
+          <% if (unlocked) { %><p><%= v.description %></p><% } else { %><p class="dim"><%= (v.description || '').slice(0, 48).trim() %>… <span class="mono gold"><%= lang === 'ja' ? '要カード' : 'locked' %></span></p><% } %>
+          <div class="vault-badges"><span class="tagchip solid"><%= v.min_tier.toUpperCase() %>+</span><span class="dim mono"><%= v.duration || '' %></span></div>
+        </div>
+        <div class="vault-lock" <%= unlocked ? 'style="display:none"' : '' %>><div><b><%= lang === 'ja' ? '会員限定' : 'Members Only' %></b><p><%= lang === 'ja' ? 'ファンカードで解除されます' : 'Unlock with an active Fan Card' %></p><button type="button" class="btn gold small" data-purchase-tier="<%= v.min_tier %>"><%= lang === 'ja' ? '解除する →' : 'Unlock →' %></button></div></div>
+      </div>
+      <% }) %>
+    </div></div>
+    <div class="c-bar rail-bar"><span class="c-count" data-c-counter>01 / <%= String(vault.length).padStart(2, '0') %></span>
+      <span class="rail-actions"><button type="button" class="c-nav" data-c-prev aria-label="Previous vault item">‹</button><button type="button" class="c-nav" data-c-next aria-label="Next vault item">›</button></span></div>
+  </div>
+  <div class="surprise-banner">
+    <div>
+      <small class="mono gold"><%= lang === 'ja' ? 'サプライズセッション' : 'SURPRISE SESSION' %></small>
+      <h3><%= site['vault.surpriseTitle'] %></h3>
+      <p><%= site['vault.surpriseBody'] %></p>
+    </div>
+    <div class="surprise-box">
+      <b><%= lang === 'ja' ? '次のドロップ' : 'Next Surprise Drop' %></b><br>
+      <span class="big gold mono"><%= site['vault.nextDrop'] %></span> <span class="dim">• Vault Update</span><br>
+      <span class="dim"><%= lang === 'ja' ? 'JST 00:00 に有効なカードへ解放' : 'Unlocks at midnight JST for active cards' %></span>
+    </div>
+  </div>
+</div>
