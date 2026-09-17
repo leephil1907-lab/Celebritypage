@@ -19,8 +19,12 @@ img{content-visibility:auto}
 /* ---------- app shell ---------- */
 #app{min-height:100vh;display:block}
 .js-on #app-shell{transition:opacity var(--dur-2) var(--ease-out-quart), transform var(--dur-3) var(--ease-out-expo)}
-.js-on html.motion-in #app-shell{animation:shellIn var(--dur-4) var(--ease-out-expo) both}
+.js-on.motion-in #app-shell{animation:shellIn var(--dur-3) var(--ease-out-expo) both}
 @keyframes shellIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* The card is an object being handed over: it comes into focus as its group reveals.
+   Only opacity and blur, never transform — tilt and the flip own the card's transform. */
+.js-on [data-reveal].reveal.is-revealed .fan-card{animation:cardEnter var(--dur-4) var(--ease-out-expo) both}
+@keyframes cardEnter{from{opacity:0;filter:blur(7px) saturate(.72)}to{opacity:1;filter:none}}
 #app-shell.is-swapping{opacity:.35;transform:translateY(6px)}
 main:focus{outline:none}
 

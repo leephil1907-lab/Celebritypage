@@ -14,7 +14,7 @@
   <% }) %>
 </div>
 
-<div class="card-preview">
+<div class="card-preview" data-reveal>
   <% const pick = tiers.find(function (x) { return x.featured; }) || tiers[0] || {}; %>
   <%- include('../fan-card', { card: {
         name: user ? user.name : 'YOUR NAME', kanji: site['about.kanji'] || '木村拓哉',

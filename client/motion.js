@@ -41,28 +41,60 @@ function curtain() {
 }
 
 export function revealAll(root = document) {
-  root.querySelectorAll('[data-reveal]:not(.is-revealed)').forEach((el) => io.observe(el));
+  if (!io) return;
+  /* a soft navigation hands us a page of fresh candidates. Without the base class the reveal CSS
+     never applies, so the swapped page would just appear — mark them here, and only here: the
+     markup keeps every element visible, which is what makes the site work with JavaScript off. */
+  root.querySelectorAll('[data-reveal]:not(.is-revealed)').forEach((el) => {
+    el.classList.add('reveal');
+    if (el.dataset.revealArmed !== '1') { el.dataset.revealArmed = '1'; io.observe(el); }
+  });
 }
 let io;
 function initReveal() {
   io = new IntersectionObserver((entries) => {
-    entries.forEach((en) => {
-      if (!en.isIntersecting) return;
-      const el = en.target;
-      io.unobserve(el);
-      const delay = Number(el.dataset.revealDelay || 0);
-      setTimeout(() => { el.classList.add('is-revealed'); }, delay);
-      if (el.dataset.revealOnce === 'stagger') {
-        [...el.children].forEach((c, i) => {
-          c.classList.add('is-staggered');
-          c.style.setProperty('--stagger', `${i * 70}ms`);
-        });
-      }
+    /* what the user already scrolled past is shown as it is: an intersection it left behind
+       never comes back, and waiting for one is how a page ends up holding invisible text */
+    entries.filter((en) => !en.isIntersecting && en.boundingClientRect.bottom < 0).forEach((en) => {
+      io.unobserve(en.target);
+      en.target.classList.add('is-revealed');
     });
+    /* what is on screen now enters top-first in a short sequence, so arriving on a page is
+       a reveal and not a wall of content switching on at once */
+    entries.filter((en) => en.isIntersecting)
+      .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+      .forEach((en, i) => {
+        const el = en.target;
+        io.unobserve(el);
+        const own = Number(el.dataset.revealDelay || 0);
+        const delay = own || Math.min(i, 6) * 55;
+        if (delay > 0) setTimeout(() => { el.classList.add('is-revealed'); }, delay);
+        else el.classList.add('is-revealed');
+        if (el.dataset.revealOnce === 'stagger') {
+          [...el.children].forEach((c, k) => {
+            c.classList.add('is-staggered');
+            c.style.setProperty('--stagger', `${k * 70}ms`);
+          });
+        }
+      });
   }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
 
   // mark candidates — never hide content when JS is off, so we add the base class here only
-  document.querySelectorAll('[data-reveal]').forEach((el) => { el.classList.add('reveal'); io.observe(el); });
+  document.querySelectorAll('[data-reveal]').forEach((el) => { el.classList.add('reveal'); el.dataset.revealArmed = '1'; io.observe(el); });
+
+  /* An observer only reports a change of intersection, so a jump — End key, an anchor link, a
+     search scroll — can leave a group false-above-false and never tell us. Reveal what the reader
+     has already passed on a scroll-idle sweep: polish must never cost anyone the text. */
+  let queued = false;
+  const sweep = () => {
+    queued = false;
+    document.querySelectorAll('[data-reveal].reveal:not(.is-revealed)').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.top < 0) { io.unobserve(el); el.classList.add('is-revealed'); }
+    });
+  };
+  window.addEventListener('scroll', () => { if (queued) return; queued = true; requestAnimationFrame(sweep); }, { passive: true });
+  requestAnimationFrame(sweep);
 }
 
 function initHeader() {

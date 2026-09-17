@@ -273,6 +273,58 @@ if (driver) {
   check(/^\d{6}$/.test(repainted.member) && dig(repainted.number) === dig(repainted.member), 'the member number is redrawn with the tier', `${repainted.number} → ${repainted.member}`);
   await page.setViewportSize({ width: 1280, height: 900 });
 
+  /* ---- 3a4. the entrance and the scroll reveal ---- */
+  step('3a4 entrance and reveal');
+  const look = () => page.evaluate(() => ({
+    cands: document.querySelectorAll('[data-reveal]').length,
+    marked: document.querySelectorAll('[data-reveal].reveal').length,
+    revealed: document.querySelectorAll('[data-reveal].is-revealed').length,
+    shell: getComputedStyle(document.getElementById('app-shell')).animationName,
+    dur: getComputedStyle(document.getElementById('app-shell')).animationDuration,
+    inViewBlind: [...document.querySelectorAll('[data-reveal]')].filter((e) => { const r = e.getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0 && +getComputedStyle(e).opacity < 0.05; }).length,
+    passedBlind: [...document.querySelectorAll('[data-reveal]')].filter((e) => e.getBoundingClientRect().bottom < 0 && +getComputedStyle(e).opacity < 0.05).length,
+  }));
+  const hard = await look();
+  check(hard.shell === 'shellIn' && parseFloat(hard.dur) > 0.2 && parseFloat(hard.dur) < 0.7,
+    'the page rises in on arrival', `${hard.shell} ${hard.dur}`);
+  check(hard.cands > 0 && hard.marked === hard.cands, 'reveal candidates are armed by JS, not markup', `${hard.marked}/${hard.cands}`);
+  check(hard.inViewBlind === 0, 'nothing on screen is left waiting to be revealed', `${hard.inViewBlind} at opacity 0`);
+  /* the polish has to survive the way people actually move around here: soft navigation */
+  await page.evaluate(() => { window.scrollTo({ top: 0, behavior: 'instant' }); const a = document.querySelector('a[href="/tour/"]'); if (a) a.click(); });
+  await page.waitForTimeout(1400);
+  const soft = await look();
+  check(soft.cands > 0 && soft.marked === soft.cands, 'a softly navigated page reveals too', `${soft.marked}/${soft.cands} armed on /tour/`);
+  check(soft.inViewBlind === 0, 'and it does not arrive with invisible text', `${soft.inViewBlind} at opacity 0`);
+  await page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' }));
+  await page.waitForTimeout(800);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.waitForTimeout(600);
+  const jumped = await look();
+  check(jumped.passedBlind === 0, 'a jump past content never leaves it hidden', `${jumped.passedBlind} above the fold at opacity 0, ${jumped.revealed}/${jumped.cands} revealed`);
+  /* the card's own beat */
+  await page.goto(BASE + '/#membership', { waitUntil: 'load' });
+  await page.waitForSelector('#fanCard');
+  await page.waitForTimeout(1400);
+  const beat = await page.evaluate(() => {
+    const g = document.querySelector('.card-preview[data-reveal]');
+    const c = document.querySelector('#fanCard');
+    return { revealed: !!g && g.classList.contains('is-revealed'), anim: c ? getComputedStyle(c).animationName : 'none', transform: c ? getComputedStyle(c).transform.slice(0, 12) : '' };
+  });
+  check(beat.revealed && beat.anim === 'cardEnter', 'the fan card comes into focus as its group reveals', `revealed=${beat.revealed} ${beat.anim}`);
+  check(!/matrix/.test(beat.transform) || beat.transform === 'none', 'that beat leaves the card transform to tilt and flip', beat.transform || 'none');
+  /* reduced motion: the arming never happens, so nothing can be stuck hidden */
+  const c2 = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1280, height: 900 } });
+  const p2 = await c2.newPage();
+  await p2.goto(BASE + '/', { waitUntil: 'load' });
+  await p2.waitForTimeout(1200);
+  const calm = await p2.evaluate(() => ({
+    marked: document.querySelectorAll('[data-reveal].reveal').length,
+    blind: [...document.querySelectorAll('[data-reveal]')].filter((e) => +getComputedStyle(e).opacity < 0.05).length,
+    shell: getComputedStyle(document.getElementById('app-shell')).animationDuration,
+  }));
+  await c2.close();
+  check(calm.marked === 0 && calm.blind === 0, 'reduced motion shows everything, immediately', `${calm.blind} hidden, shell ${calm.shell}`);
+
   /* ---- 3b. responsive ---- */
   step('3b responsive');
   for (const w of WIDTHS) {
