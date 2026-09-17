@@ -1,10 +1,10 @@
 {
-  "build": "mu5wxnjd",
-  "at": "2026-09-17T19:18:48.986Z",
+  "build": "mu5x7aqc",
+  "at": "2026-09-17T19:26:18.948Z",
   "files": {
     "public/css/app.css": {
-      "bytes": 134231,
-      "hash": "8b3d8457a9"
+      "bytes": 134854,
+      "hash": "681b552e73"
     },
     "public/css/admin.css": {
       "bytes": 16032,
@@ -12,11 +12,11 @@
     },
     "public/js/app.js": {
       "bytes": 63071,
-      "hash": "0f9232b0ba"
+      "hash": "52fcfed374"
     },
     "public/js/admin.js": {
       "bytes": 9385,
-      "hash": "37700b596f"
+      "hash": "0a6c7a08a8"
     }
   }
 }

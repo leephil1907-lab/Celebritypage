@@ -334,10 +334,33 @@ else {
   await page.waitForTimeout(250);
   const clip = await page.evaluate(() => { const r = document.querySelector('.fan-card').getBoundingClientRect(); return { x: Math.max(0, r.x - 10), y: Math.max(0, r.y - 10), width: r.width + 20, height: r.height + 20 }; });
   await page.screenshot({ path: path.join(SHOTS, 'fan-card-back.png'), clip });
+  const collide = () => page.evaluate(() => {
+    const c = document.querySelector('.fan-card');
+    const front = c.querySelector('.fc-front');
+    const r = (sel) => { const el = c.querySelector(sel); return el ? el.getBoundingClientRect() : null; };
+    const box = (b) => b && { l: b.left, t: b.top, r: b.right, b: b.bottom };
+    const hit = (a, d) => !!(a && d) && Math.min(a.r, d.r) - Math.max(a.l, d.l) > 0.5 && Math.min(a.b, d.b) - Math.max(a.t, d.t) > 0.5;
+    const stamp = box(r('.fc-stamp')), hint = box(r('.fc-hint')), kanji = box(r('.fc-kanji'));
+    const fb = front.getBoundingClientRect();
+    return {
+      hasStamp: !!stamp,
+      overPrint: !!stamp && [r('.fc-front h4'), r('.fc-front .num'), r('[data-card-field="sublabel"]')].some((x) => hit(stamp, box(x))),
+      hintOnKanji: hit(hint, kanji),
+      inside: !stamp || (stamp.l >= fb.left - 1 && stamp.r <= fb.right + 1 && stamp.t >= fb.top - 1 && stamp.b <= fb.bottom + 1),
+      spill: [...c.querySelectorAll('.fc-face')].map((el) => el.scrollHeight - el.clientHeight),
+    };
+  });
+  const deskPrint = await collide();
+  (!deskPrint.overPrint && !deskPrint.hintOnKanji && deskPrint.inside)
+    ? ok(`the card's state mark (${deskPrint.hasStamp ? 'stamp' : 'hint'}) never sits on printed text`, `spill ${deskPrint.spill.join('/')}`)
+    : bad("the card's state mark never sits on printed text", JSON.stringify(deskPrint));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(500);
-  const small = await page.evaluate(() => [...document.querySelectorAll('.fan-card .fc-face')].map((el) => el.scrollHeight - el.clientHeight));
-  small.every((v) => v <= 0) ? ok('both faces fit the card at 390px', `spill ${small.join('/')} on a phone`) : bad('both faces fit the card at 390px', `spill ${small.join('/')}`);
+  const small = await collide();
+  small.spill.every((v) => v <= 0) ? ok('both faces fit the card at 390px', `spill ${small.spill.join('/')} on a phone`) : bad('both faces fit the card at 390px', `spill ${small.spill.join('/')}`);
+  (!small.overPrint && !small.hintOnKanji && small.inside)
+    ? ok('the state mark keeps clear of the print on a phone too', small.hasStamp ? 'stamp in the corner' : 'hint in the corner')
+    : bad('the state mark keeps clear of the print on a phone too', JSON.stringify(small));
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.waitForTimeout(300);
 }

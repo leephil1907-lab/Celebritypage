@@ -55,16 +55,14 @@
       <div class="holder">
         <div><b class="mono"><%= lang === 'ja' ? '会員番号' : 'MEMBER NO' %></b>
           <span data-card-field="sublabel"><%= [c.priceLabel, c.tierName].filter(Boolean).join(' • ') || (lang === 'ja' ? 'ティアを選んで発行' : 'PICK A TIER TO ISSUE') %></span></div>
-        <span class="fc-kanji"><%= c.kanji || '木村拓哉' %></span>
+        <div class="fc-mark">
+          <span class="fc-kanji"><%= c.kanji || '木村拓哉' %></span>
+          <% if (status !== 'active' && !c.preview) { %>
+          <% /* not issued yet: a stamp. On a wide card CSS lifts it across the face, on a phone it stays in the corner where it cannot cover the print */ %>
+          <span class="fc-stamp mono"><%= status === 'pending' ? (lang === 'ja' ? '承認待ち' : 'PENDING') : (status === 'none' ? (lang === 'ja' ? '未発行' : 'NO CARD') : status.toUpperCase()) %></span>
+          <% } else { %><span class="fc-hint mono" aria-hidden="true"><%= lang === 'ja' ? 'タップで裏面' : 'TAP TO TURN' %></span><% } %>
+        </div>
       </div>
-
-      <% if (c.preview) { %>
-      <span class="fc-hint mono" aria-hidden="true"><%= lang === 'ja' ? 'タップで裏面' : 'TAP TO TURN' %></span>
-      <% } else if (status !== 'active') { %>
-      <span class="fc-stamp mono"><%= status === 'pending' ? (lang === 'ja' ? '承認待ち' : 'PENDING') : (status === 'none' ? (lang === 'ja' ? '未発行' : 'NO CARD') : status.toUpperCase()) %></span>
-      <% } else { %>
-      <span class="fc-hint mono" aria-hidden="true"><%= lang === 'ja' ? 'タップで裏面' : 'TAP TO TURN' %></span>
-      <% } %>
       <span class="card-holo" aria-hidden="true"></span>
     </div>
 
