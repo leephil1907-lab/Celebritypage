@@ -696,6 +696,70 @@ test('a single-origin host serves the site and the console side by side', async 
   }
 });
 
+test('a read-only project directory still boots — state moves to the scratch tree', async () => {
+  /* what a Vercel (or any readOnlyRootFilesystem) host does to the app: the code dir cannot be
+     written, so the database must be created somewhere the process may still touch, and the boot
+     has to say so instead of failing quietly on the first request. */
+  const rport = PORT + 61;
+  const rbase = `http://127.0.0.1:${rport}`;
+  const tmp = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', `starto-ro-${process.pid}-`));
+  const ro = path.join(tmp, 'task');
+  const scratch = path.join(tmp, 'scratch');
+  fs.mkdirSync(path.join(ro, 'data'), { recursive: true });
+  fs.mkdirSync(path.join(ro, 'uploads'), { recursive: true });
+  fs.mkdirSync(scratch, { recursive: true });
+  fs.chmodSync(path.join(ro, 'data'), 0o500);
+  fs.chmodSync(path.join(ro, 'uploads'), 0o500);
+
+  const rolog = [];
+  const child2 = spawn(process.execPath, [path.join(ROOT, 'server/index.js')], {
+    cwd: ROOT,
+    env: {
+      ...process.env,
+      DATA_DIR: path.join(ro, 'data'),
+      UPLOAD_DIR: path.join(ro, 'uploads'),
+      TMPDIR: scratch,                                   // the fallback has to land in this test's own tree
+      DB_FILE: '',                                       // no override: the app must choose
+      PORT: String(rport),
+      ADMIN_PORT: String(rport + 1),
+      HOST: '127.0.0.1',
+      NODE_ENV: 'test',
+      TEST_BOOT_MARK: `${BOOT_MARK}-ro`,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  child2.stdout.on('data', (b) => rolog.push(b.toString()));
+  child2.stderr.on('data', (b) => rolog.push(b.toString()));
+  try {
+    const deadline = Date.now() + 25000;
+    let up = false;
+    while (Date.now() < deadline && !up) {
+      if (child2.exitCode !== null) throw new Error('the read-only boot exited:\n' + rolog.join(''));
+      try { up = (await fetch(`${rbase}/healthz`)).ok; } catch { await new Promise((r) => setTimeout(r, 150)); }
+    }
+    assert.ok(up, 'the server never answered with an unwritable data dir:\n' + rolog.join('').slice(0, 500));
+
+    const log = rolog.join('');
+    assert.match(log, /data\/ dir is not writable here/, 'the boot line has to admit it is running on scratch state');
+
+    const home = await fetch(rbase + '/');
+    const text = await home.text();
+    assert.equal(home.status, 200, 'a page must render even when the repo is read-only');
+    assert.match(text, /<title>/);
+    const api = await fetch(rbase + '/api/tour');
+    assert.equal(api.status, 200);
+    assert.ok(Array.isArray(await api.json()), '/api/tour still answers from the scratch database');
+
+    const found = fs.readdirSync(path.join(scratch, 'starto-celebritypage', 'data'), { recursive: true }).map(String);
+    assert.ok(found.some((f) => f.endsWith('celebrity.db')), `the database was not created under the temp tree — found ${found.join(', ') || 'nothing'}`);
+    assert.ok(!/\[error\]|TypeError:|ENOENT/.test(log), 'read-only boot logged:\n' + log.split('\n').filter((l) => /Error|ENOENT/.test(l)).slice(0, 4).join('\n'));
+  } finally {
+    if (child2.exitCode === null) child2.kill('SIGKILL');
+    for (const d of [path.join(ro, 'data'), path.join(ro, 'uploads'), ro]) { try { fs.chmodSync(d, 0o700); } catch { /* already gone */ } }
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test('no server-side errors were logged during the run', async () => {
   const log = req.log();
   const bad = log.split('\n').filter((l) => /\[error\]|ReferenceError|TypeError:|Cannot read|EJS Error/.test(l));

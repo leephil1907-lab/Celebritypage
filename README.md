@@ -26,21 +26,32 @@ npm start               # site :8000  ·  admin console :8001
 ```
 server/
   index.js      boots both apps, auto-seeds an empty DB, sweeps sessions, SSE heartbeat
-  app.js        23 public routes + 32 REST endpoints + SSE stream + pjax fragment mode
-  admin.js      the console on its own origin: auth, generic CRUD per content type,
-                stock, media upload, CSV export, live state feed
+  host.js       the two composition roots: public-only, and `COMBINED=1` with the console at /admin
+  app.js        the public app: every page, the REST endpoints, the SSE stream, pjax fragment mode
+  admin.js      the console: auth, generic CRUD per content type, stock, media upload, CSV, live feed
   auth.js       sessions (httpOnly cookie), bcrypt password hashing, CSRF guard, throttling
-  db.js         better-sqlite3 wrapper: migrations, tx(), insert/update/run, audit()
-  content.js    every read the site needs (hero, news, tour, vault, shop, stats, kpis)
-  resources.js  the CMS contract: which table, which list columns, which form fields
+  db.js         better-sqlite3 wrapper: migrations, tx(), insert/update/run, audit(); `data/` and
+                `uploads/` fall back to a writable scratch directory when the mount is read-only
+  content.js    every read the site needs (hero, news, tour, vault, shop, stats, kpis), projected
+                against the viewer, so a template cannot show what the server means to withhold
+  resources.js  the CMS contract: 16 content types — which table, which list columns, which fields
+  lib/tourkit.js venue coordinates and the maths behind the countdown, the check-in window,
+                the haversine walk from the gate and the projected SVG locator
   i18n.js       ja/en dictionaries — the server renders both, the client never re-implements it
   bus.js        publish/subscribe with a replay buffer, so a late tab still sees the last events
-views/          51 EJS templates: layout, partials, sections, pages, admin/*
+  seed.js, seed-extra.js
+                the fiction, generated into any empty database: the full route with setlists and
+                past nights, the journal, releases, awards, wall notes, lottery entries, sign-ups
+views/          61 EJS templates: layout, partials, sections, pages, admin/*
 client/         app.js (bootstrap), site.js (features), carousel.js (engine), motion.js
                 (transitions), admin.js (console), css/*.css
-public/         built assets + images; served with hash-aware caching
-scripts/        build.mjs (esbuild), check.mjs (integrity gate), qa-browser.mjs (Chromium QA)
-tests/          app.test.mjs — 25 end-to-end tests against a real booted server
+public/         built assets + images, served with hash-aware caching; `build.json` is the fingerprint
+api/index.js    the Vercel entry point: a lazy boot into the same app, self-seeding on first request
+vercel.json     build `npm run build`, output `public`, every non-`/api` path rewritten to `/api`
+scripts/        build.mjs (esbuild), check.mjs (integrity gate), audit.mjs (whole-site sweep),
+                qa-browser.mjs (Chromium QA), fetch-fonts.mjs (self-hosted brand faces)
+tests/          app.test.mjs — 33 end-to-end tests against a real booted server, one of them a
+                `COMBINED=1` boot that crawls the console inside the public app
 ```
 
 Nothing in `client/` is a copy of server truth: pages come from the database, and so do the
@@ -58,6 +69,22 @@ fragments the live layer swaps in.
   gets one thread to talk in and the console gets one row to work.
 * **Shop** — session cart (`/api/cart/*`), stock reserved in a transaction, order number + QR
   (`/api/orders/verify`), collection page, member discount only for active cards.
+* **Tour** — each date carries its own countdown, an `.ics` on demand, a venue check-in window that
+  stamps the passport inside it, and (once it has happened) a setlist and photo archive at
+  `/tour/show/<slug>`. The fan wall under a night is member-posted and console-moderated; a
+  meet-and-greet lottery is entered per night and drawn in the console, which writes the winners and
+  audits the draw.
+* **"Notify me"** — a date that is not on sale yet takes an address instead of a ticket.
+  `notify_list` + `POST /api/tour/notify`, unique per (email, date), throttled per IP, answered by a
+  token'd unsubscribe link that works without a session; the honeypot field gets a 201 and no row.
+  The console reads and exports the queue but cannot write it, and no part of this is a `mailto`.
+* **Venue locator** — real coordinates per venue, projected to inline SVG in
+  `views/partials/venue-map.ejs`. No tiles, no third-party request, so it renders under the
+  CDN-free CSP and on a plane; the OSM and Google links underneath are for the live map.
+* **Priority access is a door, not a label** — `tier_required` on a date decides what a viewer may see:
+  presale windows and seat releases are stripped from `/api/tour` and the templates until the session's
+  rank clears it, and a visitor with no session is linked to `join/#signup` rather than handed a
+  button whose only possible answer is 401.
 * **Support chat** — same thread the console answers in; a guest's thread is bound to their session
   token, and reading someone else's thread is a 404, not a 403 (no existence leak).
 * **Admin CMS** — every content type in `resources.js` gets list + editor + toggle + delete + CSV;
@@ -102,13 +129,19 @@ per-IP throttling on login/signup/chat, bcrypt password hashes, and role checks
 ## Verify
 
 ```
-npm run verify          # build + integrity check + 25 e2e tests   (~3 s)
-npm run qa              # 49 Chromium checks: carousels, motion, live sync, mobile, console errors
+npm run verify          # build + integrity check + 33 e2e tests   (~6 s)
+npm run audit           # 299 whole-site checks: links, media, fonts, meta, sitemap, layout at 6 widths
+npm run qa              # 61 Chromium checks: carousels, motion, live sync, waitlist, mobile, console
 ```
 
-`npm run check` walks every template through `ejs.compile`, resolves every `include`, scans for inline
-handlers, matches every client `api()` call to a real route, and (when a server answers on :8000)
-sweeps all 16 live routes. `npm run qa` needs Playwright's Chromium; the sandbox has it under
+`npm run check` (109 checks) walks every template through `ejs.compile`, resolves every `include`,
+scans for inline handlers, matches all 31 client `api()` calls to a real route, and — when a server
+answers on :8000 — sweeps all 16 live pages. `npm run audit` fetches the rendered site and checks the
+things a browser would punish: a 404 image, an upscale past its frame, an off-screen control at any of
+six widths, a relative canonical, a dead sitemap entry. Both are gates, not reports: a failure is a
+non-zero exit. One of its stages is the deploy bundle itself: it runs `@vercel/nft` over
+`api/index.js` — the same trace Vercel uses to decide what a function gets — and fails if a template,
+the template engine, the fingerprint file or the native SQLite binding would be left behind. `npm run qa` needs Playwright's Chromium; the sandbox has it under
 `/home/user/tools`, and `scripts/qa-browser.mjs` imports it from there — point `QA_BASE`/`QA_ADMIN`
 elsewhere to run it against another deployment. Screenshots land in `qa/`.
 
@@ -142,7 +175,8 @@ reason a staging preview starts emitting production canonicals.
 ### Vercel
 
 `vercel.json` and `api/index.js` are the deploy path: one Node function runs the same Express app,
-and `npm run build` regenerates `public/` from `client/` during the build. Import the repository,
+`npm run build` regenerates `public/` from `client/` during the build, and the function's
+`includeFiles` carries the templates plus the native SQLite binding that a static trace could miss. Import the repository,
 accept the defaults (framework: **Other**, build `npm run build`, output `public`), and the site is
 live — `/admin` is the desk console on the same origin, which is what `COMBINED=1` does locally too.
 

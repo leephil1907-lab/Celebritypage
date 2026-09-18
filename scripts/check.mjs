@@ -8,6 +8,7 @@
  *   5. every /api/… path the client calls exists on the router
  *   6. built assets exist, are non-empty and are newer than their sources
  *   7. if a server answers on :8000, every route still renders without an error
+ *   8. the file trace a Vercel function would get is complete (templates, engine, native binding)
  * Exits non-zero on the first problem class found.
  */
 import fs from 'node:fs';
@@ -157,6 +158,77 @@ try {
   if (okXml && items && !sloppy.length) { checks += 3; console.log(`  rss: ${items} entries, ${links.length} links, all absolute`); }
 } catch (e) {
   console.log(`  rss: skipped (${e.message.split('\n')[0]})`);
+}
+
+/* ---------- 8. the deploy bundle is whole ----------
+ * A Vercel function is only ever given the files `@vercel/nft` can prove it reads. Templates loaded
+ * by path, the engine express asks for by string, the native SQLite binding — any of them missing is
+ * a 500 on the deploy host and a green light locally, so the trace is measured here, before that. */
+console.log('\n[7] deploy bundle');
+{
+  let bad = 0;
+  try {
+    const { nodeFileTrace } = await import('@vercel/nft');
+    const entry = path.join(ROOT, 'api', 'index.js');
+    if (!fs.existsSync(entry)) { note('api/index.js — the Vercel entry point — does not exist'); bad++; }
+    const traced = new Set((await nodeFileTrace([entry], { base: ROOT })).fileList);
+
+    const lostViews = views.map((f) => rel(f)).filter((v) => !traced.has(v));
+    if (lostViews.length) { note(`${lostViews.length} template(s) are not in the deploy trace: ${lostViews.slice(0, 3).join(' ')}`); bad++; }
+    else pass('every template is in the deploy trace');
+
+    for (const [f, why] of [
+      ['node_modules/ejs/lib/ejs.js', 'express reaches the engine by string, which only a registered engine makes visible'],
+      ['public/build.json', 'the asset fingerprint the <head> asks for on every page'],
+    ]) {
+      if (!traced.has(f)) { note(`${f} is not in the deploy trace — ${why}`); bad++; } else pass(`${f} traced`);
+    }
+
+    const native = [...traced].filter((f) => f.endsWith('.node'));
+    if (!native.some((f) => f.includes('better-sqlite3'))) { note('no better-sqlite3 binding in the deploy trace — open() would fail on the host'); bad++; }
+    else pass('the native SQLite binding is traced');
+
+    const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
+    const fn = (cfg.functions || {})['api/index.js'];
+    if (!fn) { note('vercel.json says nothing about api/index.js — maxDuration/includeFiles belong to that function'); bad++; }
+    else {
+      if (!(fn.maxDuration > 0)) { note('vercel.json: the function needs a maxDuration'); bad++; } else pass('function maxDuration set');
+      if (!Array.isArray(fn.includeFiles) || !fn.includeFiles.length) { note('vercel.json: functions["api/index.js"].includeFiles should name views/** and node_modules/better-sqlite3/**'); bad++; }
+      else pass('function includeFiles declared');
+    }
+    if (cfg.buildCommand) {
+      const build = fs.readFileSync(path.join(ROOT, 'scripts/build.mjs'), 'utf8');
+      if (!/esbuild is not installed/.test(build)) { note('npm run build is the install/build hook but does not survive a production install without esbuild'); bad++; }
+      else pass('the build tolerates a production install (no esbuild)');
+    }
+    if (!cfg.outputDirectory || !fs.existsSync(path.join(ROOT, cfg.outputDirectory))) { note(`vercel.json outputDirectory "${cfg.outputDirectory}" is not a directory in the repo`); bad++; }
+    else pass('outputDirectory exists');
+
+    /* the ignore list is allowed to hide state and tooling, never the code the function reads */
+    const igFile = path.join(ROOT, '.vercelignore');
+    if (!fs.existsSync(igFile)) { note('.vercelignore is missing — the deploy would ship the dev database and every screenshot'); bad++; }
+    else {
+      const ig = fs.readFileSync(igFile, 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#')).map((l) => l.replace(/\/+$/, '').replace(/^\/+/, ''));
+      const needed = ['views', 'server', 'client', 'public', 'api', 'package.json', 'package-lock.json'];
+      const blocked = ig.filter((g) => needed.includes(g));
+      if (blocked.length) { note(`.vercelignore hides source the deploy needs: ${blocked.join(' ')}`); bad++; }
+      else pass(`${ig.length} ignored paths, none of them source`);
+      const mustHide = ['data', 'uploads', '.git', 'qa'];
+      const leaking = mustHide.filter((g) => !ig.includes(g));
+      if (leaking.length) { note(`.vercelignore should keep ${leaking.join(', ')} out of the deploy`); bad++; }
+      else pass('state, git and dependencies stay out of the deploy');
+    }
+
+    const rewrites = cfg.rewrites || [];
+    for (const rw of rewrites) {
+      const dest = String(rw.destination || '').replace(/^\//, '');
+      if (!fs.existsSync(path.join(ROOT, dest)) && !fs.existsSync(path.join(ROOT, `${dest}.js`))) { note(`vercel.json rewrite targets ${rw.destination}, which is not in the repo`); bad++; }
+    }
+    if (!bad) console.log(`  ${traced.size} files traced for the function · ${views.length} templates · ${native.length} native binding(s) · ${rewrites.length} rewrite(s)`);
+  } catch (e) {
+    note(`the deploy-bundle check could not run: ${e.message.split('\n')[0]}`);
+    console.log('  ✗ this stage is not optional — install its dev dependency (`npm i -D @vercel/nft`)');
+  }
 }
 
 /* ---------- verdict ---------- */

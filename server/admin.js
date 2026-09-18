@@ -15,6 +15,7 @@ import { UPLOAD_DIR } from './db.js';
 import { drawRaffle, slugify } from './lib/tourkit.js';
 import { securityHeaders, gzip, asyncH, bodyParser, notFound, errorHandler, staticAssets } from './lib/http.js';
 import { makeRender, ROOT } from './app.js';
+import ejs from 'ejs';
 
 const SECTION_FOR = {
   hero: 'hero', news: 'news', schedule: 'schedule', releases: 'releases', tour: ['tour-dates', 'countdown'],
@@ -37,6 +38,8 @@ export function createAdminApp({ mounted = false } = {}) {
   const app = express();
   makeRender(app);
   app.set('views', path.join(ROOT, 'views'));
+  app.set('view engine', 'ejs');
+  app.engine('ejs', ejs.__express);
   app.locals.admin = true;
   if (!mounted) {
     app.use(securityHeaders);

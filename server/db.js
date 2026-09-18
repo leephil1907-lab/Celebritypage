@@ -39,8 +39,24 @@ function usableDir(dir) {
 const SCRATCH = path.join(os.tmpdir(), 'starto-celebritypage');
 const WANTED_DATA = process.env.DATA_DIR || path.join(ROOT, 'data');
 const WANTED_UPLOADS = process.env.UPLOAD_DIR || path.join(ROOT, 'uploads');
-export const DATA_DIR = usableDir(WANTED_DATA) ? WANTED_DATA : path.join(SCRATCH, 'data');
-export const UPLOAD_DIR = usableDir(WANTED_UPLOADS) ? WANTED_UPLOADS : path.join(SCRATCH, 'uploads');
+
+/**
+ * The directory state will *really* live in, created here rather than assumed.
+ *
+ * A deploy host with a read-only project tree (Vercel, any `readOnlyRootFilesystem` container)
+ * has no `data/` beside the app, so the scratch tree under `os.tmpdir()` is the fallback — and
+ * better-sqlite3 will not open a file whose parent directory does not exist. Building that parent
+ * is therefore part of choosing it, not a later step that boot has to remember.
+ */
+function stateDir(wanted, name) {
+  if (usableDir(wanted)) return wanted;
+  const scratch = path.join(SCRATCH, name);
+  if (usableDir(scratch)) return scratch;
+  throw new Error(`no writable state directory: neither ${wanted} nor ${scratch} can be written — `
+    + 'point DATA_DIR/UPLOAD_DIR at a mounted volume (on Vercel: Blob, or Postgres/KV for durable state)');
+}
+export const DATA_DIR = stateDir(WANTED_DATA, 'data');
+export const UPLOAD_DIR = stateDir(WANTED_UPLOADS, 'uploads');
 const DB_FILE = process.env.DB_FILE && usableDir(path.dirname(process.env.DB_FILE))
   ? process.env.DB_FILE
   : path.join(DATA_DIR, 'celebrity.db');

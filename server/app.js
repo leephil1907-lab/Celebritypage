@@ -19,6 +19,7 @@ import * as S from './seo.js';
 import { imgAttrs, preloadAttrs } from './media.js';
 import { imageDims } from './lib/images.js';
 import { buildVCalendar, checkinWindow, parseJst, countdownParts, entryCode, validateWallNote, WALL_MAX, venueCode, normalizeNotifyEmail } from './lib/tourkit.js';
+import ejs from 'ejs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(__dirname, '..');
@@ -52,6 +53,9 @@ export const NAV = [
 export function makeRender(app) {
   app.set('view engine', 'ejs');
   app.set('views', VIEWS);
+  /* the engine is registered, not named: express would otherwise `require('ejs')` by string at
+     render time, and a bundler tracing the function for a deploy cannot see that requirement */
+  app.engine('ejs', ejs.__express);
   app.locals.version = buildId();
   app.locals.imgAttrs = imgAttrs;
   app.locals.imgDims = imageDims;
