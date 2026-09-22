@@ -176,7 +176,7 @@ reason a staging preview starts emitting production canonicals.
 
 `vercel.json` and `api/index.js` are the deploy path: one Node function runs the same Express app,
 `npm run build` regenerates `public/` from `client/` during the build, and the function's
-`includeFiles` carries the templates plus the native SQLite binding that a static trace could miss. Import the repository,
+`includeFiles` carries the templates (a single glob — Vercel's schema rejects an array), while `npm run check` traces the function and proves the engine and the native SQLite binding come along too. Import the repository,
 accept the defaults (framework: **Other**, build `npm run build`, output `public`), and the site is
 live — `/admin` is the desk console on the same origin, which is what `COMBINED=1` does locally too.
 

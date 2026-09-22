@@ -193,8 +193,22 @@ console.log('\n[7] deploy bundle');
     if (!fn) { note('vercel.json says nothing about api/index.js — maxDuration/includeFiles belong to that function'); bad++; }
     else {
       if (!(fn.maxDuration > 0)) { note('vercel.json: the function needs a maxDuration'); bad++; } else pass('function maxDuration set');
-      if (!Array.isArray(fn.includeFiles) || !fn.includeFiles.length) { note('vercel.json: functions["api/index.js"].includeFiles should name views/** and node_modules/better-sqlite3/**'); bad++; }
-      else pass('function includeFiles declared');
+      // Vercel's published schema is strict here: a single glob string, not an array
+      if (typeof fn.includeFiles !== 'string' || !fn.includeFiles.length) { note(`vercel.json: functions["api/index.js"].includeFiles must be a glob string (Vercel rejects an array), got ${JSON.stringify(fn.includeFiles)}`); bad++; }
+      else if (!fs.existsSync(path.join(ROOT, fn.includeFiles.replace(/\/\*\*$/, '')))) { note(`vercel.json: includeFiles "${fn.includeFiles}" does not point at a directory in the repo`); bad++; }
+      else pass('function includeFiles is a glob over a real directory');
+      if (fn.runtime && !/^nodejs(18|20|22|x)/.test(fn.runtime)) note(`vercel.json: runtime "${fn.runtime}" is not a Node runtime this app knows how to serve`);
+      const keys = new Set(Object.keys(cfg));
+      const known = new Set(['$schema', 'framework', 'buildCommand', 'installCommand', 'devCommand', 'outputDirectory', 'functions', 'rewrites', 'redirects', 'headers', 'cleanUrls', 'trailingSlash', 'crons', 'regions', 'public', 'assets', 'builds', 'routes', 'mounts', 'maximumNowNextRequests']);
+      const unknown = [...keys].filter((k) => !known.has(k));
+      if (unknown.length) { note(`vercel.json has keys Vercel does not accept: ${unknown.join(' ')}`); bad++; }
+      else pass('every vercel.json key is one Vercel accepts');
+      for (const [k, v] of Object.entries(cfg)) {
+        if (k === 'functions' || k === '$schema') continue;
+        const t = typeof v;
+        if (k === 'framework') continue;
+        if (!(t === 'string' || Array.isArray(v))) { note(`vercel.json: "${k}" should be a string or an array, got ${t}`); bad++; }
+      }
     }
     if (cfg.buildCommand) {
       const build = fs.readFileSync(path.join(ROOT, 'scripts/build.mjs'), 'utf8');

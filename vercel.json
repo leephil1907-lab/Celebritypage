@@ -7,10 +7,7 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 30,
-      "includeFiles": [
-        "views/**",
-        "node_modules/better-sqlite3/**"
-      ]
+      "includeFiles": "views/**"
     }
   },
   "rewrites": [

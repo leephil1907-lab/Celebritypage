@@ -1,6 +1,6 @@
 {
-  "build": "mu6aawn7",
-  "at": "2026-09-18T01:33:02.326Z",
+  "build": "mucx8zk1",
+  "at": "2026-09-22T17:02:01.011Z",
   "files": {
     "public/css/app.css": {
       "bytes": 156943,
@@ -12,11 +12,11 @@
     },
     "public/js/app.js": {
       "bytes": 72996,
-      "hash": "08fb0d5d2f"
+      "hash": "f2a0884408"
     },
     "public/js/admin.js": {
       "bytes": 10248,
-      "hash": "2a3c40df50"
+      "hash": "0eb785ee37"
     }
   }
 }
