@@ -15,7 +15,7 @@
  * Needs a running app: `npm run dev`, then `npm run audit`.
  *   AUDIT_BASE=http://127.0.0.1:8000 AUDIT_VERBOSE=1 node scripts/audit.mjs
  */
-import { loadChromium } from './lib/browser.mjs';
+import { loadChromium, lastBrowserError } from './lib/browser.mjs';
 import { displayWidth } from '../server/seo.js';
 
 const BASE = process.env.AUDIT_BASE || 'http://127.0.0.1:8000';
@@ -45,10 +45,26 @@ const ok = (n, d = '') => { results.push([true, n, d]); if (VERBOSE) console.log
 const bad = (n, d = '') => { results.push([false, n, d]); console.log(`  ✗ ${n}${d ? ' — ' + d : ''}`); };
 const check = (cond, name, detail = '') => (cond ? ok(name, detail) : bad(name, detail));
 const step = (t) => { if (VERBOSE) console.log(`\n[${t}]`); };
-const head = async (url) => { try { return await fetch(url, { method: 'GET', redirect: 'manual' }); } catch { return { status: 0 }; } };
+const head = async (url) => {
+  try { return await fetch(url, { method: 'GET', redirect: 'manual' }); }
+  catch { return { status: 0, headers: new Headers(), url, redirected: false }; }
+};
+
+/* nothing below is worth reading if the site is not up: say so in one line instead of a stack */
+try {
+  const probe = await fetch(BASE + '/healthz', { signal: AbortSignal.timeout(4000) });
+  if (probe.status >= 500) { console.log(`[audit] ${BASE} answered ${probe.status} — the site is not healthy, aborting`); process.exit(1); }
+} catch (e) {
+  console.log(`[audit] nothing is listening on ${BASE} (${String(e.message).split('\n')[0]})`);
+  console.log('[audit] start the site first:  npm run dev   (or point AUDIT_BASE at a deployment)');
+  process.exit(1);
+}
 
 const driver = await loadChromium();
-if (!driver) console.log('[audit] Playwright is not available — the browser stages are skipped, HTTP stages still run.');
+if (!driver) {
+  console.log(`[audit] the browser stages cannot run here — ${lastBrowserError()}`);
+  console.log('[audit] the HTTP and metadata stages still run; the browser ones are recorded as a failure');
+}
 
 /* ---------- 1. routes, redirects and stale files ---------- */
 step('1 routes');
@@ -268,7 +284,9 @@ if (driver) {
   check(/^\d{6}$/.test(cs?.member || '') && dig(cs?.numbers?.[0]) === dig(cs.member), 'the back member number is the card number', `${cs?.member} from ${cs?.numbers?.[0]}`);
   check(cs && cs.perks > 0 && cs.bars > 8, 'the back carries entitlements and a barcode', `${cs?.perks} perks, ${cs?.bars} bars`);
   check(cs && cs.faceOverflow.every((o) => o <= 0), 'neither face overflows its own card', (cs?.faceOverflow || []).join('/'));
-  await page.click('#fanCard');
+  /* the card tilts toward the pointer, so its box never "settles" and Playwright would wait
+     forever for a stable element by design — click it where it is */
+  await page.click('#fanCard', { force: true });
   await page.waitForTimeout(1200);
   const flipped = await cardState();
   check(flipped && flipped.flipped && flipped.rotated, 'a click turns the card over', `is-flipped=${flipped?.flipped} transform=${flipped?.rotated}`);
@@ -559,8 +577,10 @@ if (driver) {
   step('3f console');
   check(noise.length === 0, 'browser console and network log is clean', [...new Set(noise)].slice(0, 6).join(' | '));
   await browser.close();
+} else if (!process.env.AUDIT_ALLOW_NO_BROWSER) {
+  check(false, 'the browser stages of the audit ran', lastBrowserError() + ' — or set AUDIT_ALLOW_NO_BROWSER=1 to audit HTTP and metadata only');
 } else {
-  console.log('[audit] browser stage skipped');
+  console.log('[audit] browser stage skipped by request');
 }
 
 const failed = results.filter(([pass]) => !pass);

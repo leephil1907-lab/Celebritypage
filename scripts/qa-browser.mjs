@@ -8,13 +8,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadChromium } from './lib/browser.mjs';
+import { loadChromium, lastBrowserError } from './lib/browser.mjs';
 
 const driver = await loadChromium();
 if (!driver) {
-  console.log('[qa] Playwright is not installed here — skipping the browser suite.');
-  console.log('[qa] install it (npm i -D playwright && npx playwright install chromium) or set PLAYWRIGHT_PATH.');
-  process.exit(0);
+  // a browser suite that skips itself and exits 0 is worse than one that was never run: it reads
+  // as a pass to whoever is looking at the log, and this suite is the only thing holding the
+  // console, the motion system and the mobile layout down.
+  console.log(`[qa] ${lastBrowserError()}`);
+  console.log('[qa] nothing was verified. Fix the browser, or say you mean it: QA_ALLOW_NO_BROWSER=1.');
+  process.exit(process.env.QA_ALLOW_NO_BROWSER ? 0 : 1);
 }
 const { chromium } = driver;
 
@@ -316,7 +319,7 @@ else {
   /(会員番号|MEMBER NO)\s*\d/.test(cardData.memberNo) && cardData.perks > 0 && cardData.bars > 8 && cardData.faces === 2
     ? ok('the card back carries member no, perks and barcode', `${cardData.memberNo} · ${cardData.perks} perks · ${cardData.bars} bars`)
     : bad('the card back carries member no, perks and barcode', JSON.stringify(cardData));
-  await page.click('.fan-card');
+  await page.click('.fan-card', { force: true });   // the card tilts with the pointer, so it is never "stable" by design
   await page.waitForTimeout(1150);
   const turned = await page.evaluate(() => {
     const c = document.querySelector('.fan-card');

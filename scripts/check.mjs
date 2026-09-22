@@ -28,6 +28,7 @@ const problems = [];
 const note = (msg) => { problems.push(msg); console.log('  ✗ ' + msg); };
 const rel = (f) => path.relative(ROOT, f);
 let checks = 0;
+let liveSkipped = false;
 const pass = (label) => { checks++; if (process.env.CHECK_VERBOSE) console.log(`  ✓ ${label}`); };
 
 console.log('\ncelebritypage — integrity check\n' + '='.repeat(38));
@@ -143,6 +144,7 @@ try {
   console.log(`  ${live}/${pages.length} routes rendered on ${base}`);
 } catch (e) {
   console.log(`  skipped — no server answering on ${base} (${e.message.split('\n')[0]}); start it with npm run dev`);
+  liveSkipped = true;
 }
 
 /* ---------- the feed the <head> promises ---------- */
@@ -253,5 +255,6 @@ if (unique.length) {
   unique.slice(0, 40).forEach((p) => console.log('  · ' + p));
   process.exit(1);
 } else {
-  console.log(`PASS — ${checks} checks, ${views.length} templates, ${calls} API calls, ${pages.length} routes swept\n`);
+  console.log(`PASS — ${checks} checks, ${views.length} templates, ${calls} API calls`
+    + (liveSkipped ? ', live route sweep SKIPPED (no server on ' + base + ')' : `, ${pages.length} routes swept`) + '\n');
 }

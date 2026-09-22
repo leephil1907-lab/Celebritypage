@@ -134,7 +134,12 @@ npm run audit           # 299 whole-site checks: links, media, fonts, meta, site
 npm run qa              # 61 Chromium checks: carousels, motion, live sync, waitlist, mobile, console
 ```
 
-`npm run check` (109 checks) walks every template through `ejs.compile`, resolves every `include`,
+Neither browser suite pretends to have run: if Chromium cannot be launched, `npm run qa` exits
+non-zero and says what is missing (and `npm run audit` records the skipped stages as a failure) —
+`QA_ALLOW_NO_BROWSER=1` / `AUDIT_ALLOW_NO_BROWSER=1` are the opt-outs for a machine that has no
+browser by design. `npm run audit` likewise refuses to run against a server that is not up.
+
+`npm run check` (110 checks) walks every template through `ejs.compile`, resolves every `include`,
 scans for inline handlers, matches all 31 client `api()` calls to a real route, and — when a server
 answers on :8000 — sweeps all 16 live pages. `npm run audit` fetches the rendered site and checks the
 things a browser would punish: a 404 image, an upscale past its frame, an off-screen control at any of

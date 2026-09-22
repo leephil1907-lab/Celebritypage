@@ -11,12 +11,33 @@ const CANDIDATES = [
   'playwright',
 ].filter(Boolean);
 
-export async function loadChromium() {
+let lastError = '';
+const reasons = [];
+
+/**
+ * A driver is only useful if it opens a window. A resolved `playwright` package with no browser
+ * download, or one missing system libraries, would otherwise be reported as "Playwright is not
+ * installed" — so the launch is attempted here and the real reason travels with the null.
+ */
+export async function loadChromium({ prove = true } = {}) {
+  lastError = 'no Playwright package found — npm i -D playwright, or set PLAYWRIGHT_PATH';
+  reasons.length = 0;
   for (const spec of CANDIDATES) {
+    let mod;
+    try { mod = await import(spec); } catch (e) { lastError = `${spec} cannot be imported: ${String(e.message).split('\n')[0]}`; reasons.push(lastError); continue; }
+    if (!mod.chromium) { lastError = `${spec} has no chromium export`; continue; }
+    if (!prove) return { chromium: mod.chromium, from: spec };
     try {
-      const mod = await import(spec);
-      if (mod.chromium) return { chromium: mod.chromium, from: spec };
-    } catch { /* try the next one */ }
+      const b = await mod.chromium.launch({ args: ['--no-sandbox'] });
+      await b.close();
+      return { chromium: mod.chromium, from: spec };
+    } catch (e) {
+      lastError = `${spec} resolves but Chromium will not launch: ${String(e.message).split('\n')[0]} `
+        + '— fetch the browser with `npx playwright install chromium`, its libraries with `npx playwright install-deps chromium`';
+      reasons.push(lastError);
+    }
   }
   return null;
 }
+
+export const lastBrowserError = () => (reasons.length > 1 ? `${lastError} (also: ${reasons.filter((r) => r !== lastError).join('; ')})` : lastError);
