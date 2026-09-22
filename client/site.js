@@ -861,6 +861,29 @@ export function initFlash(root = document) {
   });
 }
 
+/* ---------- the pointer light on spotlight-enabled cards ----------
+   Only two custom properties are written, and only inside a frame: the paint itself is CSS, so the
+   effect costs one pointermove handler per card and nothing at all when the pointer is elsewhere. */
+export function initSpotlights(root = document) {
+  $$('[data-spotlight]', root).forEach((el) => {
+    if (el.__spot) return;
+    el.__spot = true;
+    let queued = 0;
+    el.addEventListener('pointermove', (e) => {
+      if (queued || document.documentElement.classList.contains('motion-reduced')) return;
+      const x = e.clientX, y = e.clientY;
+      queued = requestAnimationFrame(() => {
+        queued = 0;
+        const r = el.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        el.style.setProperty('--mx', `${(((x - r.left) / r.width) * 100).toFixed(2)}%`);
+        el.style.setProperty('--my', `${(((y - r.top) / r.height) * 100).toFixed(2)}%`);
+      });
+    }, { passive: true });
+    el.addEventListener('pointerleave', () => { if (queued) { cancelAnimationFrame(queued); queued = 0; } }, { passive: true });
+  });
+}
+
 /* ---------- boot ---------- */
 export function mount(root = document) {
   initFanCards(root);
@@ -873,6 +896,7 @@ export function mount(root = document) {
   initWall(root);
   initCheckin(root);
   initNotify(root);
+  initSpotlights(root);
   initDraws(root);
   initFlash(root);
   const shellBooted = document.body.dataset.shellBooted;

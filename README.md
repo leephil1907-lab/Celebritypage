@@ -126,12 +126,22 @@ the rendered HTML get their hidden field injected by the render pipeline, so a t
 per-IP throttling on login/signup/chat, bcrypt password hashes, and role checks
 (`requireMember` → 401, `requireRole('admin')` → 403) on the API as well as the console.
 
+### The interaction layer
+
+The cards answer the pointer and the keyboard: the tier cards and every tour row carry a gold light that
+follows the cursor (`--mx`/`--my` written per frame, the paint is CSS) plus a rim traced on the edge, which
+also appears on `:focus-within` so a keyboard gets the same acknowledgement. The countdown panel sits on a
+slow, masked aura, and the chips on dates that have not played yet carry a single sheen. It is all paint:
+one `pointermove` handler per card, no React, no animation library, no request, and `prefers-reduced-motion`
+(and the site's own `motion-reduced` flag) stops the light from moving while leaving every card exactly
+where it was — `npm run qa` proves both halves.
+
 ## Verify
 
 ```
 npm run verify          # build + integrity check + 33 e2e tests   (~6 s)
 npm run audit           # 299 whole-site checks: links, media, fonts, meta, sitemap, layout at 6 widths
-npm run qa              # 61 Chromium checks: carousels, motion, live sync, waitlist, mobile, console
+npm run qa              # 66 Chromium checks: carousels, motion, pointer light, waitlist, mobile, console
 ```
 
 Neither browser suite pretends to have run: if Chromium cannot be launched, `npm run qa` exits

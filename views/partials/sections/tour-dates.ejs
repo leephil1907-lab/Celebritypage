@@ -3,7 +3,7 @@
 <div class="tour-grid">
   <% tour.forEach(function(d, i){ %>
   <% const st = STATE[d.sale_state] || STATE.on_sale; %>
-  <article class="tour-card is-<%= d.sale_state %> <%= d.is_past ? 'is-done' : '' %>" data-reveal data-reveal-delay="<%= i * 60 %>" id="date-<%= d.id %>">
+  <article class="tour-card is-<%= d.sale_state %> <%= d.is_past ? 'is-done' : '' %>" data-reveal data-reveal-delay="<%= i * 60 %>" data-spotlight id="date-<%= d.id %>">
     <header>
       <span class="mono dim"><%= d.date %> • <%= d.time || '—' %></span>
       <span class="tagchip <%= st[1] %>"><%= st[0] %></span>

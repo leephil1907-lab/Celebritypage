@@ -2,6 +2,7 @@
 <% const nx = (typeof next !== 'undefined' && next) || null; const cd = (typeof countdown !== 'undefined' && countdown) || null; %>
 <% if (nx) { %>
 <div class="countdown" data-count-grid data-count-to="<%= nx.at_ms %>">
+  <i class="cd-aura" aria-hidden="true"></i>
   <div class="cd-copy">
     <span class="mono dim"><%= t('sec.countdown') %></span>
     <b><%= nx.tour %> — <%= nx.city %></b>

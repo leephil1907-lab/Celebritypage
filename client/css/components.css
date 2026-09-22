@@ -1240,3 +1240,69 @@ html.motion-reduced .fc-flip,html.motion-reduced .fc-sheen{transition:none}
   border-top: 1px dashed var(--line); padding-top: 14px }
 .countdown .cd-wait .vn-field { flex: 2 1 240px }
 .cd-wait.is-on { font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold3) }
+
+/* ---------- the pointer light, the rim and the aura ----------
+   The interaction family reactbits calls spotlight card / border glow / aurora, rebuilt for a stack with
+   no React, no animation library and no CDN: two CSS custom properties written on pointermove, and the
+   rest is paint. Nothing here touches the card's own transform or opacity, so the single reveal mechanism
+   stays the only thing that moves a group child, and reduced motion turns the whole thing off by refusing
+   to paint a moving highlight. */
+[data-spotlight] { position: relative; isolation: isolate; }
+[data-spotlight]::before, [data-spotlight]::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  opacity: 0; transition: opacity .34s var(--ease, ease);
+}
+[data-spotlight]::before {
+  z-index: -1;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 16%), rgba(201, 168, 106, .17), rgba(201, 168, 106, 0) 62%);
+}
+[data-spotlight]::after {
+  z-index: 2; padding: 1px;
+  background: radial-gradient(210px circle at var(--mx, 50%) var(--my, 16%), rgba(240, 216, 168, .95), rgba(201, 168, 106, .2) 44%, rgba(201, 168, 106, 0) 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+[data-spotlight]:hover::before, [data-spotlight]:focus-within::before,
+[data-spotlight]:hover::after, [data-spotlight]:focus-within::after { opacity: 1; }
+.tier[data-spotlight]:hover { transform: translateY(-4px) }
+/* the tier cards are printed on ink, where a .17 wash is invisible — same light, turned up */
+.tier[data-spotlight]::before {
+  background: radial-gradient(300px circle at var(--mx, 50%) var(--my, 16%), rgba(201, 168, 106, .3), rgba(201, 168, 106, 0) 60%);
+}
+.tier[data-spotlight]::after {
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 16%), rgba(246, 226, 186, 1), rgba(201, 168, 106, .3) 40%, rgba(201, 168, 106, 0) 66%);
+}
+
+/* a chip for something that has not happened yet should look like it is about to */
+.tour-card .tagchip { position: relative; overflow: hidden }
+.tour-card:not(.is-done) .tagchip.gold::after {
+  content: ''; position: absolute; inset: -2px; pointer-events: none;
+  background: linear-gradient(100deg, transparent 24%, rgba(255, 255, 255, .62) 48%, transparent 74%);
+  transform: translateX(-130%); animation: chipSheen 5.4s var(--ease, ease) infinite;
+}
+@keyframes chipSheen { 0%, 58% { transform: translateX(-130%) } 88%, 100% { transform: translateX(130%) } }
+
+/* the ambient light behind the countdown, painted inside the panel so it cannot push the page wide */
+.countdown { position: relative; isolation: isolate }
+.countdown .cd-aura {
+  position: absolute; inset: 24% 15%; z-index: -1; border-radius: 50%; pointer-events: none; opacity: .5;
+  background: conic-gradient(from 210deg at 50% 50%,
+    rgba(201, 168, 106, .34), rgba(201, 168, 106, .05) 26%, rgba(255, 255, 255, .6) 50%,
+    rgba(201, 168, 106, .07) 74%, rgba(201, 168, 106, .34));
+  /* the blurred box has a hard edge of its own; masked off, only the light it throws survives */
+  -webkit-mask: radial-gradient(46% 56% at 50% 50%, #000 16%, rgba(0, 0, 0, 0) 72%);
+  mask: radial-gradient(46% 56% at 50% 50%, #000 16%, rgba(0, 0, 0, 0) 72%);
+  filter: blur(22px); animation: cdAura 32s linear infinite;
+}
+@keyframes cdAura { to { transform: rotate(1turn) } }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-spotlight]::before, [data-spotlight]::after { transition: none }
+  .tour-card:not(.is-done) .tagchip.gold::after, .countdown .cd-aura { animation: none }
+  .tour-card:not(.is-done) .tagchip.gold::after { opacity: 0 }
+}
+html.motion-reduced [data-spotlight]::before, html.motion-reduced [data-spotlight]::after { transition: none }
+html.motion-reduced .tour-card:not(.is-done) .tagchip.gold::after,
+html.motion-reduced .countdown .cd-aura { animation: none }
+html.motion-reduced .tour-card:not(.is-done) .tagchip.gold::after { opacity: 0 }

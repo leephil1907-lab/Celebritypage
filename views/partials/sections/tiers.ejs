@@ -1,7 +1,7 @@
 <% /* Fan card tiers + live preview card */ %>
 <div class="tier-grid" data-reveal-stagger>
   <% tiers.forEach(function(tier){ const featured = !!tier.featured; %>
-  <article class="tier <%= featured ? 'featured' : '' %>" data-tier="<%= tier.id %>" data-reveal>
+  <article class="tier <%= featured ? 'featured' : '' %>" data-tier="<%= tier.id %>" data-reveal data-spotlight>
     <% if (featured) { %><span class="ribbon"><%= lang === 'ja' ? '人気' : 'MOST POPULAR' %></span><% } %>
     <div class="tier-top"><span class="tier-name"><%= tier.name %></span><span class="tier-icon" style="color:<%= tier.accent %>"><%= tier.icon %></span></div>
     <h3><%= tier.name %></h3>

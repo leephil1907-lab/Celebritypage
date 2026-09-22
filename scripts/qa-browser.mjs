@@ -458,6 +458,24 @@ const vis = await rp.evaluate(() => {
   return { total: els.length, hidden: hidden.length, reduced: document.documentElement.classList.contains('motion-reduced') };
 });
 vis.hidden === 0 ? ok('reduced-motion keeps everything visible', `${vis.total} blocks, flag=${vis.reduced}`) : bad('reduced-motion keeps everything visible', JSON.stringify(vis));
+const still = await rp.evaluate(async () => {
+  const el = document.querySelector('[data-spotlight]');
+  const aura = document.querySelector('.cd-aura');
+  const chip = document.querySelector('.tour-card:not(.is-done) .tagchip.gold');
+  if (el) {
+    el.dispatchEvent(new PointerEvent('pointermove', { clientX: 40, clientY: 40, bubbles: true }));
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  }
+  const anim = (n) => (n ? getComputedStyle(n).animationName : 'none');
+  return {
+    vars: el ? el.style.getPropertyValue('--mx') : 'no card',
+    aura: anim(aura), sheen: chip ? anim(chip.querySelector ? chip : null) || anim(chip) : 'none',
+    auraVisible: aura ? getComputedStyle(aura).display !== 'none' : false,
+  };
+});
+still.aura === 'none' && !still.vars && still.auraVisible
+  ? ok('reduced motion stills the glow instead of removing the card', `aura=${still.aura}, pointer vars="${still.vars || 'none written'}"`)
+  : bad('reduced motion stills the glow instead of removing the card', JSON.stringify(still));
 await rp.screenshot({ path: path.join(SHOTS, 'reduced-motion.png') });
 await rctx.close();
 
@@ -531,8 +549,64 @@ console.log('\n[16] waitlist');
   await wctx.close();
 }
 
-/* ---------- 17. screenshots ---------- */
-console.log('\n[17] shots');
+/* ---------- 17. the pointer light, the rim and the sheen ---------- */
+console.log('\n[17] pointer light');
+await page.goto(BASE + '/', { waitUntil: 'load' });
+await page.waitForTimeout(800);
+{
+  const card = page.locator('.tier[data-spotlight]').first();
+  await card.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(400);
+  const before = await card.evaluate((el) => ({ mx: el.style.getPropertyValue('--mx'), o: getComputedStyle(el, '::before').opacity }));
+  const box = await card.boundingBox();
+  await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.7);
+  await page.waitForTimeout(80);
+  await page.mouse.move(box.x + box.width * 0.24, box.y + box.height * 0.72);
+  await page.waitForTimeout(320);
+  const lit = await card.evaluate((el) => ({
+    mx: el.style.getPropertyValue('--mx'), my: el.style.getPropertyValue('--my'),
+    light: getComputedStyle(el, '::before').opacity, rim: getComputedStyle(el, '::after').opacity,
+    bg: getComputedStyle(el, '::before').backgroundImage,
+  }));
+  const moved = /^[\d.]+%$/.test(lit.mx || '') && lit.mx !== before.mx && /[\d.]+%/.test(lit.my || '');
+  moved && parseFloat(lit.light) > .9 && parseFloat(lit.rim) > .9 && /at \d+\.?\d*% \d+\.?\d*%/.test(lit.bg)
+    ? ok('a card answers the pointer with a light that follows it', `--mx ${lit.mx} / --my ${lit.my}, light ${lit.light}, rim ${lit.rim}`)
+    : bad('a card answers the pointer with a light that follows it', JSON.stringify({ before, lit }).slice(0, 220));
+
+  const kb = await page.evaluate(() => {
+    const el = document.querySelector('.tier[data-spotlight]');
+    const inside = el.querySelector('a, button, [tabindex]');
+    inside?.focus();
+    const o = getComputedStyle(el, '::after').opacity;
+    inside?.blur();
+    return { focusable: !!inside, rim: o };
+  });
+  kb.focusable && parseFloat(kb.rim) > .9
+    ? ok('the keyboard gets the same acknowledgement without a pointer', `rim opacity ${kb.rim} on focus-within`)
+    : bad('the keyboard gets the same acknowledgement without a pointer', JSON.stringify(kb));
+
+  const deco = await page.evaluate(() => {
+    const aura = document.querySelector('.countdown .cd-aura');
+    const chip = document.querySelector('.tour-card:not(.is-done) .tagchip.gold');
+    const c = aura && getComputedStyle(aura);
+    const k = chip && getComputedStyle(chip, '::after');
+    return {
+      aura: c ? { name: c.animationName, z: c.zIndex, inPanel: !!aura.closest('.countdown'), aria: aura.getAttribute('aria-hidden') } : null,
+      chip: k ? { name: k.animationName, pe: k.pointerEvents } : null,
+      width: { doc: document.documentElement.scrollWidth, win: window.innerWidth },
+    };
+  });
+  deco.aura && deco.aura.name !== 'none' && deco.aura.z === '-1' && deco.aura.aria === 'true' && deco.chip.name === 'chipSheen' && deco.chip.pe === 'none'
+    ? ok('the glow is paint only — behind the copy, invisible to AT, no pointer capture', `aura z ${deco.aura.z}, chip ${deco.chip.name}, scrollWidth ${deco.width.doc}/${deco.width.win}`)
+    : bad('the glow is paint only — behind the copy, invisible to AT', JSON.stringify(deco).slice(0, 220));
+
+    const wide = deco.width.doc > deco.width.win;
+    wide ? bad('the glow costs the page no width', `scrollWidth ${deco.width.doc} > ${deco.width.win}`) : ok('the glow costs the page no width', `${deco.width.doc}px`);
+  await page.screenshot({ path: path.join(SHOTS, 'pointer-light.png') });
+}
+
+/* ---------- 18. screenshots ---------- */
+console.log('\n[18] shots');
 for (const [url, name] of [['/', 'home'], ['/shop/', 'shop'], ['/tour/', 'tour'], ['/music/', 'music'], ['/journal/', 'journal'], ['/members/', 'members'], ['/join/', 'join'], ['/archive/', 'archive']]) {
   await page.goto(BASE + url, { waitUntil: 'load' });
   await page.evaluate(() => window.scrollTo(0, 900));
