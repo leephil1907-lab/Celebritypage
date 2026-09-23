@@ -318,6 +318,19 @@ console.log('\n[8] deploy contract');
     pr ? pass('the image runs production mode') : (note('the Dockerfile never sets NODE_ENV=production, so demo accounts stay open in the image'), bad++);
     const runs = /CMD|ENTRYPOINT/.test(docker);
     runs ? pass('the image declares how to start') : (note('the Dockerfile has no CMD'), bad++);
+    /* A native dependency whose binary arrives through an install script is dead weight if the
+       install step is told to ignore scripts: the image builds, and the container cannot open its
+       database. This shipped once — the check now refuses it. */
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+    const deps = Object.keys(pkg.dependencies || {});
+    const natives = deps.filter((d) => fs.existsSync(path.join(ROOT, 'node_modules', d, 'binding.gyp')));
+    const install = /npm (ci|install)[^\n]*/.exec(docker)?.[0] || '';
+    if (natives.length && /--ignore-scripts/.test(install) && !/--ignore-scripts[^\n]*\n[^\n]*npm rebuild/.test(docker)) {
+      note(`the Dockerfile installs with --ignore-scripts, so ${natives.join(', ')} would ship without its native binary (the container boots into a dead database)`);
+      bad++;
+    } else if (natives.length) {
+      pass(`the image keeps install scripts on, so ${natives.join(', ')} gets its binary`);
+    }
   } else { note('Dockerfile is missing'); bad++; }
 }
 

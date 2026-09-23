@@ -14,7 +14,9 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends python3 make g++ ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+# scripts stay ON: better-sqlite3's install step is what downloads (or compiles) the
+# better_sqlite3.node binary — with --ignore-scripts the image builds fine and then dies at boot
+RUN npm ci --omit=dev && npm cache clean --force
 
 # assets are built from source into public/ (npm run build == node scripts/build.mjs)
 COPY client ./client
