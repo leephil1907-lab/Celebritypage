@@ -884,6 +884,39 @@ export function initSpotlights(root = document) {
   });
 }
 
+/* ---------- the buttons lean toward the pointer ----------
+   `translate` is set as a variable-driven property, not `transform`, so the button keeps the hover
+   lift it already had. A pointer that never arrives costs one listener and writes nothing. */
+export function initMagnets(root = document) {
+  $$('[data-magnet]', root).forEach((el) => {
+    if (el.__magnet) return;
+    el.__magnet = true;
+    const pull = Number(el.dataset.magnet) || 6;
+    let frame = 0;
+    const move = (e) => {
+      if (document.documentElement.classList.contains('motion-reduced')) return;
+      const r = el.getBoundingClientRect();
+      if (!r.width) return;
+      const x = ((e.clientX - (r.left + r.width / 2)) / (r.width / 2)) * pull;
+      const y = ((e.clientY - (r.top + r.height / 2)) / (r.height / 2)) * pull;
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        el.style.setProperty('--mg-x', x.toFixed(2) + 'px');
+        el.style.setProperty('--mg-y', y.toFixed(2) + 'px');
+      });
+    };
+    const rest = () => {
+      if (frame) { cancelAnimationFrame(frame); frame = 0; }
+      el.style.setProperty('--mg-x', '0px');
+      el.style.setProperty('--mg-y', '0px');
+    };
+    el.addEventListener('pointermove', move, { passive: true });
+    el.addEventListener('pointerleave', rest, { passive: true });
+    el.addEventListener('blur', rest);
+  });
+}
+
 /* ---------- boot ---------- */
 export function mount(root = document) {
   initFanCards(root);
@@ -897,6 +930,7 @@ export function mount(root = document) {
   initCheckin(root);
   initNotify(root);
   initSpotlights(root);
+  initMagnets(root);
   initDraws(root);
   initFlash(root);
   const shellBooted = document.body.dataset.shellBooted;

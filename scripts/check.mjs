@@ -247,6 +247,80 @@ console.log('\n[7] deploy bundle');
   }
 }
 
+console.log('\n[8] deploy contract');
+{
+  let bad = 0;
+  /* Every variable the app can be configured with has to be documented, and the documentation has to
+     describe a variable the app actually reads — a deploy checklist that drifts from the code is
+     worse than none, because it is believed. */
+  const read = new Set();
+  const walk = (dir, out = []) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (['node_modules', '.git', 'data', 'uploads'].includes(e.name)) continue;
+      const f = path.join(dir, e.name);
+      if (e.isDirectory()) walk(f, out);
+      else if (/\.(mjs|js|ejs|json)$/.test(e.name)) out.push(f);
+    }
+    return out;
+  };
+  const sources = [...walk(path.join(ROOT, 'server')), ...walk(path.join(ROOT, 'api')), ...walk(path.join(ROOT, 'scripts')), ...walk(path.join(ROOT, 'tests'))]
+    .filter((f) => !f.includes(path.sep + 'scripts' + path.sep + 'lib' + path.sep));
+  for (const f of sources) {
+    const src = fs.readFileSync(f, 'utf8');
+    for (const m of src.matchAll(/process\.env(?:\.([A-Z0-9_]+)|\[['"]([A-Z0-9_]+)['"]\])/g)) read.add(m[1] || m[2]);
+  }
+  const exampleFile = path.join(ROOT, '.env.example');
+  if (!fs.existsSync(exampleFile)) { note('.env.example is missing — a deployment has no documented contract'); bad++; }
+  else {
+    const body = fs.readFileSync(exampleFile, 'utf8');
+    const documented = new Set([...body.matchAll(/^([A-Z0-9_]+)=/gm)].map((m) => m[1]));
+    const undocumented = [...read].filter((k) => !documented.has(k)).sort();
+    const unused = [...documented].filter((k) => !read.has(k)).sort();
+    if (undocumented.length) { note(`.env.example does not document ${undocumented.join(', ')} — a deploy would guess`); bad++; }
+    else pass(`every one of the ${read.size} variables the code reads is documented`);
+    if (unused.length) { note(`.env.example documents ${unused.join(', ')}, which no code reads`); bad++; }
+    else pass('and .env.example documents nothing the code ignores');
+    const blanks = [...body.matchAll(/^([A-Z0-9_]+)=(\S+)$/gm)].filter((m) => /PASSWORD|SECRET|TOKEN|KEY/.test(m[1]));
+    if (blanks.length) { note(`.env.example ships a value for ${blanks.map((m) => m[1]).join(', ')} — secrets belong in the host`); bad++; }
+    else pass('no secret is pre-filled in .env.example');
+  }
+
+  /* The container/disk path is the one that keeps data, so its mount has to line up with the code. */
+  const renderFile = path.join(ROOT, 'render.yaml');
+  if (!fs.existsSync(renderFile)) { note('render.yaml is missing — the durable deploy path is undocumented'); bad++; }
+  else {
+    const yaml = fs.readFileSync(renderFile, 'utf8');
+    const mount = /mountPath:\s*(\S+)/.exec(yaml)?.[1];
+    const dataDir = /key:\s*DATA_DIR\s*\n\s*value:\s*(\S+)/.exec(yaml)?.[1];
+    const health = /healthCheckPath:\s*(\S+)/.exec(yaml)?.[1];
+    if (!mount || !dataDir || dataDir !== mount) { note(`render.yaml must point DATA_DIR at the mounted disk (mount ${mount || '?'} vs DATA_DIR ${dataDir || '?'})`); bad++; }
+    else pass(`the disk at ${mount} is where state is written`);
+    const uploads = /key:\s*UPLOAD_DIR\s*\n\s*value:\s*(\S+)/.exec(yaml)?.[1];
+    if (!uploads || !uploads.startsWith(mount)) { note(`render.yaml must keep UPLOAD_DIR (${uploads || 'unset'}) inside the mounted disk`); bad++; }
+    else pass('uploads stay on the same disk');
+    if (!health) { note('render.yaml has no health check'); bad++; }
+    else {
+      const appJs = fs.readFileSync(path.join(ROOT, 'server', 'app.js'), 'utf8');
+      const registered = appJs.includes("'" + health + "'") || appJs.includes('"' + health + '"');
+      if (!registered) { note(`render.yaml health-checks ${health}, which the app does not serve`); bad++; }
+      else pass(`health check ${health} is a route the app answers`);
+    }
+    const passwords = [...yaml.matchAll(/key:\s*(ADMIN_PASSWORD|SEED_DEMO_PASSWORD)\s*\n(?:\s+.*\n)*?\s+value:/g)];
+    if (passwords.length) { note('render.yaml must not carry a password value — use sync: false'); bad++; }
+    else pass('the blueprint asks for secrets instead of storing them');
+  }
+
+  /* Docker is the other durable path: the image must run in production mode with a writable data dir. */
+  const dockerFile = path.join(ROOT, 'Dockerfile');
+  if (fs.existsSync(dockerFile)) {
+    const docker = fs.readFileSync(dockerFile, 'utf8');
+    const pr = /NODE_ENV=production/.test(docker);
+    pr ? pass('the image runs production mode') : (note('the Dockerfile never sets NODE_ENV=production, so demo accounts stay open in the image'), bad++);
+    const runs = /CMD|ENTRYPOINT/.test(docker);
+    runs ? pass('the image declares how to start') : (note('the Dockerfile has no CMD'), bad++);
+  } else { note('Dockerfile is missing'); bad++; }
+}
+
 /* ---------- verdict ---------- */
 const unique = [...new Set(problems)];
 console.log('\n' + '='.repeat(38));

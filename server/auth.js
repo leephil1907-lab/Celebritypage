@@ -203,6 +203,8 @@ export function membershipOf(userId) {
 
 export function setLangRow(req, lang) { run(`UPDATE sessions SET lang=@l WHERE token=@t`, { l: lang, t: req.sid }); }
 
-export function activeSessionCount() { return all(`SELECT 1 FROM sessions`).length; }
+/* "active" has to mean active: rows whose expiry has passed are waiting for the sweep, and counting
+   them made the boot line claim seven thousand live sessions on a laptop */
+export function activeSessionCount() { return get(`SELECT COUNT(*) AS n FROM sessions WHERE expires_at > datetime('now')`).n; }
 export function sweepSessions() { const r = run(`DELETE FROM sessions WHERE expires_at < datetime('now')`); return r.changes; }
 export { bcrypt, crypto, getDb };

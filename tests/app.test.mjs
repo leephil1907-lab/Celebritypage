@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -757,6 +758,87 @@ test('a read-only project directory still boots — state moves to the scratch t
     if (child2.exitCode === null) child2.kill('SIGKILL');
     for (const d of [path.join(ro, 'data'), path.join(ro, 'uploads'), ro]) { try { fs.chmodSync(d, 0o700); } catch { /* already gone */ } }
     fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('a deployed copy cannot be taken over with the passwords in this repository', async () => {
+  /* The fixture password lives in a public repo, so the deployment story has to be: it does nothing
+     in production, an operator's ADMIN_PASSWORD is authoritative on every boot (not just the first),
+     and demo member accounts cannot sign in at all until someone says so. */
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'starto-prod-'));
+  const data = path.join(dir, 'data');
+  fs.mkdirSync(data, { recursive: true });
+  const baseEnv = {
+    ...process.env,
+    DATA_DIR: data,
+    UPLOAD_DIR: path.join(data, 'uploads'),
+    NODE_ENV: 'production',
+    PORT: String(PORT + 2),
+    ADMIN_PORT: String(ADMIN_PORT + 2),
+  };
+  delete baseEnv.ADMIN_PASSWORD;
+  delete baseEnv.SEED_DEMO_PASSWORD;
+  const pbase = `http://127.0.0.1:${PORT + 2}`;
+
+  const boot = async (env) => {
+    const c = spawn(process.execPath, ['server/index.js'], { cwd: ROOT, env });
+    let log = '';
+    c.stdout.on('data', (d) => { log += d; });
+    c.stderr.on('data', (d) => { log += d; });
+    const get = () => log;
+    for (let i = 0; i < 60; i++) {
+      await new Promise((r) => setTimeout(r, 150));
+      try { if ((await fetch(pbase + '/healthz')).ok) break; } catch { /* not up yet */ }
+    }
+    return { c, get };
+  };
+  const login = async (email, password) => {
+    const home = await fetch(pbase + '/');
+    const html = await home.text();
+    const csrf = /name="csrf-token" content="([^"]+)"/.exec(html)?.[1];
+    const cookie = (home.headers.getSetCookie?.() || []).map((c) => c.split(';')[0]).join('; ');
+    const r = await fetch(pbase + '/api/auth/login', {
+      method: 'POST',
+      headers: { cookie, 'content-type': 'application/json', 'x-csrf-token': csrf },
+      body: JSON.stringify({ email, password }),
+    });
+    return r.status;
+  };
+
+  let first;
+  let second;
+  try {
+    first = await boot(baseEnv);
+    const log = first.get();
+    assert.match(log, /GENERATED for this database/, 'a production boot without ADMIN_PASSWORD has to say what it generated');
+    const generated = /\/ ([A-Za-z0-9_-]{16,}) — GENERATED/.exec(log)?.[1];
+    assert.ok(generated, 'the generated password has to be printable, or nobody can ever sign in:\n' + log.slice(0, 300));
+
+    assert.equal(await login('aiko@example.com', 'Starto2026!'), 401, 'a demo account must not accept the repository password in production');
+    assert.equal(await login('admin@starto.jp', 'Starto2026!'), 401, 'the repository password must not open the console in production');
+    assert.equal(await login('admin@starto.jp', generated), 200, 'the generated password has to work on the boot that printed it');
+
+    first.c.kill('SIGTERM');
+    await new Promise((r) => setTimeout(r, 700));
+
+    /* the same database, this time with ADMIN_PASSWORD: the env var wins on an existing install */
+    second = await boot({ ...baseEnv, ADMIN_PASSWORD: 'DeployRotate2026!ok' });
+    assert.match(second.get(), /password from ADMIN_PASSWORD/, 'the boot line has to report where the password came from');
+    assert.equal(await login('admin@starto.jp', 'DeployRotate2026!ok'), 200, 'ADMIN_PASSWORD must take effect on a database that already exists');
+    assert.equal(await login('admin@starto.jp', generated), 401, 'the previous generated password must stop working once the env var is set');
+
+    /* and a restart with no env var admits it does not know the password instead of inventing one */
+    second.c.kill('SIGTERM');
+    await new Promise((r) => setTimeout(r, 700));
+    const third = await boot(baseEnv);
+    try {
+      assert.match(third.get(), /cannot be read back/, 'a deployed instance must not print a password it did not store');
+      assert.doesNotMatch(third.get(), /GENERATED for this database/, 'no password may be advertised that this boot did not set');
+    } finally { third.c.kill('SIGKILL'); }
+  } finally {
+    first?.c.kill('SIGKILL');
+    second?.c.kill('SIGKILL');
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });
 

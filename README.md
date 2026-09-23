@@ -134,14 +134,16 @@ also appears on `:focus-within` so a keyboard gets the same acknowledgement. The
 slow, masked aura, and the chips on dates that have not played yet carry a single sheen. It is all paint:
 one `pointermove` handler per card, no React, no animation library, no request, and `prefers-reduced-motion`
 (and the site's own `motion-reduced` flag) stops the light from moving while leaving every card exactly
-where it was — `npm run qa` proves both halves.
+where it was — `npm run qa` proves both halves. The hero's calls to action lean toward the pointer
+(a `translate` written from two variables, so the button keeps its own hover lift), and the
+next-show panel carries a light that walks its own rim; both stop under reduced motion.
 
 ## Verify
 
 ```
-npm run verify          # build + integrity check + 33 e2e tests   (~6 s)
+npm run verify          # build + integrity check + 35 e2e tests   (~10 s)
 npm run audit           # 299 whole-site checks: links, media, fonts, meta, sitemap, layout at 6 widths
-npm run qa              # 66 Chromium checks: carousels, motion, pointer light, waitlist, mobile, console
+npm run qa              # 70 Chromium checks: carousels, motion, pointer light, magnet, waitlist, mobile, console
 ```
 
 Neither browser suite pretends to have run: if Chromium cannot be launched, `npm run qa` exits
@@ -149,7 +151,7 @@ non-zero and says what is missing (and `npm run audit` records the skipped stage
 `QA_ALLOW_NO_BROWSER=1` / `AUDIT_ALLOW_NO_BROWSER=1` are the opt-outs for a machine that has no
 browser by design. `npm run audit` likewise refuses to run against a server that is not up.
 
-`npm run check` (110 checks) walks every template through `ejs.compile`, resolves every `include`,
+`npm run check` (119 checks) walks every template through `ejs.compile`, resolves every `include`,
 scans for inline handlers, matches all 31 client `api()` calls to a real route, and — when a server
 answers on :8000 — sweeps all 16 live pages. `npm run audit` fetches the rendered site and checks the
 things a browser would punish: a 404 image, an upscale past its frame, an off-screen control at any of
@@ -182,6 +184,11 @@ complete deploy. Sessions live in SQLite, so a restart does not log members out.
 | `BUILD_ID` | content hash | cache-busting token, also written to `public/build.json` |
 | `COMBINED` | empty | `1` puts the console at `/admin` on the site's own port instead of a second listener |
 | `DATA_DIR` / `UPLOAD_DIR` | `data/` / `uploads/` | where state is written; both fall back to the temp dir when the filesystem is read-only |
+| `ADMIN_PASSWORD` / `ADMIN_EMAIL` | empty | console credentials. Authoritative on every boot — see the table above |
+| `SEED_DEMO_PASSWORD` | empty | set it to let the seeded member accounts sign in on a production build |
+
+`.env.example` lists every variable the code reads, and `npm run check` fails if that file drifts in
+either direction — an undocumented variable, or a documented one nothing reads.
 
 `settings.site.url` (Admin → Settings → `site.url`) overrides `SITE_URL` when you would rather not
 touch the environment. Both are empty in a fresh install on purpose: a hard-coded origin is the usual
@@ -213,6 +220,22 @@ Three things are worth knowing before you point anything real at it:
 
 Nothing in the build or the runtime reaches for a CDN, a tile server or an image API — the fonts,
 icons and photography are all in `public/`, so a deployment with no network access still renders.
+
+### A host with a disk (Render, Fly, Railway, a VPS)
+
+Vercel's function filesystem is read-only apart from `/tmp`, so the database there is per instance and
+temporary. For a deployment that *keeps* its members, waitlists and uploads, use a host that can mount
+a disk — `render.yaml` is a working blueprint for one:
+
+```
+Render → New → Blueprint → this repository     # Dockerfile, /healthz, a 1 GB disk at /app/data
+                                              # DATA_DIR=/app/data · UPLOAD_DIR=/app/data/uploads · COMBINED=1
+```
+
+`ADMIN_PASSWORD` and `SITE_URL` are `sync: false`, so Render asks for them instead of storing them in
+the repository. `npm run check` verifies that the blueprint's `DATA_DIR` actually points at the mounted
+disk, that the health check it probes is a route the app serves, and that no password value is
+committed to it. The same two variables make `docker compose up` production-ready.
 
 ### Container
 
@@ -261,10 +284,23 @@ tar czf uploads-$(date +%F).tgz uploads/
 Then `curl -s localhost:8000/api/health` (or `/healthz`) shows `db: "up"` again. The audit runs
 against production with `AUDIT_BASE=https://your-domain npm run audit` (`QA_BASE`/`QA_ADMIN` point the browser suite); media 404s are fatal there by design.
 
-### Change the demo credentials
+### Credentials, and what a deployment does with them
 
-`admin@starto.jp / Starto2026!` and the three seeded members (`aiko|marc|yuki@example.com / Starto2026!`)
-are seed data. Rotate them in Admin → Members (or delete those rows) before the site is public.
+The fixture password (`Starto2026!`) is a development convenience, and a repository is public, so the
+code refuses to let it become a deployment:
+
+| Situation | What happens |
+| --- | --- |
+| `ADMIN_PASSWORD` set | Authoritative **on every boot**, not just the first — change the variable, restart, you are in. The old password stops working. |
+| production, no `ADMIN_PASSWORD`, empty database | A random password is generated, stored, and printed **once** in the boot log (`!! ADMIN_PASSWORD is not set…`). Set the variable and restart to choose your own. |
+| production, no `ADMIN_PASSWORD`, database already has an admin | The boot line says the stored password is unchanged and cannot be read back, and tells you to set the variable. It never invents a password. |
+| the three seeded members (`aiko`/`marc`/`yuki@example.com`) | Seeded with random passwords in production: they cannot sign in until `SEED_DEMO_PASSWORD` is set. Their orders, tickets and memberships still exist, because the seeded content references them. |
+| development (`NODE_ENV` not production) | Everything uses `Starto2026!`, so the suites and `npm start` keep working with no setup. |
+
+`ADMIN_EMAIL` renames the admin account (the row is updated in place, keeping its history).
+`npm test` covers all four rows of that table: the fixture password is refused in production, the
+generated one works on the boot that printed it, `ADMIN_PASSWORD` overrides it on an existing
+database, and a later boot admits it does not know the password instead of advertising a wrong one.
 
 ## Repository housekeeping
 

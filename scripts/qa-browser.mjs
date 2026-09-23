@@ -467,15 +467,24 @@ const still = await rp.evaluate(async () => {
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   }
   const anim = (n) => (n ? getComputedStyle(n).animationName : 'none');
+  const mag = document.querySelector('[data-magnet]');
+  const cd = document.querySelector('.countdown');
+  if (mag) {
+    mag.dispatchEvent(new PointerEvent('pointermove', { clientX: 30, clientY: 30, bubbles: true }));
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  }
   return {
     vars: el ? el.style.getPropertyValue('--mx') : 'no card',
     aura: anim(aura), sheen: chip ? anim(chip.querySelector ? chip : null) || anim(chip) : 'none',
     auraVisible: aura ? getComputedStyle(aura).display !== 'none' : false,
+    magnet: mag ? mag.style.getPropertyValue('--mg-x') : 'no cta',
+    rim: cd ? getComputedStyle(cd, '::after').animationName : 'no panel',
+    panel: cd ? cd.getBoundingClientRect().height > 40 : false,
   };
 });
-still.aura === 'none' && !still.vars && still.auraVisible
-  ? ok('reduced motion stills the glow instead of removing the card', `aura=${still.aura}, pointer vars="${still.vars || 'none written'}"`)
-  : bad('reduced motion stills the glow instead of removing the card', JSON.stringify(still));
+still.aura === 'none' && still.rim === 'none' && !still.vars && !still.magnet && still.auraVisible && still.panel
+  ? ok('reduced motion stills the glow, the magnet and the rim — without removing anything', `aura ${still.aura}, rim ${still.rim}, magnet vars "${still.magnet || 'none written'}", pointer vars "${still.vars || 'none written'}"`)
+  : bad('reduced motion stills the glow, the magnet and the rim — without removing anything', JSON.stringify(still));
 await rp.screenshot({ path: path.join(SHOTS, 'reduced-motion.png') });
 await rctx.close();
 
@@ -602,6 +611,53 @@ await page.waitForTimeout(800);
 
     const wide = deco.width.doc > deco.width.win;
     wide ? bad('the glow costs the page no width', `scrollWidth ${deco.width.doc} > ${deco.width.win}`) : ok('the glow costs the page no width', `${deco.width.doc}px`);
+  /* the magnet and the rim: the CTA leans toward the pointer, the panel's own edge carries a light */
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForTimeout(700);
+  {
+    /* the hero carousel's own nav sits over the buttons' outer corners, so the pointer has to land on
+       the middle band of the button — which is also where a person would actually hover it */
+    const cta = page.locator('.hero-cta [data-magnet]').first();
+    await cta.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
+    const box = await cta.boundingBox();
+    const before = await cta.evaluate((el) => ({ x: el.style.getPropertyValue('--mg-x'), t: getComputedStyle(el).translate }));
+    await page.mouse.move(box.x + box.width * 0.78, box.y + box.height * 0.5);
+    await page.waitForTimeout(70);
+    await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.52);
+    await page.waitForTimeout(240);
+    const pulled = await cta.evaluate((el) => ({ x: el.style.getPropertyValue('--mg-x'), y: el.style.getPropertyValue('--mg-y'), t: getComputedStyle(el).translate }));
+    const leaned = parseFloat(pulled.x) > 0.5 && Math.abs(parseFloat(pulled.y)) < 3 && pulled.t !== before.t && pulled.t !== '0px';
+    leaned
+      ? ok('the call to action leans toward the pointer', `--mg-x ${pulled.x}, --mg-y ${pulled.y}, translate ${pulled.t}`)
+      : bad('the call to action leans toward the pointer', JSON.stringify({ before, pulled }).slice(0, 220));
+
+    await page.mouse.move(4, 4);
+    await page.waitForTimeout(300);
+    const rested = await cta.evaluate((el) => el.style.getPropertyValue('--mg-x'));
+    Math.abs(parseFloat(rested)) < 0.01
+      ? ok('and comes back to rest when the pointer leaves', `--mg-x ${rested}`)
+      : bad('and comes back to rest when the pointer leaves', `--mg-x ${rested}`);
+
+    const rim = await page.evaluate(() => {
+      const el = document.querySelector('.countdown');
+      if (!el) return null;
+      const c = getComputedStyle(el, '::after');
+      return { name: c.animationName, pe: c.pointerEvents, mask: (c.webkitMaskComposite || c.maskComposite || ''), clip: getComputedStyle(el).overflow };
+    });
+    rim && rim.name === 'starRim' && rim.pe === 'none' && /xor|exclude/i.test(rim.mask)
+      ? ok('the next-show panel has a light walking its own rim', `::after ${rim.name}, ${rim.pe}, mask ${rim.mask}`)
+      : bad('the next-show panel has a light walking its own rim', JSON.stringify(rim));
+
+    await page.keyboard.press('Tab');
+    const focusRing = await page.evaluate(() => {
+      const el = document.querySelector('[data-magnet]');
+      el.focus();
+      return document.activeElement === el;
+    });
+    focusRing ? ok('the leaning button is still a normal, focusable control', 'focus lands on it') : bad('the leaning button is still a normal, focusable control', 'focus did not land');
+  }
+
   await page.screenshot({ path: path.join(SHOTS, 'pointer-light.png') });
 }
 

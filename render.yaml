@@ -1,0 +1,43 @@
+# render.com blueprint — the durable deployment path.
+#
+# Unlike a serverless host, this one keeps the SQLite database and the uploads: the disk is mounted
+# at /app/data, and DATA_DIR/UPLOAD_DIR point into it, so members, waitlists and content survive a
+# restart, a redeploy and a cold start.
+#
+#   Render → New → Blueprint → point it at this repository
+#
+# ADMIN_PASSWORD and SITE_URL are `sync: false`: Render will ask for them when the blueprint is
+# created, and they are never stored in this file. `npm run check` verifies this file mounts a disk
+# where DATA_DIR points, and that every environment variable the app reads is documented in
+# .env.example.
+services:
+  - type: web
+    name: starto-celebritypage
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter              # a persistent disk needs a paid instance type
+    healthCheckPath: /healthz  # the app answers this only once SQLite is open
+    autoDeploy: true
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000            # Render routes the public port here
+      - key: COMBINED
+        value: "1"              # one origin: the console lives at /admin
+      - key: DATA_DIR
+        value: /app/data
+      - key: UPLOAD_DIR
+        value: /app/data/uploads
+      - key: SITE_URL
+        sync: false             # e.g. https://starto.example.com — set in the dashboard
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false             # authoritative on every boot; without it the app reports a generated one

@@ -4,6 +4,7 @@
  */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { getDb, insert, tableEmpty, audit } from './db.js';
 import { seedExtras } from './seed-extra.js';
@@ -210,13 +211,92 @@ function seedIfEmpty() {
   return counts;
 }
 
+/* ---------- who may sign in ----------
+   The demo password is a development convenience, and a repository is public, so a deployed copy
+   must not ship one. The rules, in order:
+     • ADMIN_PASSWORD set        → that password, on every boot (rotating the env var is authoritative)
+     • production, unset         → a random password generated once per database and printed once
+     • development, unset        → the fixture password the suites log in with
+   Demo members follow the same idea through SEED_DEMO_PASSWORD: content still seeds (orders and
+   tickets need those rows), but in production their passwords are random, so nobody can sign in
+   as them until the operator says so. */
+export const DEV_PASSWORD = 'Starto2026!';
+const IS_PROD = process.env.NODE_ENV === 'production';
+const randomPassword = () => crypto.randomBytes(15).toString('base64url');
+export const credentials = { admin: { email: null, password: null, source: 'dev-default' }, demo: { password: null, source: 'dev-default' } };
+
+/** What the operator can sign in with, and whether this boot knows it.
+ *  `password` is only ever set when this boot actually put that password in the database — a
+ *  generated value is reported exactly once, on the boot that stored it, because a later boot
+ *  cannot read a hash back. Everything else says so instead of printing a guess. */
+function adminPasswordFor(existingAdmin) {
+  const fromEnv = process.env.ADMIN_PASSWORD;
+  const email = process.env.ADMIN_EMAIL || existingAdmin?.email || 'admin@starto.jp';
+  if (fromEnv) {
+    credentials.admin = { email, password: fromEnv, source: 'env' };
+    return fromEnv;
+  }
+  if (IS_PROD) {
+    if (existingAdmin) {
+      /* existing deployment, no env var: the stored hash is whatever it is. Never invent a password
+         here — that is how an operator ends up copying a login that cannot work. */
+      credentials.admin = { email, password: null, source: 'existing' };
+      return null;
+    }
+    const gen = randomPassword();
+    credentials.admin = { email, password: gen, source: 'generated' };
+    return gen;
+  }
+  credentials.admin = { email, password: DEV_PASSWORD, source: 'dev-default' };
+  return DEV_PASSWORD;
+}
+
+function demoPasswordFor() {
+  const fromEnv = process.env.SEED_DEMO_PASSWORD;
+  if (fromEnv) { credentials.demo = { password: fromEnv, source: 'env' }; return fromEnv; }
+  if (IS_PROD) { credentials.demo = { password: randomPassword(), source: 'locked' }; return credentials.demo.password; }
+  credentials.demo = { password: DEV_PASSWORD, source: 'dev-default' };
+  return DEV_PASSWORD;
+}
+
+/** Runs on every boot, seeding or not.
+ *  An env var that only works on an empty database is worse than none: the operator sets
+ *  ADMIN_PASSWORD on a live deployment, nothing changes, and the old generated password keeps
+ *  working. So this is idempotent and authoritative — it creates the admin if it is missing and
+ *  re-hashes from ADMIN_PASSWORD whenever that variable is present. */
+/* the password this process wrote into the database, so a second call in the same boot can still
+   report it — the hash cannot be read back, but the boot that set it remembers */
+let generatedThisBoot = null;
+
+export function syncCredentials() {
+  const db = getDb();
+  const envEmail = process.env.ADMIN_EMAIL || null;
+  const admin = db.prepare(`SELECT id, email FROM users WHERE role='admin' ORDER BY id LIMIT 1`).get();
+  if (!admin) {
+    const pass = adminPasswordFor(null);
+    insert('users', { name: 'STARTO Management', email: envEmail || credentials.admin.email, pass_hash: bcrypt.hashSync(pass, 10), role: 'admin' });
+    if (credentials.admin.source === 'generated') generatedThisBoot = pass;
+    audit('system', 'BOOT', 'users', `admin created (password source: ${credentials.admin.source})`);
+    return credentials;
+  }
+  if (!process.env.ADMIN_PASSWORD && generatedThisBoot) {
+    credentials.admin = { email: admin.email, password: generatedThisBoot, source: 'generated' };
+    return credentials;
+  }
+  adminPasswordFor(admin);
+  if (process.env.ADMIN_PASSWORD) {
+    const changed = envEmail && envEmail !== admin.email;
+    db.prepare(`UPDATE users SET pass_hash=@h${changed ? ', email=@e' : ''} WHERE id=@id`).run(changed
+      ? { h: bcrypt.hashSync(credentials.admin.password, 10), e: envEmail, id: admin.id }
+      : { h: bcrypt.hashSync(credentials.admin.password, 10), id: admin.id });
+    audit('system', 'BOOT', 'users', 'admin password synced from ADMIN_PASSWORD');
+  }
+  return credentials;
+}
+
 function seedUsers() {
   const db = getDb();
-  const hasAdmin = db.prepare(`SELECT 1 FROM users WHERE role='admin' LIMIT 1`).get();
-  if (!hasAdmin) {
-    insert('users', { name: 'STARTO Management', email: 'admin@starto.jp', pass_hash: bcrypt.hashSync('Starto2026!', 10), role: 'admin' });
-    audit('system', 'SEED', 'users', 'admin created');
-  }
+  syncCredentials();
   const demo = [
     { name: 'Aiko Tanaka', email: 'aiko@example.com', tier: 'platinum', status: 'active' },
     { name: 'Marc Dubois', email: 'marc@example.com', tier: 'gold', status: 'active' },
@@ -225,7 +305,7 @@ function seedUsers() {
   demo.forEach((d, i) => {
     const exists = db.prepare(`SELECT 1 FROM users WHERE email=?`).get(d.email);
     if (exists) return;
-    const info = insert('users', { name: d.name, email: d.email, pass_hash: bcrypt.hashSync('Starto2026!', 10), role: 'member', created_at: '2026-0' + (7 + i) + '-1' + i + ' 09:00:00' });
+    const info = insert('users', { name: d.name, email: d.email, pass_hash: bcrypt.hashSync(demoPasswordFor(), 10), role: 'member', created_at: '2026-0' + (7 + i) + '-1' + i + ' 09:00:00' });
     const uid = info.lastInsertRowid;
     if (d.tier !== 'none') {
       const t = TIERS.find((x) => x.id === d.tier);

@@ -1306,3 +1306,30 @@ html.motion-reduced [data-spotlight]::before, html.motion-reduced [data-spotligh
 html.motion-reduced .tour-card:not(.is-done) .tagchip.gold::after,
 html.motion-reduced .countdown .cd-aura { animation: none }
 html.motion-reduced .tour-card:not(.is-done) .tagchip.gold::after { opacity: 0 }
+
+/* ---------- the magnet and the travelling rim ----------
+   Two more ideas from the free component catalogue, rebuilt for a stack with no React and no
+   animation library: the CTA leans toward the pointer, and the next-show panel carries a light that
+   walks its own rim. The magnet writes the `translate` property rather than `transform`, because
+   these buttons already use `transform` for their hover lift and the two must not fight. */
+[data-magnet] { translate: var(--mg-x, 0) var(--mg-y, 0); will-change: translate; }
+@media (prefers-reduced-motion: no-preference) { [data-magnet] { transition: translate .28s var(--ease, ease); } }
+
+.countdown { overflow: hidden }
+.countdown::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(115deg, transparent 40%, rgba(246, 226, 186, .95) 50%, transparent 60%) border-box;
+  background-size: 260% 100%; background-position: 190% 0;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: starRim 7s var(--ease, ease) infinite;
+}
+@keyframes starRim { 0% { background-position: 190% 0 } 55%, 100% { background-position: -90% 0 } }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-magnet] { translate: 0 0; transition: none }
+  .countdown::after { animation: none; opacity: 0 }
+}
+html.motion-reduced [data-magnet] { translate: 0 0 !important; transition: none }
+html.motion-reduced .countdown::after { animation: none; opacity: 0 }

@@ -16,8 +16,8 @@
             <h1 data-c-in><%= titleParts[0] %><% if (titleParts[1]) { %><em><%= titleParts[1] %></em><% } %></h1>
             <p data-c-in><%= s.subtitle %></p>
             <div class="hero-cta" data-c-in>
-              <% if (s.cta_href) { %><a class="btn primary" href="<%= s.cta_href %>"><%= s.cta_label || 'More' %> →</a><% } %>
-              <a class="btn ghost on-dark" href="/join/"><%= t('cta.join') %></a>
+              <% if (s.cta_href) { %><a class="btn primary" data-magnet href="<%= s.cta_href %>"><%= s.cta_label || 'More' %> →</a><% } %>
+              <a class="btn ghost on-dark" data-magnet href="/join/"><%= t('cta.join') %></a>
             </div>
           </div>
         </div>
@@ -37,8 +37,8 @@
       <b><%= site['hero.sideTitle'] %></b>
       <div><% (site['hero.sideBody'] || '').split('\n').forEach(function(line, k){ %><%= line %><% if (k === 0) { %><br><% } %><% }) %></div>
       <div class="hsb-cta">
-        <a class="btn gold small" href="/#booking"><%= lang === 'ja' ? 'ミーグリ予約' : 'Book Meet & Greet' %></a>
-        <a class="btn ghost small on-dark" href="/tour/"><%= lang === 'ja' ? 'チケット' : 'Tickets' %></a>
+        <a class="btn gold small" data-magnet href="/#booking"><%= lang === 'ja' ? 'ミーグリ予約' : 'Book Meet & Greet' %></a>
+        <a class="btn ghost small on-dark" data-magnet href="/tour/"><%= lang === 'ja' ? 'チケット' : 'Tickets' %></a>
       </div>
     </div>
   </div>
