@@ -1,317 +1,184 @@
 # Takuya Kimura — STARTO Premium Official Site
 
-**Full-stack edition.** Not a static page set: an Express server, a real SQLite database, session
-auth, a REST API, live sync over SSE, a server-rendered admin CMS, and a motion/carousel layer on
-top of the editorial design.
+**Full-stack edition.** Not a static page set: Express + SQLite + EJS on the server, session auth, a
+REST API, SSE live sync, a server-rendered admin CMS, and a motion/carousel layer over the editorial
+design. No CDN, no Redis, no Postgres, no build service.
 
 ```
 npm install
-npm run db:reset        # schema + demo content (76 rows)
+npm run db:reset        # schema + demo content
 npm run build           # esbuild + css concat → public/js, public/css (hashed)
-npm start               # site :8000  ·  admin console :8001
+npm start               # site :8000 · console :8001
 ```
 
 | | |
 | --- | --- |
 | Public site | `http://localhost:8000` |
-| Admin console | `http://localhost:8001` — `admin@starto.jp` / `Starto2026!` |
-| Demo members | `aiko@example.com`, `marc@example.com`, `yuki@example.com` — password `Starto2026!` |
-| Database | `data/celebrity.db` (SQLite, WAL) — `DB_FILE=/tmp/x.db` to override |
-| Design tokens | pearl `#fbf6ee` · ink `#0f0e0c` · gold `#c9a86a` · Cormorant Garamond / Inter / Noto Sans JP / JetBrains Mono |
-
----
+| Admin console | `http://localhost:8001` — `admin@starto.jp / Starto2026!` (development only — see *Credentials*) |
+| Demo members | `aiko@` / `marc@` / `yuki@example.com`, same fixture password |
+| Database | `data/celebrity.db` (SQLite, WAL) |
+| Tokens | pearl `#fbf6ee` · ink `#0f0e0c` · gold `#c9a86a` · Cormorant Garamond / Inter / JetBrains Mono |
 
 ## What runs
 
 ```
-server/
-  index.js      boots both apps, auto-seeds an empty DB, sweeps sessions, SSE heartbeat
-  host.js       the two composition roots: public-only, and `COMBINED=1` with the console at /admin
-  app.js        the public app: every page, the REST endpoints, the SSE stream, pjax fragment mode
-  admin.js      the console: auth, generic CRUD per content type, stock, media upload, CSV, live feed
-  auth.js       sessions (httpOnly cookie), bcrypt password hashing, CSRF guard, throttling
-  db.js         better-sqlite3 wrapper: migrations, tx(), insert/update/run, audit(); `data/` and
-                `uploads/` fall back to a writable scratch directory when the mount is read-only
-  content.js    every read the site needs (hero, news, tour, vault, shop, stats, kpis), projected
-                against the viewer, so a template cannot show what the server means to withhold
-  resources.js  the CMS contract: 16 content types — which table, which list columns, which fields
-  lib/tourkit.js venue coordinates and the maths behind the countdown, the check-in window,
-                the haversine walk from the gate and the projected SVG locator
-  i18n.js       ja/en dictionaries — the server renders both, the client never re-implements it
-  bus.js        publish/subscribe with a replay buffer, so a late tab still sees the last events
-  seed.js, seed-extra.js
-                the fiction, generated into any empty database: the full route with setlists and
-                past nights, the journal, releases, awards, wall notes, lottery entries, sign-ups
-views/          61 EJS templates: layout, partials, sections, pages, admin/*
-client/         app.js (bootstrap), site.js (features), carousel.js (engine), motion.js
-                (transitions), admin.js (console), css/*.css
-public/         built assets + images, served with hash-aware caching; `build.json` is the fingerprint
-api/index.js    the Vercel entry point: a lazy boot into the same app, self-seeding on first request
-vercel.json     build `npm run build`, output `public`, every non-`/api` path rewritten to `/api`
-scripts/        build.mjs (esbuild), check.mjs (integrity gate), audit.mjs (whole-site sweep),
-                qa-browser.mjs (Chromium QA), fetch-fonts.mjs (self-hosted brand faces)
-tests/          app.test.mjs — 33 end-to-end tests against a real booted server, one of them a
-                `COMBINED=1` boot that crawls the console inside the public app
+server/index.js       boots both apps, auto-seeds an empty DB, sweeps sessions, SSE heartbeat
+server/host.js        composition roots: site alone, and COMBINED=1 with the console at /admin
+server/app.js         pages, REST, SSE, pjax fragments      server/admin.js   console: CRUD, stock, media, CSV
+server/auth.js        httpOnly sessions, bcrypt, CSRF, throttling
+server/db.js          migrations, tx(), audit(); data/ and uploads/ fall back to a writable scratch dir
+server/content.js     every read, projected against the viewer, so a template cannot show what the
+                      server means to withhold        server/lib/tourkit.js  venue coordinates, countdown
+views/                61 EJS templates      client/  carousel + motion + features      public/  built assets
+api/index.js          the Vercel entry point (lazy boot into the same app)
+vercel.json · render.yaml                            the two deployment paths
+scripts/              build, check, audit, qa-browser, fetch-fonts        tests/  35 end-to-end tests
 ```
-
-Nothing in `client/` is a copy of server truth: pages come from the database, and so do the
-fragments the live layer swaps in.
 
 ## Features, and where they are enforced
 
-* **Membership** — four tiers (¥300,000 / ¥500,000 / ¥750,000 / ¥1,000,000). Buying a tier opens a
-  ticket and issues a fan-card preview; the card stays `pending` until Management approves it in the
-  console. A pending card is *shown* to the member and grants *nothing* — `activeMembershipFor()` is
-  what the vault, pre-sale rank and shop discount consult.
-* **Vault gating** is server-side: `GET /api/vault/:id` withholds the description and returns
-  `locked: true` + the tier needed. Locked cards print a truncated teaser, never the payload.
-* **Booking → ticket** — `POST /api/bookings` writes the booking and a linked ticket, so the member
-  gets one thread to talk in and the console gets one row to work.
-* **Shop** — session cart (`/api/cart/*`), stock reserved in a transaction, order number + QR
-  (`/api/orders/verify`), collection page, member discount only for active cards.
-* **Tour** — each date carries its own countdown, an `.ics` on demand, a venue check-in window that
-  stamps the passport inside it, and (once it has happened) a setlist and photo archive at
-  `/tour/show/<slug>`. The fan wall under a night is member-posted and console-moderated; a
-  meet-and-greet lottery is entered per night and drawn in the console, which writes the winners and
-  audits the draw.
-* **"Notify me"** — a date that is not on sale yet takes an address instead of a ticket.
-  `notify_list` + `POST /api/tour/notify`, unique per (email, date), throttled per IP, answered by a
-  token'd unsubscribe link that works without a session; the honeypot field gets a 201 and no row.
-  The console reads and exports the queue but cannot write it, and no part of this is a `mailto`.
-* **Venue locator** — real coordinates per venue, projected to inline SVG in
-  `views/partials/venue-map.ejs`. No tiles, no third-party request, so it renders under the
-  CDN-free CSP and on a plane; the OSM and Google links underneath are for the live map.
-* **Priority access is a door, not a label** — `tier_required` on a date decides what a viewer may see:
-  presale windows and seat releases are stripped from `/api/tour` and the templates until the session's
-  rank clears it, and a visitor with no session is linked to `join/#signup` rather than handed a
-  button whose only possible answer is 401.
-* **Support chat** — same thread the console answers in; a guest's thread is bound to their session
-  token, and reading someone else's thread is a 404, not a 403 (no existence leak).
-* **Admin CMS** — every content type in `resources.js` gets list + editor + toggle + delete + CSV;
-  a save publishes `content:changed` with the affected sections, and open tabs re-render those
-  sections in place (carousel position preserved).
-* **i18n** — the language lives on the session (`POST /api/lang`); the server re-renders, and the
-  soft navigation keeps `<html lang>` in step.
-* **Search** — one SQL `LIKE` sweep across news, works, releases, journal, shop, tour (`/api/search`).
+* **Membership** — four tiers (¥300k–¥1M). A purchase opens a ticket and issues a *pending* fan card;
+  pending is shown to the member and grants nothing, because `activeMembershipFor()` is what the vault,
+  the presale rank and the shop discount consult.
+* **Vault gating is server-side** — a locked item returns `locked: true` plus the tier needed, never the
+  payload; the card prints a teaser.
+* **Shop** — session cart, stock reserved in a transaction, order number + QR verification, member
+  discount only on active cards.
+* **Tour** — per-date countdown, `.ics` on demand, a venue check-in window that stamps the passport,
+  a per-show archive once the night has happened, a member-posted/console-moderated fan wall, and a
+  meet-and-greet lottery entered per night and drawn (and audited) in the console.
+* **"Notify me"** — a date that is not on sale takes an address instead of a ticket: real table + API,
+  unique per (email, date), IP-throttled, a token'd unsubscribe that works without a session, a
+  honeypot that gets a 201 and writes nothing. The console reads and exports the queue but cannot write
+  it, and no part of it is a `mailto`.
+* **Venue locator** — real coordinates projected to inline SVG. No tiles, no third-party request, so it
+  renders under the CDN-free CSP.
+* **Priority access is a door, not a label** — presale windows and seat releases are stripped from
+  `/api/tour` and the templates until the session's rank clears it; anonymous visitors get `join/#signup`
+  instead of a button whose only answer is 401.
+* **Support chat, admin CMS, i18n, search** — one thread the console answers in (a guest's thread is
+  bound to their session; someone else's is a 404, not a 403); 16 content types with list/editor/toggle/
+  delete/CSV, where a save publishes `content:changed` and open tabs re-render that section in place.
 
-## Motion & carousels
+## Motion & the interaction layer
 
-`client/carousel.js` is a single engine with three modes used across the site:
-
-| mode | where | behaviour |
-| --- | --- | --- |
-| `fade` | hero, about, product media | crossfade + Ken Burns breathing + per-slide `data-c-in` stagger |
-| `rail` | news, films, releases, shop | measured, drag/swipe with velocity, per-view responsive |
-| `coverflow` | vault | 3D depth, click-through to the gated viewer |
-
-Markers: `[data-carousel]` `[data-c-viewport]` `[data-c-track]` `[data-c-slide]`
-`[data-c-prev|-next|-dots|-counter|-toggle]`, attributes `data-c-mode/-interval/-per-view/-gap/-loop/-start/-kenburns`.
-
-`client/motion.js` adds the rest of the transitions: curtain + View Transitions API on navigation
-(full-page fallback when unsupported), pjax fragments from `GET /api/section/:name`, scroll reveals,
-magnetic buttons, tilt, counters, header tuck, scroll progress — all behind
-`prefers-reduced-motion`, which switches animations off but keeps every piece of content visible.
-Server-rendered markup never depends on JS to appear.
-
-Live layer: `GET /api/events` (SSE) carries 12 event types — `content:changed`, `stock:changed`,
-`cart:changed`, `ticket:created|reply|status|message`, `order:created|collected`, `member:joined`,
-`booking:created`, `passport:stamp`, plus a `ping` heartbeat with the connected-client count that
-paints the console's live badge.
-
-## Security notes that matter here
-
-CSP without `unsafe-inline` for scripts (so no inline handlers anywhere — enforced by `npm run check`),
-`SameSite=Lax` httpOnly session cookie, double-submit CSRF token on every state change (POST forms in
-the rendered HTML get their hidden field injected by the render pipeline, so a template can't forget it),
-per-IP throttling on login/signup/chat, bcrypt password hashes, and role checks
-(`requireMember` → 401, `requireRole('admin')` → 403) on the API as well as the console.
-
-### The interaction layer
-
-The cards answer the pointer and the keyboard: the tier cards and every tour row carry a gold light that
-follows the cursor (`--mx`/`--my` written per frame, the paint is CSS) plus a rim traced on the edge, which
-also appears on `:focus-within` so a keyboard gets the same acknowledgement. The countdown panel sits on a
-slow, masked aura, and the chips on dates that have not played yet carry a single sheen. It is all paint:
-one `pointermove` handler per card, no React, no animation library, no request, and `prefers-reduced-motion`
-(and the site's own `motion-reduced` flag) stops the light from moving while leaving every card exactly
-where it was — `npm run qa` proves both halves. The hero's calls to action lean toward the pointer
-(a `translate` written from two variables, so the button keeps its own hover lift), and the
-next-show panel carries a light that walks its own rim; both stop under reduced motion.
+One carousel engine (`fade` / `rail` / `coverflow`) with `data-c-*` markers drives hero, rails and the
+vault; navigation uses the View Transitions API with a full-page fallback; reveals, counters, tilt,
+header tuck and scroll progress come from one `IntersectionObserver`. The cards answer the pointer *and*
+the keyboard — a gold light that follows the cursor, a rim on `:focus-within`, a masked aura behind the
+countdown, a sheen on dates that have not played, and hero calls to action that lean toward the pointer.
+All of it is paint: one `pointermove` per card, no library, no request, and all of it stops under
+`prefers-reduced-motion` while leaving every element exactly where it was. Server-rendered markup never
+needs JS to appear. Live sync is `GET /api/events` (SSE): 12 event types plus a heartbeat with the
+connected-client count.
 
 ## Verify
 
 ```
-npm run verify          # build + integrity check + 35 e2e tests   (~10 s)
-npm run audit           # 299 whole-site checks: links, media, fonts, meta, sitemap, layout at 6 widths
-npm run qa              # 70 Chromium checks: carousels, motion, pointer light, magnet, waitlist, mobile, console
+npm run verify   # build + integrity check + 35 e2e tests                                  (~10 s)
+npm run audit    # 299 whole-site checks: links, media, fonts, meta, sitemap, layout at 6 widths
+npm run qa       # 70 Chromium checks: carousels, motion, pointer light, magnet, waitlist, mobile, console
 ```
 
-Neither browser suite pretends to have run: if Chromium cannot be launched, `npm run qa` exits
-non-zero and says what is missing (and `npm run audit` records the skipped stages as a failure) —
-`QA_ALLOW_NO_BROWSER=1` / `AUDIT_ALLOW_NO_BROWSER=1` are the opt-outs for a machine that has no
-browser by design. `npm run audit` likewise refuses to run against a server that is not up.
-
-`npm run check` (119 checks) walks every template through `ejs.compile`, resolves every `include`,
-scans for inline handlers, matches all 31 client `api()` calls to a real route, and — when a server
-answers on :8000 — sweeps all 16 live pages. `npm run audit` fetches the rendered site and checks the
-things a browser would punish: a 404 image, an upscale past its frame, an off-screen control at any of
-six widths, a relative canonical, a dead sitemap entry. Both are gates, not reports: a failure is a
-non-zero exit. One of its stages is the deploy bundle itself: it runs `@vercel/nft` over
-`api/index.js` — the same trace Vercel uses to decide what a function gets — and fails if a template,
-the template engine, the fingerprint file or the native SQLite binding would be left behind. `npm run qa` needs Playwright's Chromium; the sandbox has it under
-`/home/user/tools`, and `scripts/qa-browser.mjs` imports it from there — point `QA_BASE`/`QA_ADMIN`
-elsewhere to run it against another deployment. Screenshots land in `qa/`.
+`check` (119 checks) compiles every template through `ejs.compile`, resolves every `include`, matches
+every client `api()` call to a real route, sweeps the live pages when a server answers, and runs a
+deploy-bundle stage that traces `api/index.js` with `@vercel/nft` — failing if a template, the engine,
+the fingerprint file or the native SQLite binding would be left out of the function. `audit` fetches the
+rendered site and punishes what a browser would: a 404 image, an upscale past its frame, an off-screen
+control at any of six widths, a relative canonical, a dead sitemap entry. All three are gates, not
+reports. The browser suites refuse to pass by skipping: if Chromium cannot launch, `qa` exits 1 with the
+reason (`QA_ALLOW_NO_BROWSER=1` is the explicit opt-out) and `audit` records the skipped stages as a
+failure. `AUDIT_BASE` / `QA_BASE` / `QA_ADMIN` point them at any deployment; screenshots land in `qa/`.
 
 ## Deploy
 
-The process needs Node 20+, a writable directory for `data/` and `uploads/`, and nothing else — no
-Redis, no Postgres, no build service, no CDN.
+Node 20+, a writable `data/` and `uploads/`, and nothing else.
 
 ```
-npm ci --omit=dev      # postinstall runs scripts/build.mjs, so css/js/fonts land in public/
-npm start              # site :8000, console :8001 — both bind 0.0.0.0
+npm ci --omit=dev      # postinstall runs scripts/build.mjs, so public/ is built
+npm start
 ```
 
-An empty `data/celebrity.db` is created and seeded on first boot, so the pair of commands above is a
-complete deploy. Sessions live in SQLite, so a restart does not log members out.
+An empty database is created and seeded on first boot, so those two commands are a complete deploy.
+Sessions live in SQLite, so a restart does not log members out.
+
+### Environment
+
+`.env.example` lists all 26 variables the code reads, and `npm run check` fails if that file drifts in
+either direction — a variable the code reads but the file omits, or one it documents that nothing reads.
 
 | Variable | Default | Used for |
 | --- | --- | --- |
 | `PORT` / `ADMIN_PORT` | `8000` / `8001` | public site / console listeners |
 | `HOST` | `0.0.0.0` | bind address |
-| `DB_FILE` | `data/celebrity.db` | SQLite path (`:memory:` works for tests) |
-| `SITE_URL` | empty | absolute origin for canonical, OG, sitemap, robots, hreflang. Empty follows the request host, which is correct on every preview; set it once you have a real domain behind a proxy |
+| `COMBINED` | empty | `1` puts the console at `/admin` on the site's own port (one origin) |
+| `DATA_DIR` / `UPLOAD_DIR` | `data/` / `uploads/` | where state is written; both fall back to the temp dir on a read-only filesystem |
+| `DB_FILE` | `<DATA_DIR>/celebrity.db` | SQLite path (`:memory:` works) |
+| `SITE_URL` | empty | absolute canonical/OG/sitemap/hreflang; empty follows the request host, which is right on every preview. `site.url` in Admin → Settings overrides it |
+| `ADMIN_PASSWORD` / `ADMIN_EMAIL` | empty | console credentials — authoritative on every boot |
+| `SEED_DEMO_PASSWORD` | empty | unlocks the seeded member accounts on a production build |
 | `BUILD_ID` | content hash | cache-busting token, also written to `public/build.json` |
-| `COMBINED` | empty | `1` puts the console at `/admin` on the site's own port instead of a second listener |
-| `DATA_DIR` / `UPLOAD_DIR` | `data/` / `uploads/` | where state is written; both fall back to the temp dir when the filesystem is read-only |
-| `ADMIN_PASSWORD` / `ADMIN_EMAIL` | empty | console credentials. Authoritative on every boot — see the table above |
-| `SEED_DEMO_PASSWORD` | empty | set it to let the seeded member accounts sign in on a production build |
-
-`.env.example` lists every variable the code reads, and `npm run check` fails if that file drifts in
-either direction — an undocumented variable, or a documented one nothing reads.
-
-`settings.site.url` (Admin → Settings → `site.url`) overrides `SITE_URL` when you would rather not
-touch the environment. Both are empty in a fresh install on purpose: a hard-coded origin is the usual
-reason a staging preview starts emitting production canonicals.
 
 ### Vercel
 
-`vercel.json` and `api/index.js` are the deploy path: one Node function runs the same Express app,
-`npm run build` regenerates `public/` from `client/` during the build, and the function's
-`includeFiles` carries the templates (a single glob — Vercel's schema rejects an array), while `npm run check` traces the function and proves the engine and the native SQLite binding come along too. Import the repository,
-accept the defaults (framework: **Other**, build `npm run build`, output `public`), and the site is
-live — `/admin` is the desk console on the same origin, which is what `COMBINED=1` does locally too.
+`vercel.json` + `api/index.js`: one Node function runs the same Express app, `npm run build` regenerates
+`public/`, and `includeFiles` carries the templates — a single glob, because Vercel's schema rejects an
+array. The check traces the function to prove the engine and the native SQLite binding come along.
+Import the repository, accept the defaults (framework **Other**), deploy. Two things to know: **set
+`SITE_URL`**, and remember the function filesystem is read-only apart from `/tmp` — SQLite and uploads
+land there and reset when an instance is recycled, so this path is a preview or a read-mostly brochure,
+not durable storage. SSE degrades instead of erroring when a function is capped.
 
-Three things are worth knowing before you point anything real at it:
+### A host with a disk
 
-- **Set `SITE_URL`** to the deployment URL (Admin → Settings → `site.url` also works). Canonicals,
-  OG tags, the sitemap and JSON-LD are absolute, and a preview domain that emits production
-  canonicals is the mistake this avoids.
-- **Server-side state is per instance.** Vercel's filesystem is read-only apart from `/tmp`, so the
-  SQLite file and uploads land there and are lost when an instance is recycled: content, members and
-  waitlist sign-ups start from the seed again. That is fine for a demo, a preview or a read-mostly
-  brochure; it is not a database. Attach Vercel Postgres/KV (or run the container image on any host
-  with a volume) before treating a write as durable, and note that `POST /api/*` writes will fail
-  with a 500 on a function that somehow gets no `/tmp`.
-- **Live sync degrades, on purpose.** The console and the site keep an SSE connection open
-  (`/api/events`); a serverless function caps how long that can run, so open tabs simply stop
-  receiving the "content changed" ping and refresh on navigation. `maxDuration` in `vercel.json`
-  sets the ceiling.
-
-Nothing in the build or the runtime reaches for a CDN, a tile server or an image API — the fonts,
-icons and photography are all in `public/`, so a deployment with no network access still renders.
-
-### A host with a disk (Render, Fly, Railway, a VPS)
-
-Vercel's function filesystem is read-only apart from `/tmp`, so the database there is per instance and
-temporary. For a deployment that *keeps* its members, waitlists and uploads, use a host that can mount
-a disk — `render.yaml` is a working blueprint for one:
+For state that survives, use a host that can mount a volume. `render.yaml` is a working blueprint:
+Dockerfile, `/healthz` probe, 1 GB disk at `/app/data`, `DATA_DIR`/`UPLOAD_DIR` on it, `COMBINED=1`, and
+secrets as `sync: false` so the host asks for them instead of storing them. The check verifies that the
+mount and `DATA_DIR` agree, that the health check is a route the app actually serves, and that no
+password value is committed to the blueprint.
 
 ```
-Render → New → Blueprint → this repository     # Dockerfile, /healthz, a 1 GB disk at /app/data
-                                              # DATA_DIR=/app/data · UPLOAD_DIR=/app/data/uploads · COMBINED=1
+docker build -t starto-site .          # or: docker compose up -d
 ```
 
-`ADMIN_PASSWORD` and `SITE_URL` are `sync: false`, so Render asks for them instead of storing them in
-the repository. `npm run check` verifies that the blueprint's `DATA_DIR` actually points at the mounted
-disk, that the health check it probes is a route the app serves, and that no password value is
-committed to it. The same two variables make `docker compose up` production-ready.
+Two stages: production dependencies (and the `better-sqlite3` compile) in the first, a slim `node`
+runtime with no devDependencies in the second. Behind a reverse proxy, forward both ports, trust
+`X-Forwarded-Proto`/`-For`, and switch buffering off for SSE (`proxy_buffering off;`, read timeout above
+the 20 s heartbeat).
 
-### Container
+### Media and backups
 
-```
-docker build -t starto-site .
-docker run -p 8080:8080 -p 8081:8081 -v "$PWD/data:/app/data" -v "$PWD/uploads:/app/uploads" starto-site
-# or: docker compose up -d
-```
-
-Two stages: production dependencies resolve (and `better-sqlite3` compiles) in the first, the second
-runs as `node` on a slim base with no devDependencies and no client source. `HEALTHCHECK` polls
-`/healthz`, which answers `{ ok: true, db: "up" }` only when SQLite responds.
-
-### Reverse proxy
-
-Put TLS in front and forward both listeners; the app trusts `X-Forwarded-Proto`/`-For` for secure
-cookies and per-IP throttling. SSE (`/api/events`, `/events`) must not be buffered —
-`proxy_buffering off;` and a read timeout above the 20 s heartbeat.
-
-### Media
-
-Everything the site renders is in the repository (`public/image-search`, `public/fonts`, `public/uploads`).
-
-* **Fonts** are self-hosted variable faces (Inter, Cormorant Garamond, JetBrains Mono) inlined into the
-  built CSS. `npm run fonts` re-subsets them from Google Fonts when you want to change a family — it is
-  a build-time step only, and no page loads a CDN.
-* **Optional WebP renditions**: drop `public/images/optimized/<source-basename>-{320,640,960,1280}.webp`
-  (plus `-og.webp` at 1200×630) and `server/media.js` starts emitting `srcset`/`sizes` and a
-  matching `<link rel=preload imagesrcset>` within 30 seconds — no rebuild, no restart. Candidates are
-  opened and checked (real WebP, width matches the name); anything else is ignored so a mislabeled file
-  cannot make the site softer. The static-era archive shipped such mislabeled files and they are gone.
-* **Video**: upload through the console (image *or* video, size-capped per kind) and the field stores a
-  `/uploads/...` path. Vault items render a real `<video>` with the transport bar; hero slides and
-  journal posts loop muted `mp4/webm` behind the copy. Range requests (`206`/`416`) are implemented for
-  uploads, so scrubbing works and Safari is happy.
-
-### Backups
-
-`data/` and `uploads/` are the entire mutable state:
+Fonts are self-hosted variable faces inlined into the built CSS (`npm run fonts` re-subsets them — build
+time only, and no page loads a CDN). WebP renditions are optional: drop
+`public/images/optimized/<name>-{320,640,960,1280}.webp` and `server/media.js` starts emitting
+`srcset`/`sizes` within 30 seconds, with candidates opened and validated so a mislabeled file cannot
+soften the site. Uploads support range requests, and `data/` + `uploads/` are the entire mutable state:
 
 ```
 sqlite3 data/celebrity.db ".backup 'backup/$(date +%F).db'"   # WAL-safe, unlike cp
 tar czf uploads-$(date +%F).tgz uploads/
 ```
 
-Then `curl -s localhost:8000/api/health` (or `/healthz`) shows `db: "up"` again. The audit runs
-against production with `AUDIT_BASE=https://your-domain npm run audit` (`QA_BASE`/`QA_ADMIN` point the browser suite); media 404s are fatal there by design.
+### Credentials
 
-### Credentials, and what a deployment does with them
+The fixture password is a development convenience and this repository is public, so the code refuses to
+let it become a deployment:
 
-The fixture password (`Starto2026!`) is a development convenience, and a repository is public, so the
-code refuses to let it become a deployment:
+* `ADMIN_PASSWORD` set — **authoritative on every boot**, not just the first: change it, restart, you are
+  in, and the old password stops working.
+* Production without it, empty database — a random password is generated and printed **once** in the boot
+  log; set the variable and restart to choose your own.
+* Production without it, admin already exists — the boot line says the stored password is unchanged and
+  cannot be read back, and asks you to set the variable. It never invents one.
+* The three seeded members are locked (random passwords) in production until `SEED_DEMO_PASSWORD` is set;
+  their orders, tickets and memberships still exist, because the seeded content references them.
+* Development keeps `Starto2026!`, so `npm start` and the suites work with no setup.
 
-| Situation | What happens |
-| --- | --- |
-| `ADMIN_PASSWORD` set | Authoritative **on every boot**, not just the first — change the variable, restart, you are in. The old password stops working. |
-| production, no `ADMIN_PASSWORD`, empty database | A random password is generated, stored, and printed **once** in the boot log (`!! ADMIN_PASSWORD is not set…`). Set the variable and restart to choose your own. |
-| production, no `ADMIN_PASSWORD`, database already has an admin | The boot line says the stored password is unchanged and cannot be read back, and tells you to set the variable. It never invents a password. |
-| the three seeded members (`aiko`/`marc`/`yuki@example.com`) | Seeded with random passwords in production: they cannot sign in until `SEED_DEMO_PASSWORD` is set. Their orders, tickets and memberships still exist, because the seeded content references them. |
-| development (`NODE_ENV` not production) | Everything uses `Starto2026!`, so the suites and `npm start` keep working with no setup. |
+`npm test` proves all five.
 
-`ADMIN_EMAIL` renames the admin account (the row is updated in place, keeping its history).
-`npm test` covers all four rows of that table: the fixture password is refused in production, the
-generated one works on the boot that printed it, `ADMIN_PASSWORD` overrides it on an existing
-database, and a later boot admits it does not know the password instead of advertising a wrong one.
+## Housekeeping
 
-## Repository housekeeping
-
-The tree contains only what the running site reads: `server/` (the app), `views/` (templates),
-`client/` + `public/` (source and built assets), `scripts/` (build, integrity check, audit, browser
-QA), `tests/`, and the two deployment paths above.
-
-Removed once the server replaced them, because they were dead weight and nothing referenced them:
-`legacy/` (the static-era HTML, its duplicate `image-search/` downloads and the abandoned `backend/`
-Postgres experiment), `public/favicon.png` (1.8 MB, unreferenced — `public/favicon.ico` plus
-`icon-192/512.png` are what the head and the manifest ask for), the QA screenshots that had been
-committed under `qa/` (the browser suite writes them again on every run and they are ignored now), and
-four stray `uploads/IMG_*.jpg` that no row and no template pointed at. `git log --stat` and
-`git show HEAD~1:legacy` still have all of it; nothing was rewritten or squashed away.
+The tree contains only what the running site reads: `server/`, `views/`, `client/`, `public/`,
+`scripts/`, `tests/`, and the deployment files. The static-era `legacy/`, the unreferenced 1.8 MB
+`favicon.png`, committed QA screenshots and four stray uploads are gone — `git log --stat` still has
+them, and nothing was rewritten.
