@@ -15,7 +15,7 @@ services:
     name: starto-celebritypage
     runtime: docker
     dockerfilePath: ./Dockerfile
-    region: frankfurt          # closest to Lagos; also oregon · ohio · virginia · singapore
+    region: singapore          # closest to the Asian audience; also frankfurt · oregon · ohio · virginia
     # plan omitted on purpose: a disk needs a paid instance type, and pinning a pricing name in the
     # repository is how a blueprint stops validating when a host renames its tiers. Pick one when
     # Render asks — Starter is the smallest that allows a disk.

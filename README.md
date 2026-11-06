@@ -135,7 +135,7 @@ For state that survives, use a host that can mount a volume. `render.yaml` is a 
 
 ```
 Render → New → Blueprint → this repository
-  Dockerfile · /healthz · 1 GB disk at /app/data (region: frankfurt) · COMBINED=1
+  Dockerfile · /healthz · 1 GB disk at /app/data (region: singapore) · COMBINED=1
   asks for ADMIN_PASSWORD and SITE_URL (sync: false — never in git)
 ```
 
