@@ -1,6 +1,6 @@
 {
-  "build": "mudctjjh",
-  "at": "2026-09-23T00:17:54.270Z",
+  "build": "mw560dp4",
+  "at": "2026-11-06T16:04:31.256Z",
   "files": {
     "public/css/app.css": {
       "bytes": 160841,
@@ -12,11 +12,11 @@
     },
     "public/js/app.js": {
       "bytes": 74319,
-      "hash": "a7b7ffd3fa"
+      "hash": "3426ea5e6e"
     },
     "public/js/admin.js": {
       "bytes": 10248,
-      "hash": "b6f3560a88"
+      "hash": "9c86ffe55c"
     }
   }
 }

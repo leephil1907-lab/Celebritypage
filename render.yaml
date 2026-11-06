@@ -15,9 +15,12 @@ services:
     name: starto-celebritypage
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: starter              # a persistent disk needs a paid instance type
+    region: frankfurt          # closest to Lagos; also oregon · ohio · virginia · singapore
+    # plan omitted on purpose: a disk needs a paid instance type, and pinning a pricing name in the
+    # repository is how a blueprint stops validating when a host renames its tiers. Pick one when
+    # Render asks — Starter is the smallest that allows a disk.
     healthCheckPath: /healthz  # the app answers this only once SQLite is open
-    autoDeploy: true
+    autoDeployTrigger: commit  # redeploy on every push to the branch (Render renamed this key)
     disk:
       name: data
       mountPath: /app/data

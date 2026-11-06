@@ -286,11 +286,13 @@ console.log('\n[8] deploy contract');
   }
 
   /* The container/disk path is the one that keeps data, so its mount has to line up with the code. */
+  let diskMount = null;
   const renderFile = path.join(ROOT, 'render.yaml');
   if (!fs.existsSync(renderFile)) { note('render.yaml is missing — the durable deploy path is undocumented'); bad++; }
   else {
     const yaml = fs.readFileSync(renderFile, 'utf8');
     const mount = /mountPath:\s*(\S+)/.exec(yaml)?.[1];
+    diskMount = mount || null;
     const dataDir = /key:\s*DATA_DIR\s*\n\s*value:\s*(\S+)/.exec(yaml)?.[1];
     const health = /healthCheckPath:\s*(\S+)/.exec(yaml)?.[1];
     if (!mount || !dataDir || dataDir !== mount) { note(`render.yaml must point DATA_DIR at the mounted disk (mount ${mount || '?'} vs DATA_DIR ${dataDir || '?'})`); bad++; }
@@ -305,6 +307,21 @@ console.log('\n[8] deploy contract');
       if (!registered) { note(`render.yaml health-checks ${health}, which the app does not serve`); bad++; }
       else pass(`health check ${health} is a route the app answers`);
     }
+    /* Render validates the blueprint against a schema and rejects unknown keys, so the file is held to
+       the documented field names rather than to whatever reads plausibly. */
+    const yamlLines = yaml.split('\n');
+    const blockTop = (indent) => yamlLines.filter((l) => l.match(new RegExp('^' + ' '.repeat(indent) + '[a-zA-Z]'))).map((l) => l.trim().split(':')[0]);
+    const serviceKeys = new Set(blockTop(4));
+    const knownKeys = new Set(['type', 'runtime', 'name', 'repo', 'branch', 'region', 'plan', 'rootDir',
+      'dockerfilePath', 'dockerContext', 'dockerCommand', 'healthCheckPath', 'autoDeployTrigger',
+      'maxShutdownDelaySeconds', 'numInstances', 'disk', 'envVars', 'domains', 'scaling', 'previews']);
+    const unknown = [...serviceKeys].filter((k) => !knownKeys.has(k));
+    if (unknown.length) { note(`render.yaml uses keys Render's schema does not define: ${unknown.join(', ')}`); bad++; }
+    else pass(`blueprint keys are all current (${serviceKeys.size} of ${knownKeys.size} known)`);
+    if (/^\s+autoDeploy:/m.test(yaml)) { note('render.yaml uses `autoDeploy`, which Render replaced with `autoDeployTrigger`'); bad++; }
+    const diskKeys = new Set(yaml.split('\n').filter((l) => /^\s{6}(name|mountPath|sizeGB):/.test(l)).map((l) => l.trim().split(':')[0]));
+    const unknownDisk = [...diskKeys].filter((k) => !['name', 'mountPath', 'sizeGB'].includes(k));
+    if (unknownDisk.length) { note(`render.yaml disk block has unknown keys: ${unknownDisk.join(', ')}`); bad++; }
     const passwords = [...yaml.matchAll(/key:\s*(ADMIN_PASSWORD|SEED_DEMO_PASSWORD)\s*\n(?:\s+.*\n)*?\s+value:/g)];
     if (passwords.length) { note('render.yaml must not carry a password value — use sync: false'); bad++; }
     else pass('the blueprint asks for secrets instead of storing them');
@@ -330,6 +347,24 @@ console.log('\n[8] deploy contract');
       bad++;
     } else if (natives.length) {
       pass(`the image keeps install scripts on, so ${natives.join(', ')} gets its binary`);
+    }
+    /* Render's rule for Docker: the mount path is a subdirectory of the image's WORKDIR, and a disk
+       arrives owned by root — so an image that drops to a non-root user needs an entrypoint that fixes
+       ownership first. Both are checked, because both fail only once deployed. */
+    const workdir = /^WORKDIR\s+(\S+)/m.exec(docker)?.[1];
+    const mount = diskMount;
+    if (mount && workdir && !mount.startsWith(workdir + '/')) { note(`render.yaml mounts ${mount}, which is outside the image's WORKDIR ${workdir}`); bad++; }
+    else if (mount && workdir) pass(`the disk mounts under the image WORKDIR (${workdir})`);
+    const dropsPrivileges = /^USER\s+(?!root)/m.test(docker);
+    const entrypoint = /^ENTRYPOINT\s+\[?"?([^\]"\s]+)/m.exec(docker)?.[1];
+    const entryName = entrypoint ? path.basename(entrypoint) : null;
+    const entryFile = entryName ? path.join(ROOT, entryName) : null;
+    const fixesOwnership = entryFile && fs.existsSync(entryFile) && /chown/.test(fs.readFileSync(entryFile, 'utf8'));
+    if (mount && dropsPrivileges && !fixesOwnership) {
+      note('the image drops to a non-root user and mounts a disk, but nothing fixes the mount\'s ownership — the container would boot into EACCES');
+      bad++;
+    } else if (mount) {
+      pass('the entrypoint takes ownership of the mounted disk before dropping privileges');
     }
   } else { note('Dockerfile is missing'); bad++; }
 }

@@ -44,9 +44,12 @@ COPY server ./server
 COPY views ./views
 COPY scripts ./scripts
 
-# content and uploads are state: mount them, and the image stays replaceable
+# content and uploads are state: mount them, and the image stays replaceable.
+# The entrypoint fixes the ownership of whatever gets mounted over these paths, then drops to `node` —
+# a disk arrives owned by root, and starting straight as `node` means EACCES on the first write.
 RUN mkdir -p /app/data /app/uploads && chown -R node:node /app
-USER node
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
 EXPOSE 8080 8081
 VOLUME ["/app/data", "/app/uploads"]
 
@@ -54,4 +57,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 # db.js creates the schema, seed.js fills it only when it is empty, then the app serves
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["sh", "-c", "node server/db.js && node server/seed.js && exec node server/index.js"]

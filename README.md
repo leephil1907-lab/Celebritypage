@@ -80,7 +80,7 @@ npm run audit    # 299 whole-site checks: links, media, fonts, meta, sitemap, la
 npm run qa       # 70 Chromium checks: carousels, motion, pointer light, magnet, waitlist, mobile, console
 ```
 
-`check` (119 checks) compiles every template through `ejs.compile`, resolves every `include`, matches
+`check` (123 checks) compiles every template through `ejs.compile`, resolves every `include`, matches
 every client `api()` call to a real route, sweeps the live pages when a server answers, and runs a
 deploy-bundle stage that traces `api/index.js` with `@vercel/nft` — failing if a template, the engine,
 the fingerprint file or the native SQLite binding would be left out of the function. `audit` fetches the
@@ -132,10 +132,21 @@ not durable storage. SSE degrades instead of erroring when a function is capped.
 ### A host with a disk
 
 For state that survives, use a host that can mount a volume. `render.yaml` is a working blueprint:
-Dockerfile, `/healthz` probe, 1 GB disk at `/app/data`, `DATA_DIR`/`UPLOAD_DIR` on it, `COMBINED=1`, and
-secrets as `sync: false` so the host asks for them instead of storing them. The check verifies that the
-mount and `DATA_DIR` agree, that the health check is a route the app actually serves, and that no
-password value is committed to the blueprint.
+
+```
+Render → New → Blueprint → this repository
+  Dockerfile · /healthz · 1 GB disk at /app/data (region: frankfurt) · COMBINED=1
+  asks for ADMIN_PASSWORD and SITE_URL (sync: false — never in git)
+```
+
+A disk needs a paid instance type (the blueprint deliberately does not pin a plan name), it prevents
+zero-downtime deploys — Render stops the old instance before starting the new one — and it is invisible
+to build commands, so seeding happens at boot instead. The mounted directory arrives owned by root, so
+`docker-entrypoint.sh` takes ownership of it and *then* drops to the `node` user; without that the
+container starts, can read, and dies on its first write. The check verifies the mount is inside the image
+`WORKDIR`, that it matches `DATA_DIR`, that the health check is a route the app actually serves, that a
+privilege-dropping image has an entrypoint that fixes ownership, and that no password value is committed
+to the blueprint.
 
 ```
 docker build -t starto-site .          # or: docker compose up -d

@@ -578,10 +578,30 @@ test('bad input, a bot and a date already on sale are refused; five asks in a da
   assert.ok(early.data.href, 'and it says where to go instead');
 
   const spam = `many-${Date.now()}@example.com`;
-  const eligible = (await req('p6refuse', '/api/tour')).data
+  /* The seeded calendar is a fixed fiction, so the number of not-yet-on-sale dates shrinks as real time
+     moves past it. Rather than let the cap go unproven once the demo ages, the console creates the dates
+     this test needs — which also exercises the CMS write path — and they are always in the future. */
+  let eligible = (await req('p6refuse', '/api/tour')).data
     .filter((d) => ['coming_soon', 'waitlist', 'sold_out'].includes(d.sale_state) && !d.is_past)
     .slice(0, 5);
-  assert.ok(eligible.length >= 4, 'the seeded tour needs enough waiting dates to prove the cap');
+  if (eligible.length < 5) {
+    const seed = await req('admin2', '/login', { base: ABASE });
+    await req('admin2', '/login', { method: 'POST', form: { email: 'admin@starto.jp', password: 'Starto2026!', _csrf: csrfOf(seed.text) }, base: ABASE });
+    const made = [];
+    for (let i = eligible.length; i < 5; i++) {
+      const page = await req('admin2', '/content/tour', { base: ABASE });
+      const day = new Date(Date.now() + (40 + i * 14) * 86400 * 1000).toISOString().slice(0, 10);
+      await req('admin2', '/content/tour', {
+        method: 'POST', base: ABASE,
+        form: { tour: 'Live Tour Checkpoint', date: day, time: '18:00', city: `Test City ${i}`, venue: 'Test Hall', capacity: 40, remaining: 40, status: 'waitlist', sort: 90 + i, _csrf: csrfOf(page.text) },
+      });
+      made.push(day);
+    }
+    eligible = (await req('p6refuse', '/api/tour')).data
+      .filter((d) => ['coming_soon', 'waitlist', 'sold_out'].includes(d.sale_state) && !d.is_past)
+      .slice(0, 5);
+    assert.equal(eligible.length, 5, `the console could not add waiting dates (made ${made.join(', ')})`);
+  }
   await req('p6many', '/tour/');                                    // fresh jar, so it needs its own csrf cookie
   for (const d of eligible) {
     const r = await req('p6many', '/api/notify', { method: 'POST', json: { email: spam, tour_date_id: d.id } });
