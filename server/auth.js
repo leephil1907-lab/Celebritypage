@@ -161,10 +161,24 @@ export function login(email, password) {
   return { id: user.id, name: user.name, email: user.email, role: user.role };
 }
 
+/**
+ * Signing in issues a *new* session token and retires the anonymous one. Reusing the id the
+ * browser arrived with would let anyone who planted that cookie (a shared machine, a copied link
+ * with a fixed sid) stay signed in as the next person to log in — classic session fixation.
+ * The guest cart and language choice follow the user across the rotation.
+ */
 export function attachUser(req, res, user) {
-  run(`UPDATE sessions SET user_id=@u WHERE token=@t`, { u: user.id, t: req.sid });
+  const prev = get(`SELECT lang, cart FROM sessions WHERE token=@t`, { t: req.sid }) || {};
+  const token = newSessionToken(user.id, prev.lang || req.lang || 'ja');
+  const cart = prev.cart && prev.cart !== '[]' ? prev.cart : JSON.stringify(req.cart || []);
+  if (cart && cart !== '[]') run(`UPDATE sessions SET cart=@c WHERE token=@t`, { c: cart, t: token });
+  if (req.sid && req.sid !== token) run(`DELETE FROM sessions WHERE token=@t`, { t: req.sid });
+  setCookie(res, SESSION_COOKIE, token);
+  req.sid = token;
   req.user = user;
   res.locals.user = user;
+  res.locals.sid = token;
+  return token;
 }
 
 export function detachUser(req, res) {

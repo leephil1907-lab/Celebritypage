@@ -830,6 +830,12 @@ test('a deployed copy cannot be taken over with the passwords in this repository
   try {
     first = await boot(baseEnv);
     const log = first.get();
+
+    /* deployed headers, checked on a deployed boot: TLS pinning and https-only cookies */
+    const head = await fetch(pbase + '/');
+    await head.text();
+    assert.match(String(head.headers.get('strict-transport-security') || ''), /max-age=31536000/, 'a production reply has to pin https');
+    assert.match((head.headers.getSetCookie?.() || []).join('; '), /Secure/, 'session cookies may only travel over https in production');
     assert.match(log, /GENERATED for this database/, 'a production boot without ADMIN_PASSWORD has to say what it generated');
     const generated = /\/ ([A-Za-z0-9_-]{16,}) — GENERATED/.exec(log)?.[1];
     assert.ok(generated, 'the generated password has to be printable, or nobody can ever sign in:\n' + log.slice(0, 300));
@@ -860,6 +866,123 @@ test('a deployed copy cannot be taken over with the passwords in this repository
     second?.c.kill('SIGKILL');
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+/* ---------- request-level hardening ---------- */
+test('a body that is not valid JSON is refused, not quietly emptied into a successful save', async () => {
+  await req('garbled', '/');                                   // this browser needs a csrf cookie first
+  const jar = jarFor('garbled');
+  const res = await fetch(BASE + '/api/auth/login', {
+    method: 'POST',
+    redirect: 'manual',
+    headers: {
+      'content-type': 'application/json',
+      'x-csrf-token': jar.get('tk_csrf') || '',
+      cookie: [...jar].map(([k, v]) => `${k}=${v}`).join('; '),
+    },
+    body: '{"email": "aiko@example.com", ',                      // truncated mid-object
+  });
+  const data = await res.json();
+  assert.equal(res.status, 400, 'a truncated payload is a client error, and saying 200 would hide it');
+  assert.equal(data.error, 'bad_json');
+  assert.match(data.message, /JSON/i);
+});
+
+test('an oversized body stops at 413 with a limit the caller can act on', async () => {
+  await req('bulk', '/');
+  const jar = jarFor('bulk');
+  const res = await fetch(BASE + '/api/auth/login', {
+    method: 'POST',
+    redirect: 'manual',
+    headers: {
+      'content-type': 'application/json',
+      'x-csrf-token': jar.get('tk_csrf') || '',
+      cookie: [...jar].map(([k, v]) => `${k}=${v}`).join('; '),
+    },
+    body: JSON.stringify({ email: 'aiko@example.com', pad: 'a'.repeat(1_200_000) }),
+  });
+  const data = await res.json();
+  assert.equal(res.status, 413);
+  assert.equal(data.error, 'too_big');
+  assert.match(data.message, /MB/);
+});
+
+test('repeated wrong passwords run out of attempts instead of running forever', async () => {
+  await req('bruteforce', '/');
+  const statuses = [];
+  for (let i = 0; i < 8; i += 1) {
+    const r = await req('bruteforce', '/api/auth/login', { method: 'POST', json: { email: 'probe-throttle@example.com', password: `wrong-${i}-pass` } });
+    statuses.push(r.status);
+  }
+  assert.ok(statuses.includes(401), 'the early attempts are ordinary rejections: ' + statuses.join(','));
+  assert.equal(statuses[statuses.length - 1], 429, 'the bucket has to close: ' + statuses.join(','));
+  const last = await req('bruteforce', '/api/auth/login', { method: 'POST', json: { email: 'probe-throttle@example.com', password: 'wrong-again' } });
+  assert.equal(last.data?.error, 'throttled');
+});
+
+test('signing in retires the anonymous session id instead of reusing it', async () => {
+  await req('rotate', '/');
+  const jar = jarFor('rotate');
+  const before = jar.get('tk_sid');
+  assert.ok(before, 'the visitor arrives with a session cookie');
+
+  const login = await req('rotate', '/api/auth/login', { method: 'POST', json: { email: 'aiko@example.com', password: 'Starto2026!' } });
+  assert.equal(login.status, 200, login.text.slice(0, 200));
+  const after = jar.get('tk_sid');
+  assert.ok(after && after !== before, 'the id handed to a signed-in browser has to be a fresh one (session fixation)');
+
+  assert.equal((await req('rotate', '/api/me')).data.user?.email, 'aiko@example.com', 'the new cookie is the signed-in one');
+
+  /* the pre-login id is dead: nobody holding a copy of it inherits this login */
+  const stale = await fetch(BASE + '/api/me', { headers: { cookie: `tk_sid=${before}` } });
+  const staleData = await stale.json();
+  assert.equal(staleData.user, null, 'the anonymous id must not resolve to the account that just signed in');
+
+  /* and the cart follows the user across the rotation rather than being thrown away */
+  await req('shopper', '/');                                     // a browser that has loaded a page has its csrf cookie
+  const add = await req('shopper', '/api/cart/add', { method: 'POST', json: { sku: 'CKPT-TEE-BK', qty: 1 } });
+  assert.equal(add.status, 200, 'cart add: ' + add.status + ' ' + add.text.slice(0, 160));
+  assert.equal(add.data.cart.lines.length, 1, 'one line in the guest cart: ' + add.text.slice(0, 200));
+  const shopperBefore = jarFor('shopper').get('tk_sid');
+  const relog = await req('shopper', '/api/auth/login', { method: 'POST', json: { email: 'marc@example.com', password: 'Starto2026!' } });
+  assert.equal(relog.status, 200, relog.text.slice(0, 160));
+  assert.notEqual(jarFor('shopper').get('tk_sid'), shopperBefore, 'the shopper is rotated too');
+  const cart = await req('shopper', '/api/cart');
+  assert.equal(cart.data.lines?.[0]?.sku, 'CKPT-TEE-BK', 'a guest cart survives the sign-in: ' + cart.text.slice(0, 200));
+});
+
+test('compressed responses tell caches to key on Accept-Encoding', async () => {
+  /* fetch() decompresses on the way in and hides the encoding, so the wire is inspected directly:
+     what a proxy or a CDN actually sees is the header plus the bytes. */
+  const http = await import('node:http');
+  const rawGet = (url, headers = {}) => new Promise((resolve, reject) => {
+    const r = http.request({ host: '127.0.0.1', port: PORT, path: url, headers }, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }));
+    });
+    r.on('error', reject);
+    r.end();
+  });
+
+  const plain = await rawGet('/tour/');
+  assert.equal(plain.status, 200);
+  assert.match(String(plain.headers.vary || ''), /Accept-Encoding/i, 'without Vary a proxy can serve gzip to a client that cannot read it');
+  assert.equal(plain.headers['content-encoding'], undefined, 'no encoding may be announced that was not applied');
+  assert.equal(plain.headers['strict-transport-security'], undefined, 'a plain http dev server must not pin the browser to https');
+
+  const gz = await rawGet('/tour/', { 'accept-encoding': 'gzip' });
+  assert.equal(gz.headers['content-encoding'], 'gzip');
+  assert.match(String(gz.headers.vary || ''), /Accept-Encoding/i);
+
+  const { gunzipSync } = await import('node:zlib');
+  const html = gunzipSync(gz.body).toString('utf8');
+  assert.match(html, /<html/i, 'the gzipped bytes have to decompress into the page');
+  assert.equal(html.length, plain.body.toString('utf8').length, 'both variants have to carry the same page');
+  assert.ok(gz.body.length < plain.body.length / 2, `gzip should roughly halve a page like this (${gz.body.length} vs ${plain.body.length})`);
+
+  const head = await rawGet('/tour/', { 'accept-encoding': 'gzip', range: 'bytes=0-99' });
+  assert.ok([200, 206].includes(head.status), 'a ranged request must not be mangled: ' + head.status);
 });
 
 test('no server-side errors were logged during the run', async () => {

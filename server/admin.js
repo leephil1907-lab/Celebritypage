@@ -42,6 +42,7 @@ export function createAdminApp({ mounted = false } = {}) {
   app.engine('ejs', ejs.__express);
   app.locals.admin = true;
   if (!mounted) {
+    app.set('trust proxy', 1);      // the console can sit behind the same proxy as the site
     app.use(securityHeaders);
     app.use(gzip);
     app.use(bodyParser);

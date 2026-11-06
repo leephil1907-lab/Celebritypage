@@ -32,7 +32,7 @@ server/content.js     every read, projected against the viewer, so a template ca
 views/                61 EJS templates      client/  carousel + motion + features      public/  built assets
 api/index.js          the Vercel entry point (lazy boot into the same app)
 vercel.json · render.yaml                            the two deployment paths
-scripts/              build, check, audit, qa-browser, fetch-fonts        tests/  35 end-to-end tests
+scripts/              build, check, audit, qa-browser, fetch-fonts        tests/  40 end-to-end tests
 ```
 
 ## Features, and where they are enforced
@@ -75,7 +75,7 @@ connected-client count.
 ## Verify
 
 ```
-npm run verify   # build + integrity check + 35 e2e tests                                  (~10 s)
+npm run verify   # build + integrity check + 40 e2e tests                                  (~10 s)
 npm run audit    # 299 whole-site checks: links, media, fonts, meta, sitemap, layout at 6 widths
 npm run qa       # 70 Chromium checks: carousels, motion, pointer light, magnet, waitlist, mobile, console
 ```
@@ -91,6 +91,8 @@ reason (`QA_ALLOW_NO_BROWSER=1` is the explicit opt-out) and `audit` records the
 failure. `AUDIT_BASE` / `QA_BASE` / `QA_ADMIN` point them at any deployment; screenshots land in `qa/`.
 
 ## Deploy
+
+Step-by-step runbook, environment table, backups and troubleshooting: **[DEPLOY.md](DEPLOY.md)**.
 
 Node 20+, a writable `data/` and `uploads/`, and nothing else.
 

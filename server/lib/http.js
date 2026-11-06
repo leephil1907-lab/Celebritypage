@@ -6,12 +6,22 @@ import zlib from 'node:zlib';
 
 const COMPRESSIBLE = /^(text\/|application\/json|application\/javascript|image\/svg)/;
 
+/** add a field to a Vary header without dropping the ones already there */
+function appendVary(existing, field) {
+  const have = String(existing || '').split(',').map((v) => v.trim()).filter(Boolean);
+  if (have.some((v) => v.toLowerCase() === field.toLowerCase())) return have.join(', ');
+  return [...have, field].join(', ');
+}
+
 export function securityHeaders(req, res, next) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  /* the platform terminates TLS in front of us; tell the browser to keep doing it, and only in
+     production so a local http:// run is never pinned to https by a cached header */
+  if (process.env.NODE_ENV === 'production') res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
     "img-src 'self' data: https:",
@@ -32,6 +42,10 @@ export function gzip(req, res, next) {
   // an SSE stream must be written straight through — buffering it here would stall live updates
   if (/\/events$/.test(req.path) || /text\/event-stream/.test(req.headers.accept || '')) return next();
   if (res.getHeader('Content-Encoding')) return next();          // the host already encoded this response
+  /* the bytes we send depend on Accept-Encoding, so every dynamic response has to say so — otherwise a
+     cache or CDN in front of Render (or a corporate proxy) can hand gzipped bytes to a client that
+     asked for plain text, or the reverse */
+  res.setHeader('Vary', appendVary(res.getHeader('Vary'), 'Accept-Encoding'));
   const accept = req.headers['accept-encoding'] || '';
   if (!/\bgzip\b/.test(accept) || req.headers['x-pjax'] === 'stream') return next();
   const chunks = [];
@@ -46,7 +60,6 @@ export function gzip(req, res, next) {
       const gz = zlib.gzipSync(body, { level: 5 });
       res.setHeader('Content-Encoding', 'gzip');
       res.setHeader('Content-Length', String(gz.length));
-      res.setHeader('Vary', 'Accept-Encoding');
       return end(gz);
     }
     if (body.length) res.setHeader('Content-Length', String(body.length));
@@ -81,8 +94,21 @@ export function bodyParser(req, res, next) {
   if (['GET', 'HEAD'].includes(req.method)) { req.body = {}; req.__bodyRead = true; return next(); }
   const type = req.headers['content-type'] || '';
   let raw = '';
+  let received = 0;
   let tooBig = false;
-  req.on('data', (c) => { raw += c; if (raw.length > limit) { tooBig = true; req.pause(); } });
+  req.on('data', (c) => {
+    received += c.length;
+    if (received > limit) {
+      /* Past the cap: stop buffering but keep draining. Pausing here would leave the client still
+         uploading into a socket nobody reads, so it never sees the 413 we already owe it. Memory
+         stays flat because the overflow is discarded, not accumulated. A truly abusive upload is
+         cut off outright rather than read to the end. */
+      if (!tooBig) { tooBig = true; raw = ''; }
+      if (received > limit * 32) req.destroy();
+      return;
+    }
+    raw += c;
+  });
   req.on('end', () => {
     if (tooBig) {
       req.__bodyRead = true;
@@ -94,7 +120,15 @@ export function bodyParser(req, res, next) {
       else if (type.includes('application/x-www-form-urlencoded')) req.body = Object.fromEntries(new URLSearchParams(raw));
       else if (type.includes('multipart/form-data')) req.body = {}; // admin uses urlencoded forms
       else { try { req.body = raw ? JSON.parse(raw) : {}; } catch { req.body = { raw }; } }
-    } catch { req.body = {}; }
+    } catch (err) {
+      // A truncated or hand-edited payload is a client mistake. Answering 200 with `{}` would
+      // swallow the caller's data and make an empty form look like a successful save.
+      req.__bodyRead = true;
+      if (type.includes('application/json')) {
+        return res.status(400).json({ error: 'bad_json', message: 'The request body was not valid JSON.' });
+      }
+      return next(Object.assign(new Error('Could not read the request body.'), { status: 400, code: 'bad_body' }));
+    }
     req.__bodyRead = true;
     next();
   });

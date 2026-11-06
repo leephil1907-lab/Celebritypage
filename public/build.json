@@ -1,6 +1,6 @@
 {
-  "build": "mw56dsbi",
-  "at": "2026-11-06T16:14:56.709Z",
+  "build": "mw57so30",
+  "at": "2026-11-06T16:54:30.687Z",
   "files": {
     "public/css/app.css": {
       "bytes": 160841,
@@ -12,11 +12,11 @@
     },
     "public/js/app.js": {
       "bytes": 74319,
-      "hash": "3426ea5e6e"
+      "hash": "14f85216b4"
     },
     "public/js/admin.js": {
       "bytes": 10248,
-      "hash": "9c86ffe55c"
+      "hash": "6521fe9082"
     }
   }
 }
